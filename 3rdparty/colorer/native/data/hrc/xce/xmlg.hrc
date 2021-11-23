@@ -1,0 +1,127 @@
+<!-- XML grammar for XML intellisense. Associated with XMLG extension -->
+<?xml version="1.0" encoding="windows-1251"?>
+<!DOCTYPE hrc PUBLIC "-//Cail Lomecb//DTD Colorer HRC take5//EN" "../hrc.dtd">
+<hrc version="take5" xmlns="http://colorer.sf.net/2003/hrc">
+    <type name="xmlg">
+        <region name="comment" parent="def:Comment" />
+        <region name="openTagStart" parent="def:Symbol" />
+        <region name="openTagEnd" parent="def:Symbol" />
+
+        <region name="piTagStart" parent="def:Symbol" />
+        <region name="piTagEnd" parent="def:Symbol" />
+
+        <region name="closeTagStart" parent="def:Symbol" />
+        <region name="closeTagEnd" parent="def:Symbol" />
+
+        <region name="tagName" parent="def:Keyword" />
+        <region name="namespaceDivisor" parent="def:Symbol" />
+        <region name="namespace" parent="def:Keyword" />
+        <region name="error" parent="def:Error"/>
+
+        <region name="attributeNamespace" parent="def:Keyword" />
+        <region name="attributeNamespaceDivisor" parent="def:Symbol" />
+        <region name="attributeName" parent="def:Keyword" />
+        <region name="attributeEq" parent="def:Symbol" />
+        <region name="attributeQuote" parent="def:Symbol" />
+        <region name="attributeValue" parent="def:String" />
+
+        <scheme name="xmlg">
+            <!-- comment -->
+            <block start="/&lt;\!--/" end="/--&gt;/"
+                   scheme="xmlgcomment"
+                   region="comment" />
+
+            <block start="/&lt;\!\[CDATA\[/" end="/\]\]&gt;/"
+                   scheme="xmlgcomment"
+                   region="comment" />
+
+
+            <!-- tags -->
+            <block start="/(&lt;)([\w_\-]+)(:)([\w_\-]+)?/" end="/(\/?&gt;)/"
+                scheme="xmlgtag"
+
+                region01="openTagStart"
+                region02="namespace"
+                region03="namespaceDivisor"
+                region04="tagName"
+                region11="openTagEnd"
+                region00="def:PairStart"
+                region10="def:PairEnd"
+                />
+
+            <block start="/(&lt;[?])([\w_\-]+)(:)([\w_\-]+)?/" end="/([?]&gt;)/"
+                scheme="xmlgtag"
+
+                region01="piTagStart"
+                region02="namespace"
+                region03="namespaceDivisor"
+                region04="tagName"
+                region11="piTagEnd"
+                region00="def:PairStart"
+                region10="def:PairEnd"
+                />
+
+            <block start="/(&lt;)([\w_\-]+)/" end="/(\/?&gt;)/"
+                scheme="xmlgtag"
+
+                region01="openTagStart"
+                region02="tagName"
+                region11="openTagEnd"
+                region00="def:PairStart"
+                region10="def:PairEnd"
+                />
+
+            <block start="/(&lt;[?])([\w_\-]+)/" end="/([?]&gt;)/"
+                scheme="xmlgtag"
+
+                region01="piTagStart"
+                region02="tagName"
+                region11="piTagEnd"
+                region00="def:PairStart"
+                region10="def:PairEnd"
+                />
+
+
+            <regexp match="/(&lt;\/)([\w_\-]+)(:)([\w_\-]+)?\s*(&gt;)/" region1="closeTagStart" region2="namespace" region3="namespaceDivisor" region4="tagName" region5="closeTagEnd" />
+            <regexp match="/(&lt;\/)([\w_\-]+)\s*(&gt;)/" region1="closeTagStart" region2="tagName" region3="closeTagEnd" />
+
+            <regexp match="/(&lt;\/)([\w_\-]+)(:)([\w_\-]+)$/" region1="closeTagStart" region2="namespace" region3="namespaceDivisor" region4="tagName" />
+            <regexp match="/(&lt;\/)([\w_\-]+)(:)$/" region1="closeTagStart" region2="namespace" region3="namespaceDivisor" />
+            <regexp match="/(&lt;\/)([\w_\-]+)$/" region1="closeTagStart" region2="tagName" />
+            <regexp match="/(&lt;\/)([\w_\-]+)(:)([\w_\-]+)\s?=/" region1="closeTagStart" region2="namespace" region3="namespaceDivisor" region4="tagName" />
+            <regexp match="/(&lt;\/)([\w_\-]+)(:)\s?=/" region1="closeTagStart" region2="namespace" region3="namespaceDivisor" />
+            <regexp match="/(&lt;\/)([\w_\-]+)\s?=/" region1="closeTagStart" region2="tagName" />
+
+
+            <regexp match="/(&lt;\/)\s?=/" region1="closeTagStart" />
+            <regexp match="/(&lt;\/)$/" region1="closeTagStart" />
+            <regexp match="/(&lt;)\s?=/" region1="openTagStart" />
+            <regexp match="/(&lt;)$/" region1="openTagStart" />
+        </scheme>
+
+        <scheme name="xmlgtag">
+            <regexp match="/([\w_\-]+)(:)([\w_\-]+)\s*(=)\s*(&quot;)([^&quot;]*)(&quot;)/" region1="attributeNamespace" region2="attributeNamespaceDivisor" region3="attributeName" region4="attributeEq" region5="attributeQuote" region6="attributeValue" region7="attributeQuote" />
+            <regexp match="/([\w_\-]+)\s*(=)\s*(&quot;)([^&quot;]*)(&quot;)/" region1="attributeName" region2="attributeEq" region3="attributeQuote" region4="attributeValue" region5="attributeQuote" />
+
+            <regexp match="/([\w_\-]+)(:)([\w_\-]+)\s*(=)\s*(&quot;)([^&quot;]*)$/" region1="attributeNamespace" region2="attributeNamespaceDivisor" region3="attributeName" region4="attributeEq" region5="attributeQuote" region6="attributeValue" />
+            <regexp match="/([\w_\-]+)(:)([\w_\-]+)\s*(=)$/" region1="attributeNamespace" region2="attributeNamespaceDivisor" region3="attributeName" region4="attributeEq" />
+            <regexp match="/([\w_\-]+)(:)([\w_\-]+)$/" region1="attributeNamespace" region2="attributeNamespaceDivisor" region3="attributeName" />
+            <regexp match="/([\w_\-]+)(:)$/" region1="attributeNamespace" region2="attributeNamespaceDivisor" />
+            <regexp match="/([\w_\-]+)$/" region1="attributeName" />
+
+            <regexp match="/([\w_\-]+)\s*(=)\s*(&quot;)([^&quot;]*)$/" region1="attributeName" region2="attributeEq" region3="attributeQuote" region4="attributeValue" />
+            <regexp match="/([\w_\-]+)\s*(=)$/" region1="attributeName" region2="attributeEq" />
+
+            <regexp match="/([\w_\-]+)(:)([\w_\-]+)\s*(=)\s*(&quot;)([^&quot;]*)\s?=/" region1="attributeNamespace" region2="attributeNamespaceDivisor" region3="attributeName" region4="attributeEq" region5="attributeQuote" region6="attributeValue" />
+            <regexp match="/([\w_\-]+)(:)([\w_\-]+)\s*(=)\s?=/" region1="attributeNamespace" region2="attributeNamespaceDivisor" region3="attributeName" region4="attributeEq" />
+            <regexp match="/([\w_\-]+)(:)([\w_\-]+)\s?=/" region1="attributeNamespace" region2="attributeNamespaceDivisor" region3="attributeName" />
+            <regexp match="/([\w_\-]+)(:)\s?=/" region1="attributeNamespace" region2="attributeNamespaceDivisor" />
+            <regexp match="/([\w_\-]+)\s?=/" region1="attributeName" />
+
+            <regexp match="/([\w_\-]+)\s*(=)\s*(&quot;)([^&quot;]*)\s?=/" region1="attributeName" region2="attributeEq" region3="attributeQuote" region4="attributeValue" />
+            <regexp match="/([\w_\-]+)\s*(=)\s?=/" region1="attributeName" region2="attributeEq" />
+        </scheme>
+
+        <scheme name="xmlgcomment" />
+    </type>
+</hrc>

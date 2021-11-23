@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<!DOCTYPE hrd PUBLIC "-//Cail Lomecb//DTD Colorer HRD take5//EN"
+  "http://colorer.sf.net/2003/hrd.dtd">
+<hrd xmlns="http://colorer.sf.net/2003/hrd">
+  <!-- text colors -->
+  <assign name="xce:TextColor" cfore="#7" cback="#1" />
+  <assign name="xce:CurrentLineTextColor" cfore="#7" cback="#1" />
+  <assign name="xce:BlockTextColor" cfore="#7" cback="#8" />
+  <assign name="xce:CurrentLineBlockTextColor" cfore="#7" cback="#8" />
+  <assign name="xce:SpellCheckErrorColor" cfore="#0" cback="#4" />
+  <assign name="xce:PairHighlightColor" cfore="#d" cback="#1" />
+  <assign name="xce:SearchHighlight" cfore="#7" cback="#3" />
+
+
+  <assign name="def:Text" cfore="#7" cback="#1"/>
+  <assign name="def:Syntax" cfore="#7" cback="#1"/>
+
+  <assign name="def:Number"    cfore="#A"  cback="#1"/>
+  <assign name="def:NumberSuffix" cfore="#A"  cback="#1"/>
+
+  <assign name="def:String" cfore="#f"  cback="#1"/>
+  <assign name="def:StringContent" cfore="#f"  cback="#1"/>
+  <assign name="def:StringEdge" cfore="#f"  cback="#1"/>
+  <assign name="def:Character" cfore="#f"  cback="#1"/>
+  <assign name="def:CharacterContent" cfore="#f"  cback="#1"/>
+
+  <assign name="def:Comment" cfore="#8"  cback="#1"/>
+  <assign name="def:CommentContent" cfore="#7"  cback="#1"/>
+  <assign name="def:CommentEdge"    cfore="#8"  cback="#1"/>
+  <assign name="def:CommentDoc"     cfore="#8"  cback="#1"/>
+  <assign name="def:CommentDocContent" cfore="#8"  cback="#1"/>
+  <assign name="def:CommentDocEdge" cfore="#8"  cback="#1"/>
+
+  <assign name="def:Symbol" cfore="#b"  cback="#1"/>
+  <assign name="def:SymbolStrong" cfore="#b"  cback="#1"/>
+  <assign name="def:Prefix" cfore="#b"  cback="#1"/>
+
+  <assign name="def:Operator" cfore="#d"  cback="#1"/>
+
+  <assign name="def:Keyword"       cfore="#e"  cback="#1"/>
+  <assign name="def:TypeKeyword"   cfore="#e"  cback="#1"/>
+
+  <assign name="def:Function" cfore="#7"  cback="#1"/>
+  <assign name="def:Register" cfore="#4"  cback="#1"/>
+  <assign name="def:Constant" cfore="#4"  cback="#1"/>
+  <assign name="def:BooleanConstant" cfore="#e"  cback="#1"/>
+  <assign name="def:Var" cfore="#7"  cback="#1"/>
+  <assign name="def:VarStrong" cfore="#5"  cback="#1"/>
+  <assign name="def:Identifier" cfore="#2"  cback="#1"/>
+
+  <assign name="def:Directive" cfore="#a"  cback="#1"/>
+  <assign name="def:Parameter" cfore="#a"  cback="#1"/>
+
+  <assign name="def:Tag" cfore="#b"  cback="#1"/>
+  <assign name="def:OpenTag" cfore="#b"  cback="#1"/>
+  <assign name="def:CloseTag" cfore="#b"  cback="#1"/>
+
+  <assign name="def:Label" cfore="#6" cback="#1"/>
+  <assign name="def:LabelStrong" cfore="#6" cback="#1" />
+
+  <assign name="def:Error" cfore="#F" cback="#4"/>
+  <assign name="def:ErrorText" cfore="#D"  cback="#1"/>
+
+  <assign name="def:TODO" cfore="#4" cback="#1"/>
+  <assign name="def:Debug" cfore="#4" cback="#1"/>
+
+  <assign name="def:URI" cfore="#5"  cback="#1"/>
+  <assign name="def:EMail" cfore="#5"  cback="#1"/>
+
+  <assign name="def:Date" cfore="#3"  cback="#1"/>
+  <assign name="def:Time" cfore="#7"  cback="#1"/>
+
+  <!-- UI colors -->
+  <assign name="xce:StatusLineColor" cfore="#f" cback="#3" />
+
+  <assign name="xce:MenuItem" cfore="#f" cback="#3" />
+  <assign name="xce:MenuItemSelected" cfore="#f" cback="#0" />
+  <assign name="xce:MenuDisabledItem" cfore="#7" cback="#3" />
+  <assign name="xce:MenuDisabledItemSelected" cfore="#7" cback="#0" />
+  <assign name="xce:MenuHotKey" cfore="#E" cback="#3" />
+  <assign name="xce:MenuHotKeySelected" cfore="#E" cback="#0" />
+
+  <assign name="xce:DialogBorder" cfore="#0" cback="#3" />
+  <assign name="xce:DialogItemLabelColor" cfore="#0" cback="#3" />
+  <assign name="xce:DialogItemLabelHotKey" cfore="#E" cback="#3" />
+  <assign name="xce:DialogItemCheckBoxColor" cfore="#0" cback="#3" />
+  <assign name="xce:DialogItemCheckBoxColorFocused" cfore="#f" cback="#3" />
+  <assign name="xce:DialogItemCheckBoxHotKey" cfore="#e" cback="#3" />
+  <assign name="xce:DialogItemCheckBoxHotKeyFocused" cfore="#e" cback="#3" />
+  <assign name="xce:DialogItemCheckBoxColorDisabled" cfore="#7" cback="#3" />
+  <assign name="xce:DialogItemButtonColor" cfore="#0" cback="#3" />
+  <assign name="xce:DialogItemButtonColorDisabled" cfore="#7" cback="#3" />
+  <assign name="xce:DialogItemButtonColorFocused" cfore="#f" cback="#3" />
+  <assign name="xce:DialogItemButtonHotKey" cfore="#e" cback="#3" />
+  <assign name="xce:DialogItemButtonHotKeyFocused" cfore="#e" cback="#3" />
+  <assign name="xce:DialogItemEditColor" cfore="#0" cback="#7" />
+  <assign name="xce:DialogItemEditColorDisabled" cfore="#8" cback="#7" />
+  <assign name="xce:DialogItemEditColorFocused" cfore="#f" cback="#7" />
+  <assign name="xce:DialogItemEditColorPair" cfore="#a" cback="#7" />
+  <assign name="xce:DialogItemEditColorError" cfore="#c" cback="#7" />
+  <assign name="xce:DialogItemEditColorKeyword" cfore="#b" cback="#7" />
+  <assign name="xce:DialogItemEditSelection" cfore="#0" cback="#8" />
+  <assign name="xce:DialogItemEditSelectionFocused" cfore="#f" cback="#8" />
+  <assign name="xce:DialogItemListBoxColor" cfore="#0" cback="#7" />
+  <assign name="xce:DialogItemListBoxColorDisabled" cfore="#8" cback="#7" />
+  <assign name="xce:DialogItemListBoxColorFocused" cfore="#f" cback="#7" />
+  <assign name="xce:DialogItemListBoxSelection" cfore="#7" cback="#8" />
+  <assign name="xce:DialogItemListBoxSelectionFocused" cfore="#f" cback="#8" />
+  <assign name="xce:DialogItemListBoxSelectionHighlighted" cfore="#b" cback="#8" />
+  <assign name="xce:DialogItemListBoxSelectionFocusedHighlighted" cfore="#b" cback="#8" />
+
+</hrd>

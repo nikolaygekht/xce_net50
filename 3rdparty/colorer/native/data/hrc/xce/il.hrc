@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<!DOCTYPE hrc PUBLIC "-//Cail Lomecb//DTD Colorer HRC take5//EN" "../hrc.dtd">
+<hrc version="take5" xmlns="http://colorer.sf.net/2003/hrc">
+    <type name="il">
+
+      <import type="def"/>
+
+      <region name="String" parent="def:String"/>
+      <region name="Comment" parent="def:Comment"/>
+      <region name="Number" parent="def:Number"/>
+      <region name="Keyword" parent="def:Keyword"/>
+      <region name="Label" parent="def:Label"/>
+      <region name="Sym" parent="def:Symbol"/>
+
+
+      <scheme name="il">
+
+        <block start="/((\{))/" end="/((\}))/"
+               scheme="il"
+               region01="Sym"
+               region02="def:PairStart"
+               region11="Sym"
+               region12="def:PairEnd" />
+        <block start="/((\())/" end="/((\)))/"
+               scheme="il"
+               region01="Sym"
+               region02="def:PairStart"
+               region11="Sym"
+               region12="def:PairEnd" />
+        <block start="/((\[))/" end="/((\]))/"
+               scheme="il"
+               region01="Sym"
+               region02="def:PairStart"
+               region11="Sym"
+               region12="def:PairEnd" />
+
+        <block start="/\/\//" end="/$/" scheme="def:Comment" region="LineComment"/>
+        <inherit scheme="def:Number"/>
+
+        <keywords region="Keyword">
+            <!-- declarations -->
+            <word name="auto"/>
+            <word name="ansi"/>
+            <word name="extends"/>
+            <word name="extern"/>
+            <word name="static"/>
+            <word name="instance"/>
+            <word name="public"/>
+            <word name="private"/>
+            <word name="sequential"/>
+            <word name="sealed"/>
+            <word name="protected"/>
+            <word name="internal"/>
+            <word name="managed"/>
+            <word name="hidebysig"/>
+            <word name="virtual"/>
+            <word name="abstract"/>
+            <word name="specialname"/>
+            <word name="cil"/>
+
+            <!-- datatypes -->
+            <word name="int8"/>
+            <word name="uint8"/>
+            <word name="int16"/>
+            <word name="uint16"/>
+            <word name="int32"/>
+            <word name="uint32"/>
+            <word name="int64"/>
+            <word name="uint64"/>
+            <word name="float32"/>
+            <word name="float32"/>
+            <word name="float64"/>
+            <word name="float64"/>
+            <word name="void"/>
+            <word name="char"/>
+            <word name="string"/>
+            <word name="bool"/>
+            <word name="valuetype"/>
+        </keywords>
+
+            <!-- keywords -->
+        <keywords region="Sym">
+           <word name="nop"/>
+           <word name="break"/>
+           <word name="ldarg"/>
+           <word name="ldloc"/>
+           <word name="stloc"/>
+           <word name="ldarga"/>
+           <word name="starg"/>
+           <word name="ldloc"/>
+           <word name="ldloca"/>
+           <word name="stloc"/>
+           <word name="ldnull"/>
+           <word name="ldc"/>
+           <word name="dup"/>
+           <word name="pop"/>
+           <word name="jmp"/>
+           <word name="call"/>
+           <word name="calli"/>
+           <word name="ret"/>
+           <word name="br"/>
+           <word name="brfalse"/>
+           <word name="brnull"/>
+           <word name="brzero"/>
+           <word name="brtrue"/>
+           <word name="brinst"/>
+           <word name="beq"/>
+           <word name="bge"/>
+           <word name="bgt"/>
+           <word name="ble"/>
+           <word name="blt"/>
+           <word name="br"/>
+           <word name="switch"/>
+           <word name="ldind"/>
+           <word name="stind"/>
+           <word name="add"/>
+           <word name="sub"/>
+           <word name="mul"/>
+           <word name="div"/>
+           <word name="rem"/>
+           <word name="and"/>
+           <word name="or"/>
+           <word name="xor"/>
+           <word name="shl"/>
+           <word name="shr"/>
+           <word name="neg"/>
+           <word name="not"/>
+           <word name="conv"/>
+           <word name="callvirt"/>
+           <word name="cpobj"/>
+           <word name="ldobj"/>
+           <word name="ldstr"/>
+           <word name="newobj"/>
+           <word name="castclass"/>
+           <word name="isinst"/>
+           <word name="unbox"/>
+           <word name="throw"/>
+           <word name="ldfld"/>
+           <word name="ldflda"/>
+           <word name="stfld"/>
+           <word name="ldsfld"/>
+           <word name="stobj"/>
+           <word name="ovf"/>
+           <word name="i1"/>
+           <word name="i2"/>
+           <word name="i4"/>
+           <word name="i8"/>
+           <word name="u1"/>
+           <word name="u2"/>
+           <word name="u4"/>
+           <word name="u8"/>
+           <word name="r4"/>
+           <word name="r8"/>
+           <word name="ref"/>
+           <word name="any"/>
+           <word name="un"/>
+           <word name="i"/>
+           <word name="u"/>
+           <word name="s"/>
+           <word name="ldlen"/>
+           <word name="ldelema"/>
+           <word name="ldelem"/>
+           <word name="stelem"/>
+           <word name="unbox"/>
+           <word name="refanyval"/>
+           <word name="ckfinite"/>
+           <word name="mkrefany"/>
+           <word name="ldtoken"/>
+           <word name="endfinally"/>
+           <word name="endfault"/>
+           <word name="leave"/>
+           <word name="arglist"/>
+           <word name="ceq"/>
+           <word name="cgt"/>
+           <word name="clt"/>
+           <word name="ldftn"/>
+           <word name="ldvirtftn"/>
+           <word name="endfilter"/>
+           <word name="volatile"/>
+           <word name="tail"/>
+           <word name="initobj"/>
+           <word name="constrained"/>
+           <word name="cpblk"/>
+           <word name="initblk"/>
+           <word name="rethrow"/>
+           <word name="sizeof"/>
+           <word name="refanytype"/>
+           <word name="readonly"/>
+
+           <word name="assembly"/>
+           <word name="method"/>
+           <word name="class"/>
+           <word name="field"/>
+           <word name="property"/>
+           <word name="namespace"/>
+        </keywords>
+      </scheme>
+    </type>
+</hrc>
+

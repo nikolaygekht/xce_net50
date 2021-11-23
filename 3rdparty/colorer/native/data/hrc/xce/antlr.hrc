@@ -1,0 +1,192 @@
+<!--
+HRC stylesheet for Colorer to highlight ANTLR v3 syntax
+Developed by Andrey Breslav in 2009
+License: New BSD License
+-->
+
+<?xml version="1.0" encoding="windows-1251"?>
+<!DOCTYPE hrc PUBLIC "-//Cail Lomecb//DTD Colorer HRC take5//EN"
+"http://colorer.sf.net/2003/hrc.dtd">
+
+<hrc version="take5" xmlns="http://colorer.sf.net/2003/hrc"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:schemaLocation="http://colorer.sf.net/2003/hrc http://colorer.sf.net/2003/hrc.xsd">
+
+<annotation><documentation>
+ANTLR v3 Grammar Ddefinitions
+</documentation><contributors><![CDATA[
+Andrey Breslav <abreslav at gmail.com>
+]]></contributors>
+</annotation>
+<type name="antlr">
+
+<import type="def"/>
+
+<region name="antlrKeyword" parent="Keyword"/>
+<region name="antlrSymbol" parent="Symbol"/>
+<region name="antlrOperator" parent="Operator"/>
+<region name="antlrOptionName" parent="String"/>
+<region name="antlrComment" parent="Comment"/>
+<region name="antlrString" parent="String"/>
+<region name="antlrNonterminal" parent="TypeKeyword"/>
+<region name="antlrTerminal" parent="String"/>
+<region name="antlrVariable" parent="Default"/>
+
+<entity name="alpha" value="[a-zA-Z_]"/>
+<entity name="id" value="%alpha;(%alpha;|[0-9])*"/>
+<entity name="nonterm" value="[a-z](%alpha;|[0-9])*"/>
+<entity name="term" value="[A-Z](%alpha;|[0-9])*"/>
+
+<scheme name="Comment">
+
+</scheme>
+
+<scheme name="Common">
+<keywords region="antlrSymbol">
+<symb name=";"/>
+<symb name="="/>
+</keywords>
+
+<keywords region="antlrOperator">
+<symb name=":"/>
+<symb name="*"/>
+<symb name="+"/>
+<symb name="?"/>
+<symb name="|"/>
+<symb name="->"/>
+<symb name="^"/>
+</keywords>
+
+<regexp match="/\'((\\\\)|(\\\')|[^\'])*\'/" region="antlrString"/>
+
+<!-- comments -->
+<block
+start="/\/\*/"
+end="/\*\//"
+region="antlrComment"
+scheme="Comment"
+/>
+<regexp match="/\/\/.*$/" region="antlrComment"/>
+
+</scheme>
+
+
+
+<!-- Options -->
+<scheme name="Options">
+<keywords region="antlrOptionName">
+<word name="language"/>
+<word name="tokenVocab"/>
+<word name="output"/>
+<word name="ASTLabelType"/>
+<word name="TokenLabelType"/>
+<word name="superClass"/>
+<word name="filter"/>
+<word name="rewrite"/>
+<word name="k"/>
+<word name="backtrack"/>
+<word name="memoize"/>
+</keywords>
+
+<inherit scheme="Common"/>
+</scheme>
+
+
+
+<!-- Imports -->
+<scheme name="Imports">
+<keywords region="antlrSymbol">
+<symb name=","/>
+</keywords>
+
+<inherit scheme="Common"/>
+<inherit scheme="Header"/>
+</scheme>
+
+
+<!-- Header -->
+<scheme name="Header">
+<regexp match="/%id;/" region="def:Outlined"/>
+</scheme>
+
+<!-- Rule -->
+<scheme name="Rule">
+<keywords region="antlrKeyword">
+<word name="returns"/>
+</keywords>
+
+<regexp match="/%id;\s*\=/" region="antlrVariable"/>
+<regexp match="/%nonterm;/" region="antlrNonterminal"/>
+<regexp match="/%term;/" region="antlrTerminal"/>
+<regexp match="/\$%id;/" region="antlrVariable"/>
+
+<inherit scheme="Common"/>
+
+<block
+start="/(?{def:PairStart}(?{antlrSymbol}\{))/"
+end="/(?{def:PairEnd}(?{antlrSymbol}\}))/"
+scheme="java:TypeDeclaration"/>
+<block
+start="/(?{def:PairStart}(?{antlrSymbol}\[))/"
+end="/(?{def:PairEnd}(?{antlrSymbol}\]))/"
+scheme="java:TypeDeclaration"/>
+<block
+start="/(?{def:PairStart}(?{antlrOperator}\())/"
+end="/(?{def:PairEnd}(?{antlrOperator}\)))/"
+scheme="Rule"/>
+</scheme>
+
+
+<scheme name="antlr">
+<inherit scheme="Common"/>
+
+<keywords region="antlrKeyword">
+<word name="tokens"/>
+</keywords>
+
+<!-- Header -->
+<block
+start="/(?{def:Outlined}(?{antlrKeyword}(parser|lexer|tree)?\s*grammar\W))/x"
+end="/(?{antlrSymbol}\;)/"
+scheme="Header"
+/>
+
+<!-- options section -->
+<block
+start="/(?{def:Outlined}(?{antlrKeyword}options))\s*(?{def:PairStart}(?{antlrSymbol}\{))/"
+end="/(?{def:PairEnd}(?{antlrSymbol}\}))/"
+scheme="Options"/>
+
+
+<!-- @header -->
+<block
+start="/(?{def:Outlined}(?{antlrKeyword}\@header))\s*(?{antlrSymbol}(?{def:PairStart}\{))/"
+end="/(?{def:PairEnd}(?{antlrSymbol}\}))/"
+scheme="java:java"/>
+
+<!-- @members -->
+<block
+start="/(?{def:Outlined}(?{antlrKeyword}\@members))\s*(?{antlrSymbol}(?{def:PairStart}\{))/"
+end="/(?{def:PairEnd}(?{antlrSymbol}\}))/"
+scheme="java:TypeDeclaration"/>
+
+<!-- Rule -->
+<block
+start="/(?{def:Outlined}(((?{antlrKeyword}fragment)?\s*(?{antlrNonterminal}%term;))|(?{antlrNonterminal}%nonterm;)))/"
+end="/(?{antlrSymbol}\;)/"
+scheme="Rule"
+priority="low"/>
+
+<!-- imports -->
+<block
+start="/(?{def:Outlined}(?{antlrKeyword}import))/"
+end="/(?{antlrSymbol}\;)/"
+scheme="Imports"
+priority="2"
+/>
+</scheme>
+
+</type>
+
+</hrc>
+

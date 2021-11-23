@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<!--- error log files -->
+<!DOCTYPE hrc PUBLIC "-//Cail Lomecb//DTD Colorer HRC take5//EN" "../hrc.dtd">
+<hrc version="take5" xmlns="http://colorer.sf.net/2003/hrc">
+    <type name="errfile" access="public">
+        <import type="def"/>
+
+        <region name="name" parent="def:Symbol"/>
+        <region name="lineno" parent="def:Number"/>
+        <region name="errcode" parent="def:Comment"/>
+
+        <scheme name="errfile">
+            <regexp match="/^(\d+>)?\s*([\w\\.\/][\w\-\s\/\\.:]+)\(([0-9]+)\)\s:\s(.+)$/"
+                    region2="name" region3="lineno" region4="errcode"/>
+            <regexp match="/^(\d+>)?\s*([\w\\.\/][\w\-\s\\.\/:\(\)]+):([0-9]+):\s(.+)$/"
+                    region2="name" region3="lineno" region4="errcode"/>
+            <regexp match="/^(\d+>)?\s+\[javac\]\s+([\w\\.][\w\s\-\\.\(\):]+):([0-9]+):\s(.+)$/"
+                    region2="name" region3="lineno" region4="errcode"/>
+            <regexp match="/^(\d+>)?\s*([\w\\.\/][\w\s\-\/\\.:]+\.[Cc][Ss])\s*\(([0-9]+)\,[0-9]+\): (.+)$/"
+                    region2="name" region3="lineno" region4="errcode"/>
+            <regexp match="/^(\d+>)?\s*([\w\\.\/][\w\-\s\\.\/:\(\)]+):\[([0-9]+),\d+\]\s(.+)$/"
+                    region2="name" region3="lineno" region4="errcode"/>
+            <regexp match="/^(\d+>)?\s*\[mxmlc\]\s([\w\\.\/][\w\-\s\\.\/:\(\)]+)\(([0-9]+)\):\s(.+)$/"
+                    region2="name" region3="lineno" region4="errcode"/>
+        </scheme>
+    </type>
+</hrc>

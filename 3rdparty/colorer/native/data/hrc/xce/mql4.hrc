@@ -1,0 +1,413 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<!DOCTYPE hrc PUBLIC "-//Cail Lomecb//DTD Colorer HRC take5//EN" "../hrc.dtd">
+<hrc version="take5" xmlns="http://colorer.sf.net/2003/hrc">
+    <type name="mql4">
+        <import type="def" />
+        <region name="string" parent="def:String" />
+        <region name="comment" parent="def:Comment" />
+        <region name="symbol" parent="def:Symbol" />
+        <region name="keyword" parent="def:Keyword" />
+        <region name="functionOutline" parent="def:Outlined" />
+
+        <scheme name="mql4">
+
+            <!-- global mql4 outlines -->
+            <regexp><![CDATA[
+                / \M
+                  (void | int | bool | char | string | double | color | datetime) \s+ (?{functionOutline} \w+) \s* \(
+                /x
+            ]]>
+            </regexp>
+
+            <inherit scheme="mql4-base" />
+        </scheme>
+
+        <scheme name="mql4-base">
+           <!-- comments -->
+           <regexp match="/(\/\/.*$)/" region="comment"/>
+           <block start="/\/\*/" end="/\*\//" scheme="comment-content" region="comment"/>
+           <!-- string -->
+           <regexp match="/ (&#34;) (( \\[^x] | \\x[0-9A-Za-z][0-9A-Za-z] | [^\\&#34;] )*?) (&#34;) /x" region0="string" region1="def:PairStart" region4="def:PairEnd" />
+           <regexp match="/ (') (( \\[^x] | \\x[0-9A-Za-z][0-9A-Za-z] | [^\\'] )*?) (') /x" region0="string" region1="def:PairStart" region4="def:PairEnd" />
+
+           <!-- bracket outlines -->
+           <block start="/(\{)/" end="/(\})/" scheme="mql4" region00="symbol" region01="def:PairStart" region10="symbol" region11="def:PairEnd" />
+           <block start="/(\()/" end="/(\))/" scheme="mql4" region00="symbol" region01="def:PairStart" region10="symbol" region11="def:PairEnd" />
+           <block start="/(\[)/" end="/(\])/" scheme="mql4" region00="symbol" region01="def:PairStart" region10="symbol" region11="def:PairEnd" />
+
+           <inherit scheme="def:Number"/>
+
+           <keywords region="symbol">
+                <symb name=";"/>
+                <symb name="="/>
+                <symb name="+"/>
+                <symb name="-"/>
+                <symb name="*"/>
+                <symb name="/"/>
+                <symb name="%"/>
+                <symb name="&lt;"/>
+                <symb name="&gt;"/>
+                <symb name="="/>
+                <symb name="&amp;"/>
+                <symb name="|"/>
+                <symb name="^"/>
+                <symb name="!"/>
+           </keywords>
+
+           <keywords region="keyword">
+                <word name="extern"/>
+                <word name="int"/>
+                <word name="bool"/>
+                <word name="char"/>
+                <word name="string"/>
+                <word name="double"/>
+                <word name="color"/>
+                <word name="datetime"/>
+                <word name="void"/>
+                <word name="true"/>
+                <word name="false"/>
+           </keywords>
+
+           <keywords region="keyword">
+                <word name="extern"/>
+                <word name="static"/>
+                <word name="#property"/>
+                <word name="#import"/>
+                <word name="#define"/>
+                <word name="#include"/>
+           </keywords>
+
+           <keywords region="keyword">
+                <word name="Open" />
+                <word name="Close" />
+                <word name="High" />
+                <word name="Low" />
+                <word name="Time" />
+                <word name="Volume" />
+           </keywords>
+           <keywords region="keyword">
+                <word name="break"/>
+                <word name="case"/>
+                <word name="continue"/>
+                <word name="default"/>
+                <word name="else"/>
+                <word name="for"/>
+                <word name="if"/>
+                <word name="return"/>
+                <word name="switch"/>
+                <word name="while"/>
+           </keywords>
+
+           <keywords region="keyword">
+                <word name="PERIOD_M1"/>
+                <word name="PERIOD_M5"/>
+                <word name="PERIOD_M15"/>
+                <word name="PERIOD_M30"/>
+                <word name="PERIOD_H1"/>
+                <word name="PERIOD_H4"/>
+                <word name="PERIOD_D1"/>
+                <word name="PERIOD_W1"/>
+                <word name="PERIOD_MN1"/>
+
+                <word name="OP_BUY"/>
+                <word name="OP_SELL"/>
+                <word name="OP_BUYLIMIT"/>
+                <word name="OP_SELLLIMIT"/>
+                <word name="OP_BUYSTOP"/>
+                <word name="OP_SELLSTOP"/>
+
+                <word name="PRICE_CLOSE"/>
+                <word name="PRICE_OPEN"/>
+                <word name="PRICE_HIGH"/>
+                <word name="PRICE_LOW"/>
+                <word name="PRICE_MEDIAN"/>
+                <word name="PRICE_TYPICAL"/>
+                <word name="PRICE_WEIGHTED"/>
+
+                <word name="DRAW_LINE"/>
+                <word name="DRAW_SECTION"/>
+                <word name="DRAW_HISTOGRAM"/>
+                <word name="DRAW_ARROW"/>
+                <word name="DRAW_ZIGZAG"/>
+                <word name="DRAW_NONE"/>
+                <word name="STYLE_SOLID"/>
+                <word name="STYLE_DASH"/>
+                <word name="STYLE_DOT"/>
+                <word name="STYLE_DASHDOT"/>
+                <word name="STYLE_DASHDOTDOT"/>
+
+                <word name="MODE_MAIN"/>
+                <word name="MODE_SIGNAL"/>
+                <word name="MODE_PLUSDI"/>
+                <word name="MODE_MINUSDI"/>
+                <word name="MODE_UPPER"/>
+                <word name="MODE_LOWER"/>
+                <word name="MODE_TENKANSEN"/>
+                <word name="MODE_KIJUNSEN"/>
+                <word name="MODE_SENKOUSPANA"/>
+                <word name="MODE_SENKOUSPANB"/>
+                <word name="MODE_CHINKOUSPAN"/>
+                <word name="MODE_SMA"/>
+                <word name="MODE_EMA"/>
+                <word name="MODE_SMMA"/>
+                <word name="MODE_LWMA"/>
+
+                <word name="NULL"/>
+                <word name="EMPTY"/>
+                <word name="EMPTY_VALUE"/>
+                <word name="CLR_NONE"/>
+                <word name="WHOLE_ARRAY"/>
+
+                <word name="AccountBalance" />
+                <word name="AccountCredit" />
+                <word name="AccountCompany" />
+                <word name="AccountCurrency" />
+                <word name="AccountEquity" />
+                <word name="AccountFreeMargin" />
+                <word name="AccountFreeMarginCheck" />
+                <word name="AccountFreeMarginMode" />
+                <word name="AccountLeverage" />
+                <word name="AccountMargin" />
+                <word name="AccountName" />
+                <word name="AccountNumber" />
+                <word name="AccountProfit" />
+                <word name="AccountServer" />
+                <word name="AccountStopoutLevel" />
+                <word name="AccountStopoutMode" />
+                <word name="ArrayBsearch" />
+                <word name="ArrayCopy" />
+                <word name="ArrayCopyRates" />
+                <word name="ArrayCopySeries" />
+                <word name="ArrayDimension" />
+                <word name="ArrayGetAsSeries" />
+                <word name="ArrayInitialize" />
+                <word name="ArrayIsSeries" />
+                <word name="ArrayMaximum" />
+                <word name="ArrayMinimum" />
+                <word name="ArrayRange" />
+                <word name="ArrayResize" />
+                <word name="ArraySetAsSeries" />
+                <word name="ArraySize" />
+                <word name="ArraySort" />
+                <word name="TerminalCompany" />
+                <word name="TerminalName" />
+                <word name="TerminalPath" />
+                <word name="Alert" />
+                <word name="Comment" />
+                <word name="GetTickCount" />
+                <word name="MarketInfo" />
+                <word name="MessageBox" />
+                <word name="PlaySound" />
+                <word name="Print" />
+                <word name="SendFTP" />
+                <word name="SendMail" />
+                <word name="Sleep" />
+                <word name="CharToStr" />
+                <word name="DoubleToStr" />
+                <word name="NormalizeDouble" />
+                <word name="StrToDouble" />
+                <word name="StrToInteger" />
+                <word name="StrToTime" />
+                <word name="TimeToStr" />
+                <word name="IndicatorBuffers" />
+                <word name="IndicatorCounted" />
+                <word name="IndicatorDigits" />
+                <word name="IndicatorShortName" />
+                <word name="SetIndexArrow" />
+                <word name="SetIndexBuffer" />
+                <word name="SetIndexDrawBegin" />
+                <word name="SetIndexEmptyValue" />
+                <word name="SetIndexLabel" />
+                <word name="SetIndexShift" />
+                <word name="SetIndexStyle" />
+                <word name="SetLevelStyle" />
+                <word name="SetLevelValue" />
+                <word name="Day" />
+                <word name="DayOfWeek" />
+                <word name="DayOfYear" />
+                <word name="Hour" />
+                <word name="Minute" />
+                <word name="Month" />
+                <word name="Seconds" />
+                <word name="TimeCurrent" />
+                <word name="TimeDay" />
+                <word name="TimeDayOfWeek" />
+                <word name="TimeDayOfYear" />
+                <word name="TimeHour" />
+                <word name="TimeLocal" />
+                <word name="TimeMinute" />
+                <word name="TimeMonth" />
+                <word name="TimeSeconds" />
+                <word name="TimeYear" />
+                <word name="Year" />
+                <word name="FileClose" />
+                <word name="FileDelete" />
+                <word name="FileFlush" />
+                <word name="FileIsEnding" />
+                <word name="FileIsLineEnding" />
+                <word name="FileOpen" />
+                <word name="FileOpenHistory" />
+                <word name="FileReadArray" />
+                <word name="FileReadDouble" />
+                <word name="FileReadInteger" />
+                <word name="FileReadNumber" />
+                <word name="FileReadString" />
+                <word name="FileSeek" />
+                <word name="FileSize" />
+                <word name="FileTell" />
+                <word name="FileWrite" />
+                <word name="FileWriteArray" />
+                <word name="FileWriteDouble" />
+                <word name="FileWriteInteger" />
+                <word name="FileWriteString" />
+                <word name="GlobalVariableCheck" />
+                <word name="GlobalVariableDel" />
+                <word name="GlobalVariableGet" />
+                <word name="GlobalVariableName" />
+                <word name="GlobalVariableSet" />
+                <word name="GlobalVariableSetOnCondition" />
+                <word name="GlobalVariablesDeleteAll" />
+                <word name="GlobalVariablesTotal" />
+                <word name="MathAbs" />
+                <word name="MathArccos" />
+                <word name="MathArcsin" />
+                <word name="MathArctan" />
+                <word name="MathCeil" />
+                <word name="MathCos" />
+                <word name="MathExp" />
+                <word name="MathFloor" />
+                <word name="MathLog" />
+                <word name="MathMax" />
+                <word name="MathMin" />
+                <word name="MathMod" />
+                <word name="MathPow" />
+                <word name="MathRand" />
+                <word name="MathRound" />
+                <word name="MathSin" />
+                <word name="MathSqrt" />
+                <word name="MathSrand" />
+                <word name="MathTan" />
+                <word name="ObjectCreate" />
+                <word name="ObjectDelete" />
+                <word name="ObjectDescription" />
+                <word name="ObjectFind" />
+                <word name="ObjectGet" />
+                <word name="ObjectGetFiboDescription" />
+                <word name="ObjectGetShiftByValue" />
+                <word name="ObjectGetValueByShift" />
+                <word name="ObjectMove" />
+                <word name="ObjectName" />
+                <word name="ObjectsDeleteAll" />
+                <word name="ObjectSet" />
+                <word name="ObjectSetFiboDescription" />
+                <word name="ObjectSetText" />
+                <word name="ObjectsTotal" />
+                <word name="ObjectType" />
+                <word name="StringConcatenate" />
+                <word name="StringFind" />
+                <word name="StringGetChar" />
+                <word name="StringLen" />
+                <word name="StringSetChar" />
+                <word name="StringSubstr" />
+                <word name="StringTrimLeft" />
+                <word name="StringTrimRight" />
+                <word name="iAC" />
+                <word name="iAD" />
+                <word name="iAlligator" />
+                <word name="iADX" />
+                <word name="iATR" />
+                <word name="iAO" />
+                <word name="iBearsPower" />
+                <word name="iBands" />
+                <word name="iBandsOnArray" />
+                <word name="iBullsPower" />
+                <word name="iCCI" />
+                <word name="iCCIOnArray" />
+                <word name="iCustom" />
+                <word name="iDeMarker" />
+                <word name="iEnvelopes" />
+                <word name="iEnvelopesOnArray" />
+                <word name="iForce" />
+                <word name="iFractals" />
+                <word name="iGator" />
+                <word name="iIchimoku" />
+                <word name="iBWMFI" />
+                <word name="iMomentum" />
+                <word name="iMomentumOnArray" />
+                <word name="iMFI" />
+                <word name="iMA" />
+                <word name="iMAOnArray" />
+                <word name="iOsMA" />
+                <word name="iMACD" />
+                <word name="iOBV" />
+                <word name="iSAR" />
+                <word name="iRSI" />
+                <word name="iRSIOnArray" />
+                <word name="iRVI" />
+                <word name="iStdDev" />
+                <word name="iStdDevOnArray" />
+                <word name="iStochastic" />
+                <word name="iWPR" />
+                <word name="iBars" />
+                <word name="iBarShift" />
+                <word name="iClose" />
+                <word name="iHigh" />
+                <word name="iHighest" />
+                <word name="iLow" />
+                <word name="iLowest" />
+                <word name="iOpen" />
+                <word name="iTime" />
+                <word name="iVolume" />
+                <word name="OrderClose" />
+                <word name="OrderCloseBy" />
+                <word name="OrderClosePrice" />
+                <word name="OrderCloseTime" />
+                <word name="OrderComment" />
+                <word name="OrderCommission" />
+                <word name="OrderDelete" />
+                <word name="OrderExpiration" />
+                <word name="OrderLots" />
+                <word name="OrderMagicNumber" />
+                <word name="OrderModify" />
+                <word name="OrderOpenPrice" />
+                <word name="OrderOpenTime" />
+                <word name="OrderPrint" />
+                <word name="OrderProfit" />
+                <word name="OrderSelect" />
+                <word name="OrderSend" />
+                <word name="OrdersHistoryTotal" />
+                <word name="OrderStopLoss" />
+                <word name="OrdersTotal" />
+                <word name="OrderSwap" />
+                <word name="OrderSymbol" />
+                <word name="OrderTakeProfit" />
+                <word name="OrderTicket" />
+                <word name="OrderType" />
+                <word name="HideTestIndicators" />
+                <word name="Period" />
+                <word name="RefreshRates" />
+                <word name="Symbol" />
+                <word name="WindowBarsPerChart" />
+                <word name="WindowExpertName" />
+                <word name="WindowFind" />
+                <word name="WindowFirstVisibleBar" />
+                <word name="WindowHandle" />
+                <word name="WindowIsVisible" />
+                <word name="WindowOnDropped" />
+                <word name="WindowPriceMax" />
+                <word name="WindowPriceMin" />
+                <word name="WindowPriceOnDropped" />
+                <word name="WindowRedraw" />
+                <word name="WindowScreenShot" />
+                <word name="WindowTimeOnDropped" />
+                <word name="WindowsTotal" />
+                <word name="WindowXOnDropped" />
+                <word name="WindowYOnDropped" />
+           </keywords>
+
+        </scheme>
+
+
+        <scheme name="comment-content" />
+    </type>
+</hrc>
