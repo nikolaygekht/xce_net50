@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+  </PropertyGroup>
+
+  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
+    <XslTransformation XslInputPath="$(ProjectDir)auto/colorscheme.xsl" XmlInputPaths="$(ProjectDir)auto/colorscheme.xml" OutputPaths="$(ProjectDir)ColorScheme.cs" UseTrustedSettings="true" />
+  </Target>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Gehtsoft.Xce.Conio\Gehtsoft.Xce.Conio.csproj" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<nuget xmlns="http://www.gehtsoft.com/build/nuget">
+ <!-- versions. the FIRST version is the current -->
+ <versions>
+  <version id="0.1">First version</version>
+ </versions>
+ <properties>
+  <owner>Gehtsoft</owner>
+  <projectUrl>http://asp.gehtsoftusa.com/doc/xce</projectUrl>
+  <licenseUrl>http://asp.gehtsoftusa.com/doc/privatelicense.html</licenseUrl>
+  <copyright>Gehtsoft USA LLC 2016-2019</copyright>
+ </properties>
+<projects>
+  <project id="Gehtsoft.Xce.Conio" location="../Gehtsoft.Xce.Conio/Gehtsoft.Xce.Conio.csproj">
+    <description>Low level console I/O.</description>
+  </project>
+  <project id="Gehtsoft.Xce.Conio.Win" location="../Gehtsoft.Xce.Conio.Win/Gehtsoft.Xce.Conio.Win.csproj">
+    <description>CUA interface library for a console.</description>
+  </project>
+</projects>
+</nuget>
