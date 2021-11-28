@@ -12,7 +12,6 @@ namespace Gehtsoft.Xce.Conio.Win
         private char mHotKey;
         private int mHotKeyPosition;
         private bool mChecked;
-        private char mCheckMark = '\u221a';
 
         public string Title
         {
@@ -68,20 +67,9 @@ namespace Gehtsoft.Xce.Conio.Win
                 if (Exists)
                     Invalidate();
             }
-
         }
 
-        public char CheckMark
-        {
-            get
-            {
-                return mCheckMark;
-            }
-            set
-            {
-                mCheckMark = value;
-            }
-        }
+        public char CheckMark { get; set; } = '\u221a';
 
         public DialogItemCheckBox(string title, int id, bool isChecked, int row, int column, int width)
             : base(id, row, column)
@@ -160,7 +148,7 @@ namespace Gehtsoft.Xce.Conio.Win
             canvas.Fill(0, 0, 1, Width, color);
             canvas.Write(0, 0, '[');
             if (mChecked)
-                canvas.Write(0, 1, mCheckMark);
+                canvas.Write(0, 1, CheckMark);
             else
                 canvas.Write(0, 1, ' ');
             canvas.Write(0, 2, ']');
@@ -197,6 +185,5 @@ namespace Gehtsoft.Xce.Conio.Win
         {
             Click();
         }
-
     }
 }

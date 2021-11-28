@@ -7,51 +7,39 @@ using System.Xml;
 
 namespace Gehtsoft.Xce.Conio
 {
-    public class Canvas 
+    public class Canvas
     {
-        private static int gCharInfoSize;
+        internal CharInfoArray Data { get; }
+        internal IntArray ForegroundColor { get; }
+        internal IntArray BackgroundColor { get; }
+        internal IntArray Style { get; }
 
-        private int mRows, mColumns;
-        private CharInfoArray mData;
-        private IntArray mForegroundColor, mBackgroundColor, mStyle;
-        
-        internal CharInfoArray Data => mData;
-        internal IntArray ForegroundColor => mForegroundColor;
-        internal IntArray BackgroundColor => mBackgroundColor; 
-        internal IntArray Style => mStyle;
-
-        public int Rows => mRows;
-        public int Columns => mColumns;
-
-        static Canvas()
-        {
-            gCharInfoSize = Marshal.SizeOf<Win32.CHAR_INFO>();
-        }
+        public int Rows { get; }
+        public int Columns { get; }
 
         public Canvas(int rows, int columns)
         {
-            mRows = rows;
-            mColumns = columns;
-            mData = new CharInfoArray(rows, columns);
-            mForegroundColor = new IntArray(rows, columns);
-            mBackgroundColor = new IntArray(rows, columns);
-            mStyle = new IntArray(rows, columns);
+            Rows = rows;
+            Columns = columns;
+            Data = new CharInfoArray(rows, columns);
+            ForegroundColor = new IntArray(rows, columns);
+            BackgroundColor = new IntArray(rows, columns);
+            Style = new IntArray(rows, columns);
         }
-
 
         public void Write(int row, int column, char chr)
         {
-            if (row < 0 || column < 0 || row >= mRows || column >= mColumns)
+            if (row < 0 || column < 0 || row >= Rows || column >= Columns)
                 return;
-            mData[row, column].UnicodeChar = chr;
+            Data[row, column].UnicodeChar = chr;
         }
 
         private void WriteRgb(int row, int column, CanvasColor color)
         {
-            if (row < 0 || column < 0 || row >= mRows || column >= mColumns)
+            if (row < 0 || column < 0 || row >= Rows || column >= Columns)
                 return;
 
-            int idx = row * mColumns + column;
+            int idx = row * Columns + column;
             int fg = color.RgbFg;
             int bg = color.RgbBg;
             int s = (int)color.Style;
@@ -59,64 +47,63 @@ namespace Gehtsoft.Xce.Conio
                 fg = -1;
             if (!CanvasColor.IsValid(bg))
                 bg = -1;
-            mForegroundColor[idx] = fg;
-            mBackgroundColor[idx] = bg;
-            mStyle[idx] = s;
+            ForegroundColor[idx] = fg;
+            BackgroundColor[idx] = bg;
+            Style[idx] = s;
         }
 
         public void Write(int row, int column, CanvasColor color)
         {
-            if (row < 0 || column < 0 || row >= mRows || column >= mColumns)
+            if (row < 0 || column < 0 || row >= Rows || column >= Columns)
                 return;
 
-            mData[row, column].Attributes = color.PalColor;
+            Data[row, column].Attributes = color.PalColor;
             WriteRgb(row, column, color);
         }
         public void Write(int row, int column, CanvasCell cell) => Write(row, column, cell.Character, cell.Color);
 
         public void WriteForeground(int row, int column, CanvasColor color)
         {
-            if (row < 0 || column < 0 || row >= mRows || column >= mColumns)
+            if (row < 0 || column < 0 || row >= Rows || column >= Columns)
                 return;
 
-            ref Win32.CHAR_INFO c = ref mData[row, column];
-            c.Attributes =(ushort)((c.Attributes & 0xf0) | (color.PalColor & 0x0f));
+            ref Win32.CHAR_INFO c = ref Data[row, column];
+            c.Attributes = (ushort)((c.Attributes & 0xf0) | (color.PalColor & 0x0f));
 
             if (CanvasColor.IsValid(color.RgbFg))
-                mForegroundColor[row, column] = color.RgbFg;
+                ForegroundColor[row, column] = color.RgbFg;
             else
-                mForegroundColor[row, column] = -1;
+                ForegroundColor[row, column] = -1;
         }
 
         public void WriteBackground(int row, int column, CanvasColor color)
         {
-            if (row < 0 || column < 0 || row >= mRows || column >= mColumns)
+            if (row < 0 || column < 0 || row >= Rows || column >= Columns)
                 return;
 
-            ref Win32.CHAR_INFO c = ref mData[row, column];
+            ref Win32.CHAR_INFO c = ref Data[row, column];
             c.Attributes = (ushort)((c.Attributes & 0x0f) | (color.PalColor & 0xf0));
 
             if (CanvasColor.IsValid(color.RgbBg))
-                mBackgroundColor[row, column] = color.RgbBg;
+                BackgroundColor[row, column] = color.RgbBg;
             else
-                mBackgroundColor[row, column] = -1;
+                BackgroundColor[row, column] = -1;
         }
 
-        public void Write(int row, int column, char chr, CanvasColor color) 
+        public void Write(int row, int column, char chr, CanvasColor color)
         {
-            if (row < 0 || column < 0 || row >= mRows || column >= mColumns)
+            if (row < 0 || column < 0 || row >= Rows || column >= Columns)
                 return;
 
-            ref Win32.CHAR_INFO c = ref mData[row, column];
+            ref Win32.CHAR_INFO c = ref Data[row, column];
             c.Attributes = color.PalColor;
             c.UnicodeChar = chr;
             WriteRgb(row, column, color);
         }
 
-
         private void Write(int row, int column, int offset, int length, CanvasColor color, Func<int> lengthAction, Func<int, char> charAction)
         {
-            if (row >= 0 && row < mRows)
+            if (row >= 0 && row < Rows)
             {
                 if (column < 0)
                 {
@@ -135,8 +122,8 @@ namespace Gehtsoft.Xce.Conio
                     return;
 
                 int limit = column + length;
-                if (limit > mColumns)
-                    limit = mColumns;
+                if (limit > Columns)
+                    limit = Columns;
 
                 int tbase = offset;
                 for (int i = column; i < limit; i++, tbase++)
@@ -146,7 +133,6 @@ namespace Gehtsoft.Xce.Conio
                     else
                         Write(row, i, charAction(tbase), color);
                 }
-
             }
         }
 
@@ -163,7 +149,6 @@ namespace Gehtsoft.Xce.Conio
         public void Write(int row, int column, StringBuilder text) => Write(row, column, 0, text.Length, null, () => text.Length, (i) => text[i]);
         public void Write(int row, int column, StringBuilder text, CanvasColor c) => Write(row, column, 0, text.Length, c, () => text.Length, (i) => text[i]);
 
-
         private void Fill(int row, int column, int rows, int columns, Action<int, int> action)
         {
             if (row < 0)
@@ -178,18 +163,18 @@ namespace Gehtsoft.Xce.Conio
                 column = 0;
             }
 
-            if (row >= mRows)
+            if (row >= Rows)
                 return;
             if (rows <= 0 || columns <= 0)
                 return;
 
             int rowLimit = row + rows;
-            if (rowLimit > mRows)
-                rowLimit = mRows;
+            if (rowLimit > Rows)
+                rowLimit = Rows;
 
             int colLimit = column + columns;
-            if (colLimit > mColumns)
-                colLimit = mColumns;
+            if (colLimit > Columns)
+                colLimit = Columns;
             int i, j;
             for (i = row; i < rowLimit; i++)
             {
@@ -198,13 +183,12 @@ namespace Gehtsoft.Xce.Conio
             }
         }
 
-
         public void Fill(int row, int column, int rows, int columns, char chr) => Fill(row, column, rows, columns, (r, c) => Write(r, c, chr));
         public void Fill(int row, int column, int rows, int columns, CanvasColor color) => Fill(row, column, rows, columns, (r, c) => Write(r, c, color));
         public void Fill(int row, int column, int rows, int columns, char chr, CanvasColor color) => Fill(row, column, rows, columns, (r, c) => Write(r, c, chr, color));
         public void Fill(int row, int column, int rows, int columns, CanvasCell cell) => Fill(row, column, rows, columns, (r, c) => Write(r, c, cell));
-        public void fillFg(int row, int column, int rows, int columns, CanvasColor cell) => Fill(row, column, rows, columns, (r, c) => WriteForeground(r, c, cell));
-        public void fillBg(int row, int column, int rows, int columns, CanvasColor cell) => Fill(row, column, rows, columns, (r, c) => WriteBackground(r, c, cell));
+        public void FillFg(int row, int column, int rows, int columns, CanvasColor cell) => Fill(row, column, rows, columns, (r, c) => WriteForeground(r, c, cell));
+        public void FillBg(int row, int column, int rows, int columns, CanvasColor cell) => Fill(row, column, rows, columns, (r, c) => WriteBackground(r, c, cell));
 
         public void Box(int row, int column, int rows, int columns, BoxBorder border, CanvasColor color)
         {
@@ -252,14 +236,14 @@ namespace Gehtsoft.Xce.Conio
                 dstColumn = 0;
             }
 
-            if (dstRow >= mRows)
+            if (dstRow >= Rows)
                 return;
 
-            if (srcColumns > mColumns - dstColumn)
-                srcColumns = mColumns - dstColumn;
+            if (srcColumns > Columns - dstColumn)
+                srcColumns = Columns - dstColumn;
 
-            if (srcRows > mRows - dstRow)
-                srcRows = mRows - dstRow;
+            if (srcRows > Rows - dstRow)
+                srcRows = Rows - dstRow;
 
             if (srcRows <= 0 || srcColumns <= 0)
                 return;
@@ -268,25 +252,23 @@ namespace Gehtsoft.Xce.Conio
 
             for (i = dstRow, j = 0; j < srcRows; i++, j++)
             {
-                int dstOffset = i * mColumns + dstColumn;
+                int dstOffset = i * Columns + dstColumn;
                 int srcOffset = (j + srcRow) * srcColumnsOrg + srcColumn;
 
-                Array.Copy(srcCanvas.Data.Raw, srcOffset, mData.Raw, dstOffset, srcColumns);
-                Array.Copy(srcCanvas.ForegroundColor.Raw, srcOffset, mForegroundColor.Raw, dstOffset, srcColumns);
-                Array.Copy(srcCanvas.BackgroundColor.Raw, srcOffset, mBackgroundColor.Raw, dstOffset, srcColumns);
-                Array.Copy(srcCanvas.Style.Raw, srcOffset, mStyle.Raw, dstOffset, srcColumns);
+                Array.Copy(srcCanvas.Data.Raw, srcOffset, Data.Raw, dstOffset, srcColumns);
+                Array.Copy(srcCanvas.ForegroundColor.Raw, srcOffset, ForegroundColor.Raw, dstOffset, srcColumns);
+                Array.Copy(srcCanvas.BackgroundColor.Raw, srcOffset, BackgroundColor.Raw, dstOffset, srcColumns);
+                Array.Copy(srcCanvas.Style.Raw, srcOffset, Style.Raw, dstOffset, srcColumns);
             }
         }
 
         public CanvasCell Get(int row, int column)
         {
-            ref Win32.CHAR_INFO ci = ref mData[row, column];
-            int fg = mForegroundColor[row, column];
-            int bg = mBackgroundColor[row, column];
-            int s = mStyle[row, column];
+            ref Win32.CHAR_INFO ci = ref Data[row, column];
+            int fg = ForegroundColor[row, column];
+            int bg = BackgroundColor[row, column];
+            int s = Style[row, column];
             return new CanvasCell((char)ci.UnicodeChar, new CanvasColor(ci.Attributes, fg, bg, (CanvasColor.ConsoleStyle)s));
         }
     }
-
-    
 }

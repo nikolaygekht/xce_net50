@@ -2,19 +2,19 @@
 
 namespace Gehtsoft.Xce.Conio
 {
-    class NetConsoleCursor : IConsoleCursor
+    internal class NetConsoleCursor : IConsoleCursor
     {
-        private bool mWindows;
-        private NetConsoleOutput mOutput;
+        private readonly bool mWindows;
+        private readonly NetConsoleOutput mOutput;
 
-        public bool CursorVisible 
-        { 
-            get => mWindows ? Console.CursorVisible : true; 
-            set 
-            { 
+        public bool CursorVisible
+        {
+            get => !mWindows || Console.CursorVisible;
+            set
+            {
                 if (mWindows)
-                    Console.CursorVisible = value; 
-            } 
+                    Console.CursorVisible = value;
+            }
         }
         public int CursorSize
         {

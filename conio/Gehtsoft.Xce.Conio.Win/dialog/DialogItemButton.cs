@@ -61,19 +61,7 @@ namespace Gehtsoft.Xce.Conio.Win
             }
         }
 
-        object mUserData;
-
-        public object UserData
-        {
-            get
-            {
-                return mUserData;
-            }
-            set
-            {
-                mUserData = value;
-            }
-        }
+        public object UserData { get; set; }
 
         /// <summary>
         /// Constructor
@@ -199,7 +187,5 @@ namespace Gehtsoft.Xce.Conio.Win
         {
             Click();
         }
-
-
     }
 }

@@ -12,7 +12,6 @@ namespace Gehtsoft.Xce.Conio.UnitTest
         {
             var constructor = typeof(BitStructAttribute).GetConstructor(new Type[] { });
             typeBuilder.SetCustomAttribute(new CustomAttributeBuilder(constructor, new object[] { }));
-
         }
 
         public static void AddBitStructClassAttribute(this TypeBuilder typeBuilder, int size)

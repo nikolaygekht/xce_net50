@@ -4,6 +4,8 @@ using System.Globalization;
 using System.Reflection;
 using System.Runtime.InteropServices;
 
+#pragma warning disable S3011 // Reflection should not be used to increase accessibility of classes, methods, or fields
+
 namespace Gehtsoft.Xce.Conio
 {
     internal static partial class MarshalEx
@@ -19,13 +21,12 @@ namespace Gehtsoft.Xce.Conio
 
         internal class MarshalClassInfo
         {
-
             public int SizeOf { get; set; }
             public List<MarshalFieldInfo> Fields { get; } = new List<MarshalFieldInfo>();
         }
 
-        private static object gDictionaryMutex = new object();
-        private static Dictionary<Type, MarshalClassInfo> gDictionary = new Dictionary<Type, MarshalClassInfo>();
+        private readonly static object gDictionaryMutex = new object();
+        private readonly static Dictionary<Type, MarshalClassInfo> gDictionary = new Dictionary<Type, MarshalClassInfo>();
 
         internal static MarshalClassInfo GetClassInfo(Type type)
         {
@@ -39,6 +40,7 @@ namespace Gehtsoft.Xce.Conio
                     throw new ArgumentException($"The type must have {nameof(BitStructAttribute)}", nameof(type));
 
                 classInfo = new MarshalClassInfo();
+
                 FieldInfo[] fields = type.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
                 int or = 10000;
                 int size = 0;
@@ -51,7 +53,7 @@ namespace Gehtsoft.Xce.Conio
                         int length = fieldAttr.BitLength;
                         if (length < 1 || length > 32)
                             throw new ArgumentException("A bit length of the structure should not exceed 64 bits", nameof(type));
-                            
+
                         size += length;
                         if (order < 0)
                             order = or++;
@@ -127,8 +129,6 @@ namespace Gehtsoft.Xce.Conio
                 Marshal.WriteByte(address, dstIndex++, currentByte);
                 bw++;
             }
-
-
         }
 
         public static void BitFieldStructToPtr(object structure, IntPtr address, int offset = 0)
@@ -156,12 +156,11 @@ namespace Gehtsoft.Xce.Conio
         public static object PtrToBitFieldStruct(Type type, IntPtr memory, int offset = 0)
         {
             var info = GetClassInfo(type);
-            IntPtr res = Marshal.AllocCoTaskMem(info.SizeOf);
             object structure = Activator.CreateInstance(type);
 
             int srcIndex = offset;
             int currPos = 0;
-            byte currentByte = Marshal.ReadByte(memory, srcIndex);         
+            byte currentByte = Marshal.ReadByte(memory, srcIndex);
 
             for (int i = 0; i < info.Fields.Count; i++)
             {

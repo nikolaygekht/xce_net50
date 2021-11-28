@@ -159,9 +159,9 @@ namespace Gehtsoft.Xce.Conio.Win
                     dcolumn = column - mPrevColumn;
                     if ((drow != 0 || dcolumn != 0) && Height + drow >= 3 && Width + dcolumn >= 3)
                     {
-                         Move(Row, Column, Height + drow, Width + dcolumn);
-                         mPrevRow = row;
-                         mPrevColumn = column;
+                        Move(Row, Column, Height + drow, Width + dcolumn);
+                        mPrevRow = row;
+                        mPrevColumn = column;
                     }
                 }
             }
@@ -192,6 +192,5 @@ namespace Gehtsoft.Xce.Conio.Win
                 Invalidate();
             }
         }
-
     }
 }

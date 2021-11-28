@@ -78,7 +78,7 @@ namespace Gehtsoft.Xce.Conio.Win
                     mCurrentFile = fi.Name;
                 }
             }
-            catch (Exception )
+            catch (Exception)
             {
                 mCurrentFile = "";
                 mCurrentDirectory = Path.GetFullPath(".");
@@ -120,7 +120,7 @@ namespace Gehtsoft.Xce.Conio.Win
         {
             int max = Width - 3;
             if (max <= 0)
-                return ;
+                return;
             if (mCurrentDirectory.Length < max)
                 mPathLabel.Title = mCurrentDirectory;
             else
@@ -158,7 +158,7 @@ namespace Gehtsoft.Xce.Conio.Win
                     mDirectoryList.AddItem(new DialogItemListBoxString("[" + s1 + "]", s1));
                 }
 
-                string []files = Directory.GetFiles(mCurrentDirectory, pattern, SearchOption.TopDirectoryOnly);
+                string[] files = Directory.GetFiles(mCurrentDirectory, pattern, SearchOption.TopDirectoryOnly);
                 Array.Sort(directories, mComparer);
                 foreach (string s in files)
                 {
@@ -178,13 +178,13 @@ namespace Gehtsoft.Xce.Conio.Win
                 if (mFileEdit.Text == "")
                 {
                     OnItemClick(mDirectoryList);
-                    return ;
+                    return;
                 }
                 else if (mFileEdit.Text.Contains("*") || mFileEdit.Text.Contains("?"))
                 {
                     ChangeDirectory(mFileEdit.Text);
                     mFileEdit.Text = "";
-                    return ;
+                    return;
                 }
                 else if (mFileEdit.Text == "..")
                 {
@@ -293,10 +293,10 @@ namespace Gehtsoft.Xce.Conio.Win
             {
                 file = Path.GetFullPath(Path.Combine(mCurrentDirectory, mFileEdit.Text));
             }
-            catch (Exception )
+            catch (Exception)
             {
                 MessageBox.Show(this.Manager, this.Colors, "The file name is invalid", "Error", MessageBoxButtonSet.Ok);
-                return ;
+                return;
             }
 
             if (CheckFileName(file))
@@ -310,9 +310,9 @@ namespace Gehtsoft.Xce.Conio.Win
         {
             try
             {
-                FileInfo fi = new FileInfo (name);
+                FileInfo fi = new FileInfo(name);
             }
-            catch (Exception )
+            catch (Exception)
             {
                 MessageBox.Show(this.Manager, this.Colors, "The file name is invalid", "Error", MessageBoxButtonSet.Ok);
             }
@@ -418,5 +418,4 @@ namespace Gehtsoft.Xce.Conio.Win
             return true;
         }
     }
-
 }

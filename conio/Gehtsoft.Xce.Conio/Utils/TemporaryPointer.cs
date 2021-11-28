@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
-
 namespace Gehtsoft.Xce.Conio
 {
-    public class TemporaryPointer : IDisposable
+    public sealed class TemporaryPointer : IDisposable
     {
         private GCHandle mHandle;
         public IntPtr Pointer { get; private set; }
@@ -30,9 +29,5 @@ namespace Gehtsoft.Xce.Conio
             }
             GC.SuppressFinalize(this);
         }
-
-
-
     }
-
 }

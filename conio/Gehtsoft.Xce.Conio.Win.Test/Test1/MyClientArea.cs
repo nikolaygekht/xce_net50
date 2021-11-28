@@ -77,7 +77,7 @@
         {
         }
 
-        public override void  OnKillFocus()
+        public override void OnKillFocus()
         {
             mInFocus = false;
             WindowManager.ShowCaret(false);

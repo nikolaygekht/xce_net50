@@ -20,7 +20,5 @@ namespace Gehtsoft.Xce.Conio.Win.Test.Test1
         {
             WindowManager.SetFocus(mCreator);
         }
-
-
     }
 }

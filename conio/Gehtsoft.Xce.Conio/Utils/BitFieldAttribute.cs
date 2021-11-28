@@ -3,8 +3,6 @@ using System.Collections.Concurrent;
 
 namespace Gehtsoft.Xce.Conio
 {
-
-
     [AttributeUsage(AttributeTargets.Field, AllowMultiple = false)]
     public class BitFieldAttribute : Attribute
     {

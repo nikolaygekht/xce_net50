@@ -5,6 +5,6 @@
         ConioMode Mode { get; }
         bool MouseSupported { get; }
         int CurrentLayout { get; }
-        bool Read(IConsoleInputListener lister, int timeout);
+        bool Read(IConsoleInputListener listener, int timeout);
     }
 }

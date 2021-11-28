@@ -24,6 +24,5 @@ namespace Gehtsoft.Xce.Conio.UnitTest
             control1.Should().Be(control);
             alt1.Should().Be(alt);
         }
-            
     }
 }

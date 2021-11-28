@@ -3,12 +3,11 @@ using System.Text;
 
 namespace Gehtsoft.Xce.Conio
 {
-
-    class Win32ConsoleCursor : IConsoleCursor
+    internal class Win32ConsoleCursor : IConsoleCursor
     {
-        private Win32ConsoleOutput mOutput;
+        private readonly Win32ConsoleOutput mOutput;
 
-        private static uint gCSBISize = (uint)Marshal.SizeOf<Win32.CONSOLE_SCREEN_BUFFER_INFO_EX>();
+        private readonly static uint gCSBISize = (uint)Marshal.SizeOf<Win32.CONSOLE_SCREEN_BUFFER_INFO_EX>();
 
         public bool CursorVisible
         {
@@ -62,14 +61,12 @@ namespace Gehtsoft.Xce.Conio
             {
                 GetCursorPosition(out int _, out int column);
                 return column;
-
             }
             set
             {
                 GetCursorPosition(out int row, out _);
                 SetCursorPosition(row, value);
             }
-
         }
 
         public Win32ConsoleCursor(Win32ConsoleOutput output)
@@ -79,8 +76,10 @@ namespace Gehtsoft.Xce.Conio
 
         public void GetCursorPosition(out int row, out int column)
         {
-            Win32.CONSOLE_SCREEN_BUFFER_INFO_EX sbi = new Win32.CONSOLE_SCREEN_BUFFER_INFO_EX();
-            sbi.cbSize = gCSBISize;
+            Win32.CONSOLE_SCREEN_BUFFER_INFO_EX sbi = new Win32.CONSOLE_SCREEN_BUFFER_INFO_EX
+            {
+                cbSize = gCSBISize
+            };
             Win32.GetConsoleScreenBufferInfoEx(Win32.GetStdHandle(Win32.STD_OUTPUT_HANDLE), ref sbi);
             row = sbi.dwCursorPosition.Y - mOutput.mWindowTop;
             column = sbi.dwCursorPosition.X - mOutput.mWindowLeft;
@@ -92,7 +91,7 @@ namespace Gehtsoft.Xce.Conio
             {
                 Y = (short)(row + mOutput.mWindowTop),
                 X = (short)(column + mOutput.mWindowLeft)
-            } ;
+            };
             Win32.SetConsoleCursorPosition(Win32.GetStdHandle(Win32.STD_OUTPUT_HANDLE), c);
         }
     }

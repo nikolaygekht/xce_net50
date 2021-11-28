@@ -3,9 +3,10 @@ using System.Text;
 
 namespace Gehtsoft.Xce.Conio
 {
-    class NetConsoleOutput : IConsoleOutput
+    internal sealed class NetConsoleOutput : IConsoleOutput
     {
-        private bool mWindows; 
+        private readonly bool mWindows;
+
         public int BufferRows => Console.BufferHeight;
 
         public int BufferColumns => Console.BufferWidth;
@@ -24,14 +25,18 @@ namespace Gehtsoft.Xce.Conio
 
         public ConioMode Mode => ConioMode.CompatibleConsole;
 
-        public IConsoleCursor Cursor { get; } 
+        public IConsoleCursor Cursor { get; }
 
         public NetConsoleOutput()
         {
             Cursor = new NetConsoleCursor(this);
             var os = Environment.OSVersion;
             mWindows = os.Platform == PlatformID.Win32NT;
+        }
 
+        public void Dispose()
+        {
+            //nothing to dispose for ordinary console
         }
 
         public Canvas BufferToCanvas(int row = 0, int column = 0, int rows = -1, int columns = -1)
@@ -44,10 +49,9 @@ namespace Gehtsoft.Xce.Conio
             throw new NotImplementedException();
         }
 
-        public void PaintCanvasToScreen(Canvas canvas, int screenRow, int screenColumn) => PaintCanvasToBuffer(canvas, Console.WindowTop + screenRow, Console.WindowLeft + screenColumn);
+        public void PaintCanvasToScreen(Canvas canvas, int screenRow = 0, int screenColumn = 0) => PaintCanvasToBuffer(canvas, Console.WindowTop + screenRow, Console.WindowLeft + screenColumn);
 
-
-        public void PaintCanvasToBuffer(Canvas canvas, int bufferRow, int bufferColumn)
+        public void PaintCanvasToBuffer(Canvas canvas, int bufferRow = 0, int bufferColumn = 0)
         {
             var v = Cursor.CursorVisible;
             var top = Console.WindowTop;
@@ -57,6 +61,7 @@ namespace Gehtsoft.Xce.Conio
                 int s = -1;
                 ushort attr = 0xffff;
                 StringBuilder b = null;
+
                 for (int c = 0; c < canvas.Columns; c++)
                 {
                     var cell = canvas.Data[r, c];
@@ -75,9 +80,14 @@ namespace Gehtsoft.Xce.Conio
                         b.Append((char)cell.UnicodeChar);
                     }
                     else
+                    {
+                        if (b == null)
+                            b = new StringBuilder();
                         b.Append((char)cell.UnicodeChar);
+                    }
                 }
-                if (b.Length > 0)
+
+                if (b?.Length > 0)
                 {
                     Console.SetCursorPosition(s + Console.WindowLeft, r + Console.WindowTop);
                     Console.ForegroundColor = (ConsoleColor)(attr & 0xf);
@@ -94,6 +104,7 @@ namespace Gehtsoft.Xce.Conio
 
         public void UpdateSize()
         {
+            //nothing to do for oridnary console
         }
 
         public void Clear() => Console.Clear();
@@ -104,7 +115,6 @@ namespace Gehtsoft.Xce.Conio
         {
             mDefaultFg = Console.ForegroundColor;
             mDefaultBg = Console.BackgroundColor;
-
         }
 
         public void ReleaseOnFinish()

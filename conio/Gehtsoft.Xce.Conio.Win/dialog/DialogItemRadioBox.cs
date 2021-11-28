@@ -12,7 +12,6 @@ namespace Gehtsoft.Xce.Conio.Win
         private char mHotKey;
         private int mHotKeyPosition;
         private bool mChecked;
-        private char mCheckMark = '\u2219';
         private bool mGroupStart;
 
         public string Title
@@ -114,20 +113,9 @@ namespace Gehtsoft.Xce.Conio.Win
                 if (Exists)
                     Invalidate();
             }
-
         }
 
-        public char CheckMark
-        {
-            get
-            {
-                return mCheckMark;
-            }
-            set
-            {
-                mCheckMark = value;
-            }
-        }
+        public char CheckMark { get; set; } = '\u2219';
 
         public bool GroupStart
         {
@@ -223,7 +211,7 @@ namespace Gehtsoft.Xce.Conio.Win
             canvas.Fill(0, 0, 1, Width, color);
             canvas.Write(0, 0, '(');
             if (mChecked)
-                canvas.Write(0, 1, mCheckMark);
+                canvas.Write(0, 1, CheckMark);
             else
                 canvas.Write(0, 1, ' ');
             canvas.Write(0, 2, ')');
@@ -260,6 +248,5 @@ namespace Gehtsoft.Xce.Conio.Win
         {
             Click();
         }
-
     }
 }

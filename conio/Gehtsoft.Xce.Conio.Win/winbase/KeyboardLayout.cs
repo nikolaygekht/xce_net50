@@ -191,7 +191,6 @@ namespace Gehtsoft.Xce.Conio.Win
             Add(new KeyboardLayout("hi", 0x0439));
             Add(new KeyboardLayout("zu", 0x0435));
             Add(new KeyboardLayout("hu", 0x040E));
-
         }
     }
 }

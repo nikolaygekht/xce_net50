@@ -9,7 +9,6 @@ namespace Gehtsoft.Xce.Conio
 
         public BitStructAttribute()
         {
-
         }
 
         public BitStructAttribute(int sizeOf)

@@ -159,7 +159,7 @@ namespace Gehtsoft.Xce.Conio.Win
                     {
                         CommandMenuItem cmd = item as CommandMenuItem;
                         if (cmd.Title.Length > leftWidth)
-                             leftWidth = cmd.Title.Length;
+                            leftWidth = cmd.Title.Length;
                         if (cmd.RightSide != null)
                             if (cmd.RightSide.Length > rightWidth)
                                 rightWidth = cmd.RightSide.Length;
@@ -335,7 +335,7 @@ namespace Gehtsoft.Xce.Conio.Win
                         Select(true);
                     else
                         Right();
-                    return ;
+                    return;
                 }
                 else if (scanCode == ScanCode.UP)
                 {
@@ -597,7 +597,7 @@ namespace Gehtsoft.Xce.Conio.Win
                             else
                                 canvas.Write(i + 1, 2 + cmd.HotKeyPosition, mColors.MenuHotKey);
                         }
-                        
+
                         if (mCurSel == i)
                             WindowManager.SetCaretPos(this, i + 1, 2);
                     }

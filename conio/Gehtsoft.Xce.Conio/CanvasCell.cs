@@ -2,17 +2,15 @@
 
 namespace Gehtsoft.Xce.Conio
 {
-    public class CanvasCell : IEquatable<CanvasCell>
+    public sealed class CanvasCell : IEquatable<CanvasCell>
     {
-        public CanvasColor mColor;
-
         public char Character { get; set; }
-        public CanvasColor Color { get => mColor; set => mColor = value; }
+        public CanvasColor Color { get; set; }
 
         public CanvasCell(char charater, CanvasColor color)
         {
             Character = charater;
-            mColor = color;
+            Color = color;
         }
 
         public bool Equals(CanvasCell cell)
@@ -29,7 +27,7 @@ namespace Gehtsoft.Xce.Conio
         {
             if (obj is CanvasCell cell)
                 return Equals(cell);
-            return base.Equals(obj);
+            return false;
         }
 
         public override string ToString()
@@ -40,6 +38,4 @@ namespace Gehtsoft.Xce.Conio
                 return $"[char:'{Character}',color:{Color}]";
         }
     }
-
-    
 }

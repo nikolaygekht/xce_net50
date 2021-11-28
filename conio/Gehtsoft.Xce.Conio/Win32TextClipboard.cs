@@ -5,13 +5,13 @@ using System.Text;
 
 namespace Gehtsoft.Xce.Conio
 {
-    class Win32TextClipboard : ITextClipboard
+    internal class Win32TextClipboard : ITextClipboard
     {
         public bool IsTextAvailable(TextClipboardFormat format)
         {
             if (!Win32.OpenClipboard())
                 return false;
-            bool rc =  Win32.IsClipboardFormatAvailable((uint)(int)format);
+            bool rc = Win32.IsClipboardFormatAvailable((uint)(int)format);
             Win32.CloseClipboard();
             return rc;
         }
@@ -51,7 +51,7 @@ namespace Gehtsoft.Xce.Conio
         public void SetText(string text, TextClipboardFormat format = TextClipboardFormat.UnicodeText)
         {
             if (!Win32.OpenClipboard())
-                return ;
+                return;
 
             Win32.EmptyClipboard();
 
@@ -75,7 +75,6 @@ namespace Gehtsoft.Xce.Conio
             Marshal.FreeCoTaskMem(ptr);
             Win32.SetClipboardData((uint)format, hdata);
             Win32.CloseClipboard();
-            return;
         }
     }
 }

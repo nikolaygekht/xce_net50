@@ -7,12 +7,12 @@ namespace Gehtsoft.Xce.Conio
     public class BoxBorder
     {
         public char TopLeft { get; }
-        public char Top { get;  }
-        public char TopRight { get;  }
+        public char Top { get; }
+        public char TopRight { get; }
         public char Left { get; }
         public char Right { get; }
         public char BottomLeft { get; }
-        public char Bottom { get;  }
+        public char Bottom { get; }
         public char BottomRight { get; }
 
         public BoxBorder(char topLeft, char top, char topRight, char left, char right, char bottomLeft, char bottom, char bottomRight)

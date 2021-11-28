@@ -1,7 +1,8 @@
 {
   "profiles": {
     "Gehtsoft.Xce.Conio.Win.Test": {
-      "commandName": "Project"
+      "commandName": "Project",
+      "commandLineArgs": "conemu"
     }
   }
 }

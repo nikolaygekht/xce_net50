@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Gehtsoft.Xce.Conio.Win.Test
 {
-    public class Program
+    public static class Program
     {
         public static bool Quit { get; set; } = false;
         public static IColorScheme CurrentSheme { get; set; }
@@ -12,22 +12,32 @@ namespace Gehtsoft.Xce.Conio.Win.Test
         public static void Main(string[] args)
         {
             ConioMode mode = ConioFactory.DefaultMode;
+            bool enableTrueColor = false;
             if (args.Length > 0 && args[0] == "win32")
                 mode = ConioMode.Win32;
+            else if (args.Length > 0 && args[0] == "conemu")
+            {
+                mode = ConioMode.Win32;
+                enableTrueColor = true;
+            }
             else if (args.Length > 0 && args[0] == "console")
                 mode = ConioMode.CompatibleConsole;
 
-            IConsoleInput input = ConioFactory.CreateInput(mode);
-            IConsoleOutput output = ConioFactory.CreateOutput(mode);
+            if (enableTrueColor)
+                ConioFactory.EnableTrueColor = true;
 
+            IConsoleInput input = ConioFactory.CreateInput(mode);
+            using IConsoleOutput output = ConioFactory.CreateOutput(mode);
             CurrentSheme = ColorScheme.White;
 
             output.CaptureOnStart();
 
-            WindowManager manager = new WindowManager(false, output, input);
-            manager.WindowKeyboardShortcutsEnabled = true;
-            manager.Create(new MainWindow(), null, 0, 0, output.VisibleRows, output.VisibleColumns);
-            
+            WindowManager manager = new WindowManager(false, output, input)
+            {
+                WindowKeyboardShortcutsEnabled = true
+            };
+            manager.Create(new MainWindow($"{output.Mode}.{output.SupportsTrueColor}"), null, 0, 0, output.VisibleRows, output.VisibleColumns);
+
             while (!Quit)
                 manager.PumpMessage(-1);
 

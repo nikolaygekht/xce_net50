@@ -4,31 +4,27 @@ using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Text;
 
-
 namespace Gehtsoft.Xce.Conio
 {
-
-    internal class CharInfoArray 
+    internal class CharInfoArray
     {
-        private int mRows, mColumns, mSize;
-        private static int gCharInfoSize;
-        private Win32.CHAR_INFO[] mMemory;
+        private readonly static int gCharInfoSize = Marshal.SizeOf<Win32.CHAR_INFO>();
 
-        public int Count => mSize;
+        public int Count { get; }
 
-        public int Rows => mRows;
+        public int Rows { get; }
 
-        public int Columns => mColumns;
+        public int Columns { get; }
 
-        internal Win32.CHAR_INFO[] Raw => mMemory;
+        internal Win32.CHAR_INFO[] Raw { get; }
 
         public ref Win32.CHAR_INFO this[int index]
         {
             get
             {
-                if (index < 0 || index >= mSize)
-                    throw new IndexOutOfRangeException();
-                return ref mMemory[index];
+                if (index < 0 || index >= Count)
+                    throw new ArgumentOutOfRangeException(nameof(index));
+                return ref Raw[index];
             }
         }
 
@@ -36,33 +32,25 @@ namespace Gehtsoft.Xce.Conio
         {
             get
             {
-                if (row < 0 || row >= mRows)
+                if (row < 0 || row >= Rows)
                     throw new ArgumentOutOfRangeException(nameof(row));
-                if (column < 0 || column >= mColumns)
+                if (column < 0 || column >= Columns)
                     throw new ArgumentOutOfRangeException(nameof(column));
-                return ref this[row * mColumns + column];
+                return ref this[row * Columns + column];
             }
-            
-        }
-
-        static CharInfoArray()
-        {
-            gCharInfoSize = Marshal.SizeOf<Win32.CHAR_INFO>();
         }
 
         public CharInfoArray(int rows, int columns)
         {
-            mRows = rows;
-            mColumns = columns;
-            mSize = mRows * mColumns;
-            mMemory = new Win32.CHAR_INFO[mSize * gCharInfoSize];
+            Rows = rows;
+            Columns = columns;
+            Count = Rows * Columns;
+            Raw = new Win32.CHAR_INFO[Count * gCharInfoSize];
         }
 
         public TemporaryPointer GetPointer()
         {
-            return new TemporaryPointer(mMemory);
+            return new TemporaryPointer(Raw);
         }
-
     }
-
 }

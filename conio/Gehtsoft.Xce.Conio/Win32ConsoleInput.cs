@@ -5,8 +5,7 @@ using System.Threading;
 
 namespace Gehtsoft.Xce.Conio
 {
-
-    class Win32ConsoleInput : IConsoleInput
+    internal class Win32ConsoleInput : IConsoleInput
     {
         private bool mLeftButtonPressed, mRightButtonPressed;
         private int mMouseRow, mMouseColumn;
@@ -39,14 +38,13 @@ namespace Gehtsoft.Xce.Conio
         public bool Read(IConsoleInputListener listener, int timeout)
         {
             IntPtr input = Win32.GetStdHandle(Win32.STD_INPUT_HANDLE);
-            
+
             if (Win32.WaitForSingleObject(input, timeout) != 0)
                 return false;
 
             Win32.INPUT_RECORD ri = new Win32.INPUT_RECORD();
-            uint ulEvents;
 
-            Win32.PeekConsoleSingleInput(input, ref ri, 1, out ulEvents);
+            Win32.PeekConsoleSingleInput(input, ref ri, 1, out uint ulEvents);
 
             switch (ri.EventType)
             {
@@ -61,14 +59,14 @@ namespace Gehtsoft.Xce.Conio
 
                         if (ri.KeyEvent.bKeyDown && ri.KeyEvent.wRepeatCount == 1)
                         {
-                            Win32.ReadConsoleSingleInput(input, ref ri, 1, out ulEvents);
+                            Win32.ReadConsoleSingleInput(input, ref ri, 1, out _);
                             scanCode = ri.KeyEvent.wVirtualKeyCode;
                             chr = ri.KeyEvent.UnicodeChar;
                             press = true;
                         }
                         else if (!ri.KeyEvent.bKeyDown)
                         {
-                            Win32.ReadConsoleSingleInput(input, ref ri, 1, out ulEvents);
+                            Win32.ReadConsoleSingleInput(input, ref ri, 1, out _);
                             scanCode = ri.KeyEvent.wVirtualKeyCode;
                             chr = ri.KeyEvent.UnicodeChar;
                             press = false;

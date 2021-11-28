@@ -89,7 +89,6 @@ namespace Gehtsoft.Xce.Conio.Win
         private string mRightSide;
         private int mCommand;
         private bool mEnabled;
-        private bool mChecked;
 
         /// <summary>
         /// Constructor
@@ -101,7 +100,7 @@ namespace Gehtsoft.Xce.Conio.Win
             mRightSide = null;
             mCommand = command;
             mEnabled = true;
-            mChecked = false;
+            Checked = false;
         }
 
         /// <summary>
@@ -115,7 +114,7 @@ namespace Gehtsoft.Xce.Conio.Win
             mRightSide = rightSide;
             mCommand = command;
             mEnabled = true;
-            mChecked = false;
+            Checked = false;
         }
 
 
@@ -142,17 +141,7 @@ namespace Gehtsoft.Xce.Conio.Win
             }
         }
 
-        public bool Checked
-        {
-            get
-            {
-                return mChecked;
-            }
-            set
-            {
-                mChecked = value;
-            }
-        }
+        public bool Checked { get; set; }
 
         public bool Enabled
         {

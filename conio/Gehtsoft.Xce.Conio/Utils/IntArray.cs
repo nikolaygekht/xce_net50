@@ -3,56 +3,51 @@ using System.Runtime.InteropServices;
 
 namespace Gehtsoft.Xce.Conio
 {
-    internal class IntArray 
+    internal class IntArray
     {
-        private int mRows, mColumns, mSize;
-        private int[] mMemory;
+        public int Count { get; }
 
-        public int Count => mSize;
+        public int Rows { get; }
 
-        public int Rows => mRows;
+        public int Columns { get; }
 
-        public int Columns => mColumns;
-
-        internal int[] Raw => mMemory;
-
+        internal int[] Raw { get; }
 
         public int this[int index]
         {
             get
             {
-                if (index < 0 || index >= mSize)
-                    throw new IndexOutOfRangeException();
-                return mMemory[index];
+                if (index < 0 || index >= Count)
+                    throw new ArgumentOutOfRangeException(nameof(index));
+                return Raw[index];
             }
             set
             {
-                if (index < 0 || index >= mSize)
-                    throw new IndexOutOfRangeException();
-                mMemory[index] = value;
+                if (index < 0 || index >= Count)
+                    throw new ArgumentOutOfRangeException(nameof(index));
+                Raw[index] = value;
             }
         }
 
         public int this[int row, int column]
         {
-            get => this[row * mColumns + column];
-            set => this[row * mColumns + column] = value;
+            get => this[row * Columns + column];
+            set => this[row * Columns + column] = value;
         }
 
         public IntArray(int rows, int columns)
         {
-            mRows = rows;
-            mColumns = columns;
-            mSize = mRows * mColumns;
-            mMemory = new int[mSize];
-            for (int i = 0; i < mSize; i++)
+            Rows = rows;
+            Columns = columns;
+            Count = Rows * Columns;
+            Raw = new int[Count];
+            for (int i = 0; i < Count; i++)
                 this[i] = -1;
         }
 
         public TemporaryPointer GetPointer()
         {
-            return new TemporaryPointer(mMemory);
+            return new TemporaryPointer(Raw);
         }
     }
-
 }

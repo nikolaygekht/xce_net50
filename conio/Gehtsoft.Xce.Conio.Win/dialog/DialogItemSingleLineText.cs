@@ -295,7 +295,7 @@ namespace Gehtsoft.Xce.Conio.Win
         private void Delete()
         {
             if (Readonly)
-                return ;
+                return;
             if (mSelectionStart >= 0)
             {
                 bool c = false;
@@ -317,7 +317,6 @@ namespace Gehtsoft.Xce.Conio.Win
                 OnTextChangedByUser();
                 if (c && Dialog != null)
                     Dialog.OnItemChanged(this);
-
             }
             else
             {
@@ -424,7 +423,6 @@ namespace Gehtsoft.Xce.Conio.Win
                 Invalidate();
                 if (Dialog != null)
                     Dialog.OnItemChanged(this);
-
             }
             if (c && Dialog != null)
                 Dialog.OnItemChanged(this);
@@ -546,7 +544,6 @@ namespace Gehtsoft.Xce.Conio.Win
                 Manager.SetCaretPos(this, 0, mCaret - mOffset);
                 UpdateSelect();
                 Invalidate();
-
             }
         }
 

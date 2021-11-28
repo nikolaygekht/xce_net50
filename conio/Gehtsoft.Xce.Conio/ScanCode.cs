@@ -1,4 +1,7 @@
-﻿namespace Gehtsoft.Xce.Conio
+﻿#pragma warning disable RCS1234 // Duplicate enum value.
+#pragma warning disable RCS1154 // Sort enum members.
+
+namespace Gehtsoft.Xce.Conio
 {
     public enum ScanCode
     {
@@ -126,7 +129,7 @@
         OEM_COMMA = 0xBC,             //,
         OEM_MINUS = 0xBD,             //-
         OEM_PERIOD = 0xBE,            //.
-        OEM_2 = 0xBF,                 ///
+        OEM_2 = 0xBF,                 // /
         OEM_3 = 0xC0,                 //~
         OEM_4 = 0xDB,                 //[
         OEM_5 = 0xDC,                 //\ back slash

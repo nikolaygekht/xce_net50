@@ -9,25 +9,14 @@ namespace Gehtsoft.Xce.Conio.Win
     {
         #region Constructor/Destructor
         private bool mExists;
-        private WindowManager mMgr;
 
-        internal WindowManager Manager
-        {
-            get
-            {
-                return mMgr;
-            }
-            set
-            {
-                mMgr = value;
-            }
-        }
+        internal WindowManager Manager { get; set; }
 
         public WindowManager WindowManager
         {
             get
             {
-                return mMgr;
+                return Manager;
             }
         }
 
@@ -122,7 +111,7 @@ namespace Gehtsoft.Xce.Conio.Win
                 mChildren.Remove(_window);
                 mChildren.AddLast(window);
                 Invalidate();
-                mMgr.BringToFront(this);
+                Manager.BringToFront(this);
             }
         }
 
@@ -165,7 +154,7 @@ namespace Gehtsoft.Xce.Conio.Win
             OnClose();
 
             while (mChildren.First != null)
-                mMgr.Close(mChildren.First.Value);
+                Manager.Close(mChildren.First.Value);
 
             if (mParent != null)
             {
@@ -326,7 +315,7 @@ namespace Gehtsoft.Xce.Conio.Win
         internal void Paint()
         {
             if (mValid)
-                return ;
+                return;
             if (mWidth != 0 && mHeight != 0)
             {
                 if (mCanvas == null)
@@ -335,7 +324,7 @@ namespace Gehtsoft.Xce.Conio.Win
             else
             {
                 mValid = true;
-                return ;
+                return;
             }
 
             OnPaint(mCanvas);
@@ -351,7 +340,6 @@ namespace Gehtsoft.Xce.Conio.Win
                 }
             }
             mValid = true;
-
         }
         #endregion
 
@@ -372,7 +360,6 @@ namespace Gehtsoft.Xce.Conio.Win
                 return true;
             else
                 return false;
-
         }
 
         /// <summary>
@@ -458,7 +445,6 @@ namespace Gehtsoft.Xce.Conio.Win
 
         public virtual void OnKeyPressed(ScanCode scanCode, char character, bool shift, bool ctrl, bool alt)
         {
-
         }
 
         public virtual void OnMouseMove(int row, int column, bool shift, bool ctrl, bool alt, bool leftButton, bool rightButton)

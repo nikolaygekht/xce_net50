@@ -5,12 +5,13 @@ using System.Text;
 
 namespace Gehtsoft.Xce.Conio.Win.Test
 {
-    class MainWindow : Window
+    internal class MainWindow : Window
     {
-        public MainWindow()
+        private readonly string mOutputMode;
+
+        public MainWindow(string outputMode)
         {
-            
-            
+            mOutputMode = outputMode;
         }
 
         public override void OnCreate()
@@ -30,12 +31,11 @@ namespace Gehtsoft.Xce.Conio.Win.Test
                 {
                     MessageBoxButton r = MessageBox.Show(WindowManager, Program.CurrentSheme, "This is the message to be displayed\r\nIn two lines", "MessageBox", MessageBoxButtonSet.YesNoCancel);
                     MessageBox.Show(WindowManager, Program.CurrentSheme, $"Selected Button is {r}", "Result", MessageBoxButtonSet.Ok);
-
                 }
                 else if (MainMenuFactory.Menu.CommandChosen == MainMenuFactory.TestFocusId)
                 {
                     var w1 = new MyWindow("Window 1", this);
-                    WindowManager.Create(w1, null, 1, 1, 5, 40); 
+                    WindowManager.Create(w1, null, 1, 1, 5, 40);
                     var w2 = new MyWindow("Window 2", this);
                     WindowManager.Create(w2, null, 5, 5, 5, 10);
                     var w3 = new MyWindow("Window 3", this);
@@ -87,6 +87,13 @@ namespace Gehtsoft.Xce.Conio.Win.Test
             canvas.Write(2, 0, "Press Esc for exit По русски");
             if (WindowManager.GetFocus() == this)
                 canvas.Write(3, 0, "Focus!");
+            canvas.Write(4, 0, $"True color {mOutputMode}");
+
+            for (int i = 0; i < 16; i++)
+            {
+                int c = i * 16;
+                canvas.Write(5, i, 'x', new CanvasColor((ushort)i, c, c << 8));
+            }
         }
 
         public override void OnSetFocus()
@@ -99,4 +106,3 @@ namespace Gehtsoft.Xce.Conio.Win.Test
         }
     }
 }
-

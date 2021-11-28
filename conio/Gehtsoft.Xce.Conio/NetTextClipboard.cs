@@ -1,6 +1,8 @@
-﻿namespace Gehtsoft.Xce.Conio
+﻿#pragma warning disable S2696 // Instance members should not write to "static" fields
+
+namespace Gehtsoft.Xce.Conio
 {
-    class NetTextClipboard : ITextClipboard
+    internal class NetTextClipboard : ITextClipboard
     {
         private static string mClipboardContent;
 

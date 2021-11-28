@@ -76,7 +76,7 @@ namespace Gehtsoft.Xce.Conio.UnitTest
         {
             Canvas cv = new Canvas(4, 20);
             cv.Fill(0, 0, 4, 20, '0', new CanvasColor(0x13, 1, 3));
-            cv.fillFg(1, 1, 2, 18, new CanvasColor(0x25, 5, 5));
+            cv.FillFg(1, 1, 2, 18, new CanvasColor(0x25, 5, 5));
 
             for (int i = 0; i < 4; i++)
                 for (int j = 0; j < 20; j++)
@@ -92,7 +92,7 @@ namespace Gehtsoft.Xce.Conio.UnitTest
         {
             Canvas cv = new Canvas(4, 20);
             cv.Fill(0, 0, 4, 20, '0', new CanvasColor(0x13, 1, 3));
-            cv.fillBg(1, 1, 2, 18, new CanvasColor(0x25, 5, 5));
+            cv.FillBg(1, 1, 2, 18, new CanvasColor(0x25, 5, 5));
 
             for (int i = 0; i < 4; i++)
                 for (int j = 0; j < 20; j++)
@@ -126,17 +126,15 @@ namespace Gehtsoft.Xce.Conio.UnitTest
                     var cell = cv.Get(i, j);
                     if (!probe)
                     {
-                        cell.Character.Should().Be('0');
-                        cell.Color.Should().Be(new CanvasColor(0x03, 0, 3));
+                        cell.Character.Should().Be('0', $"in {comment}");
+                        cell.Color.Should().Be(new CanvasColor(0x03, 0, 3), $"in {comment}");
                     }
                     else
                     {
                         int pi = j - probeColumn;
-                        cell.Character.Should().Be(expectedText[pi]);
-                        cell.Color.Should().Be(new CanvasColor(0x30, 3, 0));
+                        cell.Character.Should().Be(expectedText[pi], $"in {comment}");
+                        cell.Color.Should().Be(new CanvasColor(0x30, 3, 0), $"in {comment}");
                     }
-
-
                 }
             }
         }
@@ -252,17 +250,16 @@ namespace Gehtsoft.Xce.Conio.UnitTest
                     var cell = cv1.Get(i, j);
                     if (i >= expectedRow && i <= expectedRow + expectedRows - 1 && j >= expectedColumn && j <= expectedColumn + expectedColumns - 1)
                     {
-                        cell.Character.Should().Be('1', $"expected copyed data @{i},{j}");
-                        cell.Color.Should().Be(c2, $"expected copyed color @{i},{j}");
+                        cell.Character.Should().Be('1', $"expected copied data @{i},{j} in {comment}");
+                        cell.Color.Should().Be(c2, $"expected copied color @{i},{j} in {comment}");
                     }
                     else
                     {
-                        cell.Character.Should().Be('0', $"expected org data @{i},{j}");
-                        cell.Color.Should().Be(c1, $"expected org color @{i},{j}");
+                        cell.Character.Should().Be('0', $"expected orirignal data @{i},{j} in {comment}");
+                        cell.Color.Should().Be(c1, $"expected orirignal color @{i},{j} in {comment}");
                     }
                 }
             }
         }
-
     }
 }

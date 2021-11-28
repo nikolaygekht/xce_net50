@@ -115,7 +115,6 @@ namespace Gehtsoft.Xce.Conio.Win
             {
                 if (mCurSel >= -1 && mCurSel < mItems.Count - 1)
                     CurSel++;
-
             }
             else if (!ctrl && !shift && !alt && scanCode == ScanCode.UP)
             {
@@ -161,6 +160,5 @@ namespace Gehtsoft.Xce.Conio.Win
         {
             mCurSel = -1;
         }
-
     }
 }

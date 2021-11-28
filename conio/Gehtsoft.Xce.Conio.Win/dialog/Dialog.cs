@@ -165,7 +165,7 @@ namespace Gehtsoft.Xce.Conio.Win
 
                     if (curr != -1)
                     {
-                        if (!shift && !ctrl &&!alt)
+                        if (!shift && !ctrl && !alt)
                         {
                             for (i = curr + 1; i != curr; i++)
                             {
@@ -181,7 +181,7 @@ namespace Gehtsoft.Xce.Conio.Win
                                 }
                             }
                         }
-                        else if (shift && !ctrl &&!alt)
+                        else if (shift && !ctrl && !alt)
                         {
                             for (i = curr - 1; i != curr; i--)
                             {
@@ -254,7 +254,6 @@ namespace Gehtsoft.Xce.Conio.Win
                                     item.OnHotkeyActivated();
                                 }
                             }
-
                         }
                     }
                 }
@@ -275,17 +274,17 @@ namespace Gehtsoft.Xce.Conio.Win
                 if (OnCancel())
                     EndDialog(DialogResultCancel);
             }
-            return ;
+            return;
         }
 
         public virtual void OnItemActivated(DialogItem item)
         {
-            return ;
+            return;
         }
 
         public virtual void OnItemChanged(DialogItem item)
         {
-            return ;
+            return;
         }
 
         public virtual bool OnOK()
@@ -323,7 +322,7 @@ namespace Gehtsoft.Xce.Conio.Win
 
         public void CenterButtons(DialogItemButton b1)
         {
-            CenterButtons(new DialogItemButton[] {b1});
+            CenterButtons(new DialogItemButton[] { b1 });
         }
 
         public void CenterButtons(DialogItemButton b1, DialogItemButton b2)

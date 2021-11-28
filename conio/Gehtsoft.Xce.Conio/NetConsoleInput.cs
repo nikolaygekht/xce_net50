@@ -3,7 +3,7 @@ using System.Threading;
 
 namespace Gehtsoft.Xce.Conio
 {
-    class NetConsoleInput : IConsoleInput
+    internal class NetConsoleInput : IConsoleInput
     {
         public bool MouseSupported => false;
 

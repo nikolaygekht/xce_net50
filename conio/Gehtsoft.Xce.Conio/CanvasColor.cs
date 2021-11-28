@@ -4,15 +4,10 @@ using System.Text;
 
 namespace Gehtsoft.Xce.Conio
 {
-    public class CanvasColor : IEquatable<CanvasColor>
+    public sealed class CanvasColor : IEquatable<CanvasColor>
     {
-        private ushort mPalColor;
-        private int mRGBFg;
-        private int mRGBBg;
-        private ConsoleStyle mStyle;
-
         [Flags]
-        public enum ConsoleStyle : int
+        public enum ConsoleStyle
         {
             None = 0,
             Bold = 1,
@@ -26,10 +21,10 @@ namespace Gehtsoft.Xce.Conio
             AllCaps = 256,
         }
 
-        public ushort PalColor => mPalColor;
-        public int RgbFg => mRGBFg;
-        public int RgbBg => mRGBBg;
-        public ConsoleStyle Style => mStyle;
+        public ushort PalColor { get; }
+        public int RgbFg { get; }
+        public int RgbBg { get; }
+        public ConsoleStyle Style { get; }
 
         public CanvasColor(ushort palColor) : this(palColor, -1, -1, ConsoleStyle.None)
         {
@@ -39,10 +34,10 @@ namespace Gehtsoft.Xce.Conio
         }
         public CanvasColor(ushort palColor, int rgbFg, int rgbBg, ConsoleStyle style)
         {
-            mPalColor = palColor;
-            mRGBFg = rgbFg;
-            mRGBBg = rgbBg;
-            mStyle = style;
+            PalColor = palColor;
+            RgbFg = rgbFg;
+            RgbBg = rgbBg;
+            Style = style;
         }
 
         public static int RGB(int r, int g, int b)
@@ -70,7 +65,7 @@ namespace Gehtsoft.Xce.Conio
         {
             if (obj is CanvasColor cc)
                 return Equals(cc);
-            return base.Equals(obj);
+            return false;
         }
 
         public override int GetHashCode()

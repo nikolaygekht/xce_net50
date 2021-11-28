@@ -11,7 +11,6 @@ namespace Gehtsoft.Xce.Conio.UnitTest
     [Collection("TypeBuilder")]
     public class BitStruct
     {
-
         TypeBuilderFixture mTypeBuilderFixture;
         public BitStruct(TypeBuilderFixture typeBuilderFixture)
         {
@@ -195,23 +194,23 @@ namespace Gehtsoft.Xce.Conio.UnitTest
             tb.AddBitField<uint>("f", 7);
             var type = tb.CreateType();
 
-                object o = Activator.CreateInstance(type);
-                o.SetField("a", iv);
-                o.SetField("b", iv);
-                o.SetField("c", iv);
-                o.SetField("d", iv);
-                o.SetField("e", iv);
-                o.SetField("f", iv);
+            object o = Activator.CreateInstance(type);
+            o.SetField("a", iv);
+            o.SetField("b", iv);
+            o.SetField("c", iv);
+            o.SetField("d", iv);
+            o.SetField("e", iv);
+            o.SetField("f", iv);
 
-                IntPtr v = MarshalEx.BitFieldStructToPtr(o);
-                object o1 = MarshalEx.PtrToBitFieldStruct(type, v);
+            IntPtr v = MarshalEx.BitFieldStructToPtr(o);
+            object o1 = MarshalEx.PtrToBitFieldStruct(type, v);
 
-                o1.GetField<uint>("a").Should().Be((iv) & 0x7);
-                o1.GetField<uint>("b").Should().Be((iv) & 0xff);
-                o1.GetField<uint>("c").Should().Be((iv) & 0x3);
-                o1.GetField<uint>("d").Should().Be((iv) & 0xfff);
-                o1.GetField<uint>("e").Should().Be((iv));
-                o1.GetField<uint>("f").Should().Be((iv) & 0x7f);
+            o1.GetField<uint>("a").Should().Be((iv) & 0x7);
+            o1.GetField<uint>("b").Should().Be((iv) & 0xff);
+            o1.GetField<uint>("c").Should().Be((iv) & 0x3);
+            o1.GetField<uint>("d").Should().Be((iv) & 0xfff);
+            o1.GetField<uint>("e").Should().Be((iv));
+            o1.GetField<uint>("f").Should().Be((iv) & 0x7f);
         }
 
         [Fact]
@@ -240,7 +239,6 @@ namespace Gehtsoft.Xce.Conio.UnitTest
             Marshal.ReadByte(v, 5).Should().Be(0xff);
             Marshal.ReadByte(v, 6).Should().Be(0xff);
             Marshal.ReadByte(v, 7).Should().Be(0xff);
-
         }
         [Fact]
         public void NotOverShoot()
@@ -268,7 +266,6 @@ namespace Gehtsoft.Xce.Conio.UnitTest
             Marshal.ReadByte(v, 5).Should().Be(0xff);
             Marshal.ReadByte(v, 6).Should().Be(0xff);
             Marshal.ReadByte(v, 7).Should().Be(0xff);
-
         }
     }
 }

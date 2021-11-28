@@ -8,7 +8,6 @@ namespace Gehtsoft.Xce.Conio.Win.Test
     {
         private static PopupMenu gMenu;
 
-        
         public const int ExitId = 1;
         public const int MessageBoxId = 2;
         public const int TestFocusId = 3;
@@ -42,6 +41,5 @@ namespace Gehtsoft.Xce.Conio.Win.Test
             submenu.CreateCommand("&Exit", ExitId);
             gMenu = new PopupMenu(bar, Program.CurrentSheme, true);
         }
-
     }
 }

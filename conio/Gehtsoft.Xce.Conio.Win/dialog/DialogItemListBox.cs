@@ -45,7 +45,6 @@ namespace Gehtsoft.Xce.Conio.Win
 
     public class DialogItemListBox : DialogItem, IEnumerable<DialogItemListBoxString>
     {
-
         private List<DialogItemListBoxString> mItems = new List<DialogItemListBoxString>();
         private int mCurSel = -1;
         private int mOffset = 0;
@@ -78,7 +77,7 @@ namespace Gehtsoft.Xce.Conio.Win
             {
                 mCurSel = value;
                 if (Exists)
-                   Invalidate();
+                    Invalidate();
             }
         }
 

@@ -1,7 +1,9 @@
-﻿namespace Gehtsoft.Xce.Conio
+﻿using System;
+
+namespace Gehtsoft.Xce.Conio
 {
-    public interface IConsoleOutput
-   {
+    public interface IConsoleOutput : IDisposable
+    {
         ConioMode Mode { get; }
         int BufferRows { get; }
         int BufferColumns { get; }

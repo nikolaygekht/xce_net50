@@ -168,7 +168,7 @@ namespace Gehtsoft.Xce.Conio.Win
             {
                 Window lastModal = mModalStack.Last.Value;
                 if (window != lastModal && !window.HasParent(lastModal))
-                    return ;
+                    return;
             }
 
             if (mFocusWindow != null)
@@ -210,7 +210,7 @@ namespace Gehtsoft.Xce.Conio.Win
                 Window window = n.Value;
                 if (visibleOnly && !window.Visible)
                     continue;
-                 int windowRow, windowColumn;
+                int windowRow, windowColumn;
                 if (window.ScreenToWindow(row, column, out windowRow, out windowColumn))
                     return window.ChildFromPos(windowRow, windowColumn, visibleOnly);
             }
@@ -438,7 +438,7 @@ namespace Gehtsoft.Xce.Conio.Win
             if (mCaptureMouseWindow != null)
             {
                 mCaptureMouseWindow.OnMouseMove(row, column, shift, ctrl, alt, lb, rb);
-                return ;
+                return;
             }
 
             Window window = WindowFromPos(row, column, true);
@@ -455,7 +455,7 @@ namespace Gehtsoft.Xce.Conio.Win
             if (mCaptureMouseWindow != null)
             {
                 mCaptureMouseWindow.OnMouseLButtonDown(row, column, shift, ctrl, alt);
-                return ;
+                return;
             }
 
             Window window = WindowFromPos(row, column, true);
@@ -465,7 +465,6 @@ namespace Gehtsoft.Xce.Conio.Win
                 window.ScreenToWindow(row, column, out windowRow, out windowColumn);
                 window.OnMouseLButtonDown(windowRow, windowColumn, shift, ctrl, alt);
             }
-
         }
 
         public void OnMouseLButtonUp(int row, int column, bool shift, bool ctrl, bool alt)

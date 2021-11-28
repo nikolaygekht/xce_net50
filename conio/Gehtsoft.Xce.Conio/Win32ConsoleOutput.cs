@@ -2,17 +2,17 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 
 namespace Gehtsoft.Xce.Conio
 {
-
-    class Win32ConsoleOutput : IConsoleOutput
+    internal sealed class Win32ConsoleOutput : IConsoleOutput
     {
-        private static uint gCSBISize = (uint)Marshal.SizeOf<Win32.CONSOLE_SCREEN_BUFFER_INFO_EX>();
-        private static uint gAnnotationInfoSize = (uint)Marshal.SizeOf<Win32.AnnotationHeader>();
+        private readonly static uint gCSBISize = (uint)Marshal.SizeOf<Win32.CONSOLE_SCREEN_BUFFER_INFO_EX>();
+        private IntPtr mViewHandle, mMapPtr;
 
         public int mScreenBufferRows, mScreenBufferColumns;
         public int mWindowTop, mWindowLeft, mWindowRows, mWindowColumns;
@@ -22,10 +22,7 @@ namespace Gehtsoft.Xce.Conio
         public int VisibleRows => mWindowRows;
         public int VisibleColumns => mWindowColumns;
 
-        private bool mHasTrueColor = false;
-        private string mRgbChannelName;
-
-        public bool SupportsTrueColor => mHasTrueColor;
+        public bool SupportsTrueColor { get; }
         public bool SupportsReading => true;
 
         public ConioMode Mode => ConioMode.Win32;
@@ -38,13 +35,31 @@ namespace Gehtsoft.Xce.Conio
             UpdateSize();
             if (enableTrueColor)
             {
-                mRgbChannelName = string.Format("Console_annotationInfo_{0:x}_{1:x}", 32, Win32.GetConsoleWindow());
-                IntPtr channel = Win32.OpenFileMapping(Win32.FileMapAccess.FileMapRead | Win32.FileMapAccess.FileMapWrite, false, mRgbChannelName);
-                if (channel != IntPtr.Zero)
+                SupportsTrueColor = false;
+                mViewHandle = mMapPtr = IntPtr.Zero;
+                var rgbChannelName = string.Format("Console_annotationInfo_{0:x}_{1:x}", 32, Win32.GetConsoleWindow());
+                mViewHandle = Win32.OpenFileMapping(Win32.FileMapAccess.FileMapAllAccess, false, rgbChannelName);
+                if (mViewHandle != IntPtr.Zero)
                 {
-                    mHasTrueColor = true;
-                    Win32.CloseHandle(channel);
+                    mMapPtr = Win32.MapViewOfFile(mViewHandle, Win32.FileMapAccess.FileMapAllAccess, 0, 0, 0);
+                    if (mMapPtr != IntPtr.Zero)
+                        SupportsTrueColor = true;
+                    else
+                    {
+                        Win32.CloseHandle(mViewHandle);
+                        mViewHandle = IntPtr.Zero;
+                    }
                 }
+            }
+        }
+
+        public void Dispose()
+        {
+            if (mViewHandle != IntPtr.Zero)
+            {
+                Win32.UnmapViewOfFile(mMapPtr);
+                Win32.CloseHandle(mViewHandle);
+                mMapPtr = mViewHandle = IntPtr.Zero;
             }
         }
 
@@ -67,53 +82,46 @@ namespace Gehtsoft.Xce.Conio
             if (columns == -1)
                 columns = mScreenBufferColumns - column;
 
-            if (mHasTrueColor && row != mWindowTop && column != mWindowLeft &&
+            if (SupportsTrueColor && row != mWindowTop && column != mWindowLeft &&
                 rows != mWindowRows && columns != mWindowColumns)
                 throw new InvalidOperationException("In true color mode the canvas must exactly match the visible window size");
 
             Canvas canvas = new Canvas(rows, columns);
 
             //output true color
-            if (mHasTrueColor)
+            if (SupportsTrueColor)
             {
-                IntPtr handle = Win32.OpenFileMapping(Win32.FileMapAccess.FileMapRead | Win32.FileMapAccess.FileMapWrite, false, mRgbChannelName);
-                if (handle != IntPtr.Zero)
+                Win32.AnnotationHeader header = Marshal.PtrToStructure<Win32.AnnotationHeader>(mMapPtr);
+                header.Locked = 1;
+                Marshal.StructureToPtr(header, mMapPtr, true);
+
+                int offset = header.StructSize;
+                int size = canvas.Rows * canvas.Columns;
+                int[] fg = canvas.ForegroundColor.Raw;
+                int[] bg = canvas.BackgroundColor.Raw;
+                int[] style = canvas.Style.Raw;
+
+                Win32.AnnotationInfo info;
+                for (int i = 0; i < size; i++)
                 {
-                    IntPtr viewPtr = Win32.MapViewOfFile(handle, Win32.FileMapAccess.FileMapRead | Win32.FileMapAccess.FileMapWrite, 0, 0, 0);
-                    try
-                    {
-                        Win32.AnnotationHeader header = Marshal.PtrToStructure<Win32.AnnotationHeader>(viewPtr);
-                        int offset = header.StructSize;
-                        int size = canvas.Rows * canvas.Columns;
-                        int[] fg = canvas.ForegroundColor.Raw;
-                        int[] bg = canvas.BackgroundColor.Raw;
-                        int[] style = canvas.Style.Raw;
-                        Win32.AnnotationInfo info;
-                        for (int i = 0; i < size; i++)
-                        {
-                            info = MarshalEx.PtrToBitFieldStruct<Win32.AnnotationInfo>(viewPtr, offset + i * 32);
+                    info = MarshalEx.PtrToBitFieldStruct<Win32.AnnotationInfo>(mMapPtr, offset + i * 32);
 
-                            if (info.fg_valid != 0)
-                                fg[i] = info.fg_color;
-                            else
-                                fg[i] = -1;
+                    if (info.fg_valid != 0)
+                        fg[i] = info.fg_color;
+                    else
+                        fg[i] = -1;
 
-                            if (info.bk_valid != 0)
-                                bg[i] = info.bk_color;
-                            else
-                                bg[i] = -1;
+                    if (info.bk_valid != 0)
+                        bg[i] = info.bk_color;
+                    else
+                        bg[i] = -1;
 
-                            style[i] = info.style;
-                        }
-                    }
-                    finally
-                    {
-                        Win32.UnmapViewOfFile(viewPtr);
-                        Win32.CloseHandle(handle);
-                    }
+                    style[i] = info.style;
                 }
-            }
 
+                header.Locked = 0;
+                Marshal.StructureToPtr(header, mMapPtr, true);
+            }
 
             using (var pointer = canvas.Data.GetPointer())
             {
@@ -135,103 +143,129 @@ namespace Gehtsoft.Xce.Conio
                     Bottom = (short)(row + rows - 1),
                     Left = (short)column,
                     Right = (short)(column + columns - 1),
-
-
                 };
                 Win32.ReadConsoleOutput(Win32.GetStdHandle(Win32.STD_OUTPUT_HANDLE), pointer.Pointer, canvaSize, canvaCoord, ref region);
             }
             return canvas;
         }
+
         public Canvas ScreenToCanvas() => BufferToCanvas(mWindowTop, mWindowLeft, mWindowRows, mWindowColumns);
 
-        public void PaintCanvasToBuffer(Canvas canvas, int bufferRow, int bufferColumn)
+        private readonly static Win32.AnnotationHeader ZEROHEADER = new Win32.AnnotationHeader();
+
+        public void PaintCanvasToBuffer(Canvas canvas, int bufferRow = 0, int bufferColumn = 0)
         {
-            if (mHasTrueColor && bufferRow != mWindowTop && bufferColumn != mWindowLeft &&
+            if (SupportsTrueColor && bufferRow != mWindowTop && bufferColumn != mWindowLeft &&
                 canvas.Rows != mWindowRows && canvas.Columns != mWindowColumns)
                 throw new InvalidOperationException("In true color mode the canvas must exactly match the visible window size");
 
-            //output true color
-            if (mHasTrueColor)
+#pragma warning disable IDE0059 // Unnecessary assignment of a value: false positive
+            Win32.AnnotationHeader header = ZEROHEADER;
+#pragma warning restore IDE0059 
+            try
             {
-                IntPtr handle = Win32.OpenFileMapping(Win32.FileMapAccess.FileMapRead | Win32.FileMapAccess.FileMapWrite, false, mRgbChannelName);
-                if (handle != IntPtr.Zero)
+                if (SupportsTrueColor)
                 {
-                    IntPtr viewPtr = Win32.MapViewOfFile(handle, Win32.FileMapAccess.FileMapRead | Win32.FileMapAccess.FileMapWrite, 0, 0, 0);
-                    try
+                    header = Marshal.PtrToStructure<Win32.AnnotationHeader>(mMapPtr);
+                    header.Locked = 1;
+                    Marshal.StructureToPtr(header, mMapPtr, true);
+
+                    int offset = header.StructSize;
+                    int size = canvas.Rows * canvas.Columns;
+
+                    int[] fg = canvas.ForegroundColor.Raw;
+                    int[] bg = canvas.BackgroundColor.Raw;
+                    int[] style = canvas.Style.Raw;
+                    Win32.AnnotationInfo info = new Win32.AnnotationInfo();
+                    for (int i = 0; i < size; i++)
                     {
-                        Win32.AnnotationHeader header = Marshal.PtrToStructure<Win32.AnnotationHeader>(viewPtr);
-                        int offset = header.StructSize;
-                        int size = canvas.Rows * canvas.Columns;
-                        int[] fg = canvas.ForegroundColor.Raw;
-                        int[] bg = canvas.BackgroundColor.Raw;
-                        int[] style = canvas.Style.Raw;
-                        Win32.AnnotationInfo info = new Win32.AnnotationInfo();
-                        for (int i = 0; i < size; i++)
+                        int canvasRow = i / canvas.Columns;
+                        int canvasColumn = i - canvasRow * canvas.Columns;
+                        if (fg[i] != -1 && bg[i] != -1)
                         {
-                            if (fg[i] == -1)
-                            {
-                                info.fg_valid = 0;
-                            }
-                            else
-                            {
-                                info.fg_valid = 1;
-                                info.fg_color = fg[i];
-                            }
-                            if (bg[i] == -1)
-                            {
-                                info.bk_valid = 0;
-                            }
-                            else
-                            {
-                                info.bk_valid = 1;
-                                info.bk_color = bg[i];
-                            }
-                            if (style[i] >= 0 && style[i] < 512)
-                                info.style = style[i];
-                            else
-                                info.style = 0;
-                            MarshalEx.BitFieldStructToPtr(info, viewPtr, offset + i * 32);
+                            info.fg_valid = 1;
+                            info.fg_color = fg[i];
+                            info.bk_valid = 1;
+                            info.bk_color = bg[i];
                         }
-                    }
-                    finally
-                    {
-                        Win32.UnmapViewOfFile(viewPtr);
-                        Win32.CloseHandle(handle);
+                        else
+                        {
+                            info.fg_valid = 0;
+                            info.fg_color = 0;
+                            info.bk_valid = 0;
+                            info.bk_color = 0;
+                        }
+
+                        if (style[i] >= 0 && style[i] < 512)
+                            info.style = style[i];
+                        else
+                            info.style = 0;
+
+                        int cellOffset = (bufferRow + canvasRow) * mScreenBufferColumns + bufferColumn + canvasColumn;
+                        int valueOffset = offset + cellOffset * 32;
+                        MarshalEx.BitFieldStructToPtr(info, mMapPtr, valueOffset);
                     }
                 }
+
+                //output regular console
+                using (var pointer = canvas.Data.GetPointer())
+                {
+                    Win32.COORD canvaSize = new Win32.COORD()
+                    {
+                        Y = (short)canvas.Rows,
+                        X = (short)canvas.Columns,
+                    };
+
+                    Win32.COORD canvaCoord = new Win32.COORD()
+                    {
+                        X = 0,
+                        Y = 0
+                    };
+
+                    Win32.SMALL_RECT region = new Win32.SMALL_RECT()
+                    {
+                        Top = (short)bufferRow,
+                        Bottom = (short)(bufferRow + canvas.Rows - 1),
+                        Left = (short)bufferColumn,
+                        Right = (short)(bufferColumn + canvas.Columns - 1),
+                    };
+
+                    Win32.WriteConsoleOutput(Win32.GetStdHandle(Win32.STD_OUTPUT_HANDLE), pointer.Pointer, canvaSize, canvaCoord, ref region);
+                }
             }
-
-            //output regular console
-            using (var pointer = canvas.Data.GetPointer())
+            finally
             {
-                Win32.COORD canvaSize = new Win32.COORD()
+                if (SupportsTrueColor)
                 {
-                    Y = (short)canvas.Rows,
-                    X = (short)canvas.Columns,
-                };
-
-                Win32.COORD canvaCoord = new Win32.COORD()
-                {
-                    X = 0,
-                    Y = 0
-                };
-
-                Win32.SMALL_RECT region = new Win32.SMALL_RECT()
-                {
-                    Top = (short)bufferRow,
-                    Bottom = (short)(bufferRow + canvas.Rows - 1),
-                    Left = (short)bufferColumn,
-                    Right = (short)(bufferColumn + canvas.Columns - 1),
-
-                };
-
-                Win32.WriteConsoleOutput(Win32.GetStdHandle(Win32.STD_OUTPUT_HANDLE), pointer.Pointer, canvaSize, canvaCoord, ref region);
+                    header = Marshal.PtrToStructure<Win32.AnnotationHeader>(mMapPtr);
+                    header.FlushCounter++;
+                    Marshal.StructureToPtr(header, mMapPtr, true);
+                    header.Locked = 0;
+                    Marshal.StructureToPtr(header, mMapPtr, true);
+                }
             }
         }
+
         public void PaintCanvasToScreen(Canvas canvas, int screenRow = 0, int screenColumn = 0) => PaintCanvasToBuffer(canvas, mWindowTop + screenRow, mWindowLeft + screenColumn);
         public void Clear()
         {
             Console.Clear();
+
+            if (SupportsTrueColor)
+            {
+                var header = Marshal.PtrToStructure<Win32.AnnotationHeader>(mMapPtr);
+                header.Locked = 1;
+                int offset = header.StructSize;
+                int size = header.BufferSize / 32;
+                Win32.AnnotationInfo info = new Win32.AnnotationInfo();
+                for (int i = 0; i < size; i++)
+                    MarshalEx.BitFieldStructToPtr(info, mMapPtr, offset + i * 32);
+
+                header.FlushCounter++;
+                Marshal.StructureToPtr(header, mMapPtr, true);
+                header.Locked = 0;
+                Marshal.StructureToPtr(header, mMapPtr, true);
+            }
         }
 
         private Canvas mSave;

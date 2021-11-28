@@ -35,12 +35,10 @@ namespace Gehtsoft.Xce.Conio.UnitTest
         public void Dispose()
         {
         }
-
     }
 
     [CollectionDefinition("TypeBuilder")]
     public class TypeBuilderFixtureCollection : ICollectionFixture<TypeBuilderFixture>
     {
-
     }
 }

@@ -6,7 +6,7 @@ namespace Gehtsoft.Xce.Conio.Test
 {
     public class Program
     {
-        public static void Main(string []args)
+        public static void Main(string[] args)
         {
             if (args.Length > 0)
             {
@@ -37,7 +37,6 @@ namespace Gehtsoft.Xce.Conio.Test
             IConsoleInput input = ConioFactory.CreateInput(ConioMode.Win32);
             while (!mRequestStop)
                 input.Read(listener, -1);
-                
         }
         private static void KbTest2()
         {
@@ -47,7 +46,6 @@ namespace Gehtsoft.Xce.Conio.Test
             IConsoleInput input = ConioFactory.CreateInput(ConioMode.CompatibleConsole);
             while (!mRequestStop)
                 input.Read(listener, -1);
-
         }
 
         private static void Listener_MouseMoved(int row, int column, bool shift, bool ctrl, bool alt, bool lb, bool rb)
@@ -66,7 +64,6 @@ namespace Gehtsoft.Xce.Conio.Test
                     mRequestStop = true;
                 else
                     mPrevQ = true;
-
             }
             else
                 mPrevQ = false;
@@ -122,9 +119,6 @@ namespace Gehtsoft.Xce.Conio.Test
 
             while (!mRequestStop)
                 input.Read(listener, -1);
-
         }
-
-
     }
 }

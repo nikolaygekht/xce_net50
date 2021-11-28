@@ -3,10 +3,12 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
 
+#pragma warning disable S101 // Types should be named in PascalCase
+#pragma warning disable RCS1191 // Declare enum value as combination of names.
+
 namespace Gehtsoft.Xce.Conio
 {
-
-    class Win32
+    internal static class Win32
     {
         public const int STD_OUTPUT_HANDLE = -11;
         public const int STD_INPUT_HANDLE = -10;
@@ -15,33 +17,30 @@ namespace Gehtsoft.Xce.Conio
         [StructLayout(LayoutKind.Sequential)]
         public struct AnnotationHeader
         {
-            internal int StructSize;
-            internal int BufferSize;
-            internal int Locked;
-            internal uint FlushCounter; 
+            public int StructSize;
+            public int BufferSize;
+            public int Locked;
+            public uint FlushCounter;
         }
 
         [BitStruct(SizeOf = 32)]
         public class AnnotationInfo
         {
-            [BitField(24)]
+            [BitField(32)]              //byte 0-3
             public int bk_color;
-            [BitField(24)]
+            [BitField(24)]              //byte 4-6
             public int fg_color;
-            [BitField(1)]
+            [BitField(1)]               //byte 7 (bit 0)
             public int bk_valid;
-            [BitField(1)]
+            [BitField(1)]               //byte 7 (bit 1)
             public int fg_valid;
-            [BitField(4)]
-            public int border_visible;
-            [BitField(8)]
-            public int border_style;
-            [BitField(24)]
-            public int border_color;
+            [BitField(32)]              //6 bit of byte 7 and then bytes 8, 9, 10 and 11
+            public int unused1;
+            [BitField(6)]               //6 bit of byte 7 and then bytes 8, 9, 10 and 11
+            public int unused2;
             [BitField(16)]
-            public int style;
+            public int style;           //byte 12!!!
         }
-
 
         [StructLayout(LayoutKind.Sequential)]
         public struct COORD
@@ -124,7 +123,6 @@ namespace Gehtsoft.Xce.Conio
         [DllImport("USER32.dll")]
         internal static extern ushort GetKeyState(int nVirtKey);
 
-
         [StructLayout(LayoutKind.Explicit)]
         public struct INPUT_RECORD
         {
@@ -150,14 +148,12 @@ namespace Gehtsoft.Xce.Conio
             [FieldOffset(4), MarshalAs(UnmanagedType.U2)]
             public ushort wRepeatCount;
             [FieldOffset(6), MarshalAs(UnmanagedType.U2)]
-            //public VirtualKeys wVirtualKeyCode;
             public ushort wVirtualKeyCode;
             [FieldOffset(8), MarshalAs(UnmanagedType.U2)]
             public ushort wVirtualScanCode;
             [FieldOffset(10)]
             public char UnicodeChar;
             [FieldOffset(12), MarshalAs(UnmanagedType.U4)]
-            //public ControlKeyState dwControlKeyState;
             public uint dwControlKeyState;
         }
 
@@ -186,9 +182,11 @@ namespace Gehtsoft.Xce.Conio
 
             public WINDOW_BUFFER_SIZE_RECORD(short x, short y)
             {
-                dwSize = new COORD();
-                dwSize.X = x;
-                dwSize.Y = y;
+                dwSize = new COORD
+                {
+                    X = x,
+                    Y = y
+                };
             }
         }
 
@@ -211,10 +209,9 @@ namespace Gehtsoft.Xce.Conio
             public bool Visible;
         }
 
-
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern IntPtr GetStdHandle(int nStdHandle);
-        
+
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern IntPtr GetNumberOfConsoleInputEvents(IntPtr nStdHandle, ref uint ulCount);
 
@@ -238,7 +235,7 @@ namespace Gehtsoft.Xce.Conio
 
         [DllImport("kernel32.dll", SetLastError = true, EntryPoint = "WriteConsoleOutputCharacterW")]
         public static extern bool WriteConsoleOutputSingleCharacter(IntPtr hConsoleOutput, ref char lpChar, uint nLength, COORD dwWriteCoord, out uint lpNumberOfCharsWritten);
-        
+
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern bool WriteConsoleSingleAttribute(IntPtr hConsoleOutput, ref ushort lpAttribute, uint nLength, COORD dwWriteCoord, out uint lpNumberOfAttrsWritten);
 
@@ -259,7 +256,7 @@ namespace Gehtsoft.Xce.Conio
 
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern bool GetConsoleCursorInfo(IntPtr hConsoleOutput, ref CONSOLE_CURSOR_INFO lpConsoleCursorInfo);
-        
+
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern uint GetConsoleWindow();
 
@@ -338,9 +335,13 @@ namespace Gehtsoft.Xce.Conio
         [Flags]
         internal enum FileMapAccess : uint
         {
+            None = 0,
             FileMapCopy = 0x0001,
             FileMapWrite = 0x0002,
             FileMapRead = 0x0004,
+            FileMapReserved1 = 0x0008,
+            FileMapReserved2 = 0x0010,
+
             FileMapAllAccess = 0x001f,
             fileMapExecute = 0x0020,
         }
@@ -360,7 +361,5 @@ namespace Gehtsoft.Xce.Conio
         [DllImport("kernel32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool CloseHandle(IntPtr hObject);
-
-
     }
 }

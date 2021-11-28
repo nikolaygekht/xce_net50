@@ -18,7 +18,7 @@ namespace Gehtsoft.Xce.Conio
                 else
                 {
                     string modifier = name.Substring(0, idx);
-                    name = name.Substring(idx + 1);
+                    name = name[(idx + 1)..];
                     if (modifier == "shift")
                         shift = true;
                     else if (modifier == "ctrl")
@@ -27,9 +27,6 @@ namespace Gehtsoft.Xce.Conio
                         alt = true;
                 }
             }
-
-
-            
         }
 
         public static string KeyCodeToName(ScanCode scanCode) => scanCode.ToString();

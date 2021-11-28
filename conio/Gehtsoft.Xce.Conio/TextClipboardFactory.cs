@@ -4,17 +4,19 @@ namespace Gehtsoft.Xce.Conio
 {
     public static class TextClipboardFactory
     {
-        public static ITextClipboard Clipboard { get; private set; }
+        private readonly static ITextClipboard mClipboard = ClipboardFactory();
 
-        static TextClipboardFactory()
+        public static ITextClipboard Clipboard => mClipboard ?? throw new InvalidOperationException($"Unknown platform mode {Environment.OSVersion.Platform}");
+
+        private static ITextClipboard ClipboardFactory()
         {
             var os = Environment.OSVersion;
             if (os.Platform == PlatformID.Unix || os.Platform == PlatformID.MacOSX || os.Platform == PlatformID.Xbox)
-                Clipboard = new NetTextClipboard();
+                return new NetTextClipboard();
             else if (os.Platform == PlatformID.Win32NT)
-                Clipboard = new Win32TextClipboard();
-            throw new InvalidOperationException($"Unknown platform mode {os.Platform}");
-
+                return new Win32TextClipboard();
+            else
+                return null;
         }
     }
 }
