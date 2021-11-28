@@ -9,27 +9,26 @@ namespace CailLomecb.ColorerTake5
     /// </summary>
     public sealed class SyntaxRegion : IEquatable<SyntaxRegion>
     {
-        private readonly string mName;
-        private IntPtr mRegion;
+        private readonly IntPtr mRegion;
 
         internal SyntaxRegion(IntPtr region)
         {
             StringBuilder buff = new StringBuilder(256);
             NativeExports.RegionName(region, buff, 256);
-            mName = buff.ToString();
+            Name = buff.ToString();
             mRegion = region;
         }
 
         internal SyntaxRegion(string name, IntPtr region)
         {
-            mName = name;
+            Name = name;
             mRegion = region;
         }
 
         /// <summary>
         /// The name of the region
         /// </summary>
-        public string Name => mName;
+        public string Name { get; }
 
         /// <summary>
         /// Checks whether the region is derived from or is the same as the region specified
@@ -45,10 +44,20 @@ namespace CailLomecb.ColorerTake5
         /// <returns></returns>
         public bool Equals(SyntaxRegion region) => NativeExports.RegionsAreEqual(mRegion, region.mRegion);
 
+        /// <summary>Determines whether the specified object is equal to the current object.</summary>
+        /// <param name="obj">The object to compare with the current object.</param>
+        /// <returns>true if the specified object  is equal to the current object; otherwise, false.</returns>
+        public override bool Equals(object obj)
+        {
+            if (obj is SyntaxRegion r)
+                return Equals(r);
+            return false;
+        }
+
         /// <summary>
         /// Returns has code of the region
         /// </summary>
         /// <returns></returns>
-        public override int GetHashCode() => mName.GetHashCode();
+        public override int GetHashCode() => Name.GetHashCode();
     }
 }

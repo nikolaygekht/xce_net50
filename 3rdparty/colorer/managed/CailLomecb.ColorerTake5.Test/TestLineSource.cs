@@ -4,7 +4,7 @@ namespace CailLomecb.ColorerTake5.Test
 {
     public class TestLineSource : IColorerLineSource
     {
-        public List<string> mContent = new List<string>();
+        public List<string> mContent = new();
 
         public int LinesCount => mContent.Count;
 

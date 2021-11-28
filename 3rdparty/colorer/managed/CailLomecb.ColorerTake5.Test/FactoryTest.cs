@@ -8,6 +8,8 @@ using System.Text;
 using System.Threading;
 using Xunit;
 
+#pragma warning disable S2259 // Null pointers should not be dereferenced
+
 namespace CailLomecb.ColorerTake5.Test
 {
     public class FactoryTest
@@ -20,7 +22,7 @@ namespace CailLomecb.ColorerTake5.Test
             string probe = Path.Combine(path, "native/data/catalog.xml");
             if (File.Exists(probe))
                 return probe;
-            DirectoryInfo di = new DirectoryInfo(path);
+            var di = new DirectoryInfo(path);
             if (di.Parent == null)
                 return null;
             return FindCatalogue(di.Parent.FullName);
@@ -35,7 +37,6 @@ namespace CailLomecb.ColorerTake5.Test
                 ParserFactory f = ParserFactory.Create("nonexisting", "nonexisting", "nonexisting", 0);
                 f.Should().BeNull("We should get here");
                 f?.Dispose();
-
             }
             catch (Exception e)
             {
@@ -57,7 +58,7 @@ namespace CailLomecb.ColorerTake5.Test
             ParserFactory f = null;
             try
             {
-                Action x = (Action)(() => { f = ParserFactory.Create(FindCatalogue(), "console", "xce", 0); });
+                Action x = (Action)(() => f = ParserFactory.Create(FindCatalogue(), "console", "xce", 0));
                 x.Should().NotThrow();
                 f.Should().NotBeNull();
 
@@ -97,7 +98,7 @@ namespace CailLomecb.ColorerTake5.Test
         [Fact]
         public void SimpleParse()
         {
-            TestLineSource src = new TestLineSource();
+            var src = new TestLineSource();
             src.Add("<root>");
             src.Add("  <tag value=\"value\">");
             src.Add("  </tag>");
@@ -117,33 +118,30 @@ namespace CailLomecb.ColorerTake5.Test
                 new Tuple<int, int, string>(20, 20, "xml:element.start.gt"),
             };
 
-            using (var factory = ParserFactory.Create(FindCatalogue(), "console", "xce", 5000))
-            using (var editor = factory.CreateEditor(src))
+            using var factory = ParserFactory.Create(FindCatalogue(), "console", "xce", 5000);
+            using var editor = factory.CreateEditor(src);
+
+            editor.NotifyNameChange("test.xml");
+            editor.NotifyLineCount(src.LinesCount);
+            editor.NotifyIdle();
+            editor.ValidateLines(0, 4);
+
+            editor.FileType.Should().Be("xml");
+            editor.LastValid.Should().BeGreaterThan(0);
+
+            LineRegion r = editor.GetFirstRegionInLine(1);
+            for (int i = 0; i < expectedRegions.Length; i++, r = r.Next)
             {
-                editor.NotifyNameChange("test.xml");
-                editor.NotifyLineCount(src.LinesCount);
-                editor.NotifyIdle();
-                editor.ValidateLines(0, 4);
-
-                editor.FileType.Should().Be("xml");
-                editor.LastValid.Should().BeGreaterThan(0);
-
-                LineRegion r = editor.GetFirstRegionInLine(1);
-                for (int i = 0; i < expectedRegions.Length; i++, r = r.Next)
+                r.Should().NotBeNull($"region {i}");
+                r.Line.Should().Be(1, $"region {i}");
+                r.Start.Should().Be(expectedRegions[i].Item1, $"region {i}");
+                r.End.Should().Be(expectedRegions[i].Item2, $"region {i}");
+                if (expectedRegions[i].Item3 == null)
+                    r.SyntaxRegion.Should().BeNull();
+                else
                 {
-
-                    r.Should().NotBeNull($"region {i}");
-                    r.Line.Should().Be(1, $"region {i}");
-                    r.Start.Should().Be(expectedRegions[i].Item1, $"region {i}");
-                    r.End.Should().Be(expectedRegions[i].Item2, $"region {i}");
-                    if (expectedRegions[i].Item3 == null)
-                        r.SyntaxRegion.Should().BeNull();
-                    else
-                    {
-                        r.SyntaxRegion.Should().NotBeNull($"region {i}");
-                        r.SyntaxRegion.Name.Should().Be(expectedRegions[i].Item3, $"region {i}");
-                    }
-
+                    r.SyntaxRegion.Should().NotBeNull($"region {i}");
+                    r.SyntaxRegion.Name.Should().Be(expectedRegions[i].Item3, $"region {i}");
                 }
             }
         }
@@ -151,7 +149,7 @@ namespace CailLomecb.ColorerTake5.Test
         [Fact]
         public void ComplexParse()
         {
-            TestLineSource src = new TestLineSource();
+            var src = new TestLineSource();
             using (Stream s = this.GetType().Assembly.GetManifestResourceStream("CailLomecb.ColorerTake5.Test.data.lparser.c"))
             {
                 var content = new byte[s.Length];
@@ -162,50 +160,43 @@ namespace CailLomecb.ColorerTake5.Test
                     src.Add(str);
             }
 
-            using (var factory = ParserFactory.Create(FindCatalogue(), "console", "xce", 5000))
-            using (var editor = factory.CreateEditor(src))
+            using var factory = ParserFactory.Create(FindCatalogue(), "console", "xce", 5000);
+            using var editor = factory.CreateEditor(src);
+            editor.NotifyNameChange("lparser.c");
+            editor.NotifyLineCount(src.LinesCount);
+
+            //repeat 10 times
+            for (int j = 0; j < 6; j++)
             {
-                editor.NotifyNameChange("lparser.c");
-                editor.NotifyLineCount(src.LinesCount);
+                src.Change(1318, j % 2 == 0 ? "return 0;" : "//return 0;");
+                if (j >= 4)
+                    editor.NotifyMajorChange(1300);
+                else
+                    editor.NotifyLineChange(1318);
 
-                //repeat 10 times
-                for (int j = 0; j < 6; j++)
+                for (int i = 0; i < src.LinesCount; i += 10)
                 {
-                    src.Change(1318, j % 2 == 0 ? "return 0;" : "//return 0;");
-                    if (j >= 4)
-                        editor.NotifyMajorChange(1300);
-                    else
-                        editor.NotifyLineChange(1318);
-
-                    for (int i = 0; i < src.LinesCount; i += 10)
+                    editor.ValidateLines(i, i + 10);
+                    if (i == 30)
                     {
-                        editor.ValidateLines(i, i + 10);
-                        if (i == 30)
-                        {
-                            LineRegion r = editor.GetFirstRegionInLine(37);
-                            r.Should().NotBeNull();
-                            r.SyntaxRegion.Should().NotBeNull();
-                            r.SyntaxRegion.Name.Should().Be("c:Comment");
-                        }
-                        else if (i == 1310)
-                        {
-                            LineRegion r = editor.GetFirstRegionInLine(1318);
-                            r.Should().NotBeNull();
-                            r.SyntaxRegion.Should().NotBeNull();
-                            if (j % 2 == 0)
-                                r.SyntaxRegion.Name.Should().Be("c:KeywordANSI");
-                            else
-                                r.SyntaxRegion.Name.Should().Be("c:LineComment");
-                        }
+                        LineRegion r = editor.GetFirstRegionInLine(37);
+                        r.Should().NotBeNull();
+                        r.SyntaxRegion.Should().NotBeNull();
+                        r.SyntaxRegion.Name.Should().Be("c:Comment");
+                    }
+                    else if (i == 1310)
+                    {
+                        LineRegion r = editor.GetFirstRegionInLine(1318);
+                        r.Should().NotBeNull();
+                        r.SyntaxRegion.Should().NotBeNull();
+                        if (j % 2 == 0)
+                            r.SyntaxRegion.Name.Should().Be("c:KeywordANSI");
+                        else
+                            r.SyntaxRegion.Name.Should().Be("c:LineComment");
                     }
                 }
-
             }
         }
-
-         
-
-
     }
 }
 

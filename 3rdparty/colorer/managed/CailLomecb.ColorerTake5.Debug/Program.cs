@@ -3,54 +3,48 @@ using System.IO;
 
 namespace CailLomecb.ColorerTake5.Debug
 {
-    class Program
+    public class Program
     {
-        class LocalSource : IColorerLineSource
+        protected class LocalSource : IColorerLineSource
         {
             public string GetLine(int line)
             {
-                switch (line)
+                return line switch
                 {
-                    case 0:
-                        return "<root>";
-                    case 1:
-                        return "</root>";
-                    default:
-                        return "";
-                }
+                    0 => "<root>",
+                    1 => "</root>",
+                    _ => "",
+                };
             }
         }
 
-        static void Main(string[] args)
+        public static void Main()
         {
             if (!File.Exists("../../data/catalog.xml"))
             {
                 Console.WriteLine("Copy colorer data from native to bin");
                 return ;
-            }    
+            }
             Console.WriteLine("---enter---");
             ParserFactory.DoAllInOneAction();
             Console.WriteLine("---exit---");
 
-            using (ParserFactory pf = ParserFactory.Create("../../data/catalog.xml", "console", "xce", 5000))
-            using (ColorerBaseEditor be = pf.CreateEditor(new LocalSource()))
+            using ParserFactory pf = ParserFactory.Create("../../data/catalog.xml", "console", "xce", 5000);
+            using ColorerBaseEditor be = pf.CreateEditor(new LocalSource());
+
+            be.NotifyNameChange("q.xml");
+            Console.WriteLine(be.FileType);
+            be.NotifyLineCount(2);
+            be.NotifyIdle();
+            be.ValidateLines(0, 1);
+            LineRegion r = be.GetFirstRegionInLine(0);
+            if (r == null)
+                Console.WriteLine("Didn't start");
+            while (r != null)
             {
-                be.NotifyNameChange("q.xml");
-                Console.WriteLine(be.FileType);
-                be.NotifyLineCount(2);
-                be.NotifyIdle();
-                be.ValidateLines(0, 1);
-                LineRegion r = be.GetFirstRegionInLine(0);
-                if (r == null)
-                    Console.WriteLine("Didn't start");
-                while (r != null)
-                {
-                    Console.WriteLine($"{r.Start}-{r.End}-{r.SyntaxRegion?.Name}");
-                    r = r.Next;
-                }
-
+                Console.WriteLine($"{r.Start}-{r.End}-{r.SyntaxRegion?.Name}");
+                r = r.Next;
             }
-
         }
     }
 }

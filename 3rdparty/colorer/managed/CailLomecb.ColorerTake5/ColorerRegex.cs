@@ -6,75 +6,17 @@ using System.Threading.Tasks;
 
 namespace CailLomecb.ColorerTake5
 {
-    public struct ColorerMatch
-    {
-        public int Start { get; set; }
-        public int End { get; set; }
-    }
-
-    public sealed class ColorerMatches : IDisposable
-    {
-        private IntPtr mColorerMatches;
-
-        public bool Success => mColorerMatches != IntPtr.Zero;
-
-        internal ColorerMatches(IntPtr colorerMatches)
-        {
-            mColorerMatches = colorerMatches;
-        }
-
-        ~ColorerMatches()
-        {
-            if (mColorerMatches != IntPtr.Zero)
-            {
-                NativeExports.DeleteMatches(mColorerMatches);
-                mColorerMatches = IntPtr.Zero;
-            }
-        }
-
-        public void Dispose()
-        {
-            if (mColorerMatches != IntPtr.Zero)
-            {
-                NativeExports.DeleteMatches(mColorerMatches);
-                mColorerMatches = IntPtr.Zero;
-            }
-            GC.SuppressFinalize(this);
-        }
-
-        public int Count => NativeExports.MatchesCount(mColorerMatches);
-
-        public ColorerMatch this[int index]
-        {
-            get
-            {
-                if (index < 0 || index >= Count)
-                    throw new IndexOutOfRangeException();
-                int s, e;
-                NativeExports.MatchGet(mColorerMatches, index, out s, out e);
-                return new ColorerMatch()
-                {
-                    Start = s,
-                    End = e
-                };
-            }
-        }
-
-        
-    }
-
-    public class ColorerRegex : IDisposable
+    public sealed class ColorerRegex : IDisposable
     {
         private IntPtr mColorerRegex;
 
         public static ColorerRegex Parse(string regex)
         {
-            IntPtr r;
-            int rc = NativeExports.CreateRegex(regex, out r);
+            int rc = NativeExports.CreateRegex(regex, out IntPtr r);
             if (rc == 0)
                 return new ColorerRegex(r);
 
-            string error = null;
+            string error;
             switch (rc)
             {
                 case 1:
@@ -125,21 +67,19 @@ namespace CailLomecb.ColorerTake5
 
         public bool IsDiposed() => mColorerRegex == IntPtr.Zero;
 
-        public ColorerMatches Parse(string text, int start = 0, int length = -1)
+        public ColorerRegexMatches Parse(string text, int start, int length)
         {
-            IntPtr pmathes;
             if (length < 0)
                 length = text.Length;
-            NativeExports.RegexParse(mColorerRegex, text, start, length, out pmathes);
-            return new ColorerMatches(pmathes);
+            NativeExports.RegexParse(mColorerRegex, text, start, length, out IntPtr pmathes);
+            return new ColorerRegexMatches(pmathes);
         }
-        public ColorerMatches Find(string text, int start = 0, int length = -1)
+        public ColorerRegexMatches Find(string text, int start = 0, int length = -1)
         {
-            IntPtr pmathes;
             if (length < 0)
                 length = text.Length;
-            NativeExports.RegexFind(mColorerRegex, text, start, length, out pmathes);
-            return new ColorerMatches(pmathes);
+            NativeExports.RegexFind(mColorerRegex, text, start, length, out IntPtr pmathes);
+            return new ColorerRegexMatches(pmathes);
         }
 
         public void FindAll(Func<int, int, bool> callback, string text, int start = 0, int length = -1)

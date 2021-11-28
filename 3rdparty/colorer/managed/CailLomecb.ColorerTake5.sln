@@ -7,7 +7,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CailLomecb.ColorerTake5", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CailLomecb.ColorerTake5.Test", "CailLomecb.ColorerTake5.Test\CailLomecb.ColorerTake5.Test.csproj", "{8687DE92-AAF0-4AE9-8704-DDC121C442C4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CailLomecb.ColorerTake5.Debug", "CailLomecb.ColorerTake5.Debug\CailLomecb.ColorerTake5.Debug.csproj", "{AB7CCB25-7843-49B0-9BD0-8BF66F53CE52}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CailLomecb.ColorerTake5.Debug", "CailLomecb.ColorerTake5.Debug\CailLomecb.ColorerTake5.Debug.csproj", "{AB7CCB25-7843-49B0-9BD0-8BF66F53CE52}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{9FE7DD31-613C-488A-AB7C-0D53688C15EB}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -32,7 +37,7 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {067F2814-E4BD-47A2-A13E-1205DCAB9F58}
 		        SolutionGuid = {201783A5-438A-4FB2-93FC-2AFF12C1A49A}
+		SolutionGuid = {067F2814-E4BD-47A2-A13E-1205DCAB9F58}
 	EndGlobalSection
 EndGlobal

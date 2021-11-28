@@ -1,0 +1,10 @@
+﻿[*.cs]
+
+# IDE0063: Use simple 'using' statement
+dotnet_diagnostic.IDE0063.severity = none
+
+# RCS1003: Add braces to if-else (when expression spans over multiple lines).
+dotnet_diagnostic.RCS1003.severity = none
+
+# RCS1226: Add paragraph to documentation comment.
+dotnet_diagnostic.RCS1226.severity = none

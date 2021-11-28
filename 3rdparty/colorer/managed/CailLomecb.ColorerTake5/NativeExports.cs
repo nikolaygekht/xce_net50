@@ -6,12 +6,10 @@ using System.Text;
 
 namespace CailLomecb.ColorerTake5
 {
-    class NativeExports
+    internal class NativeExports
     {
         static NativeExports()
         {
-            LibraryManager lm = new LibraryManager();
-            
             var accessor = new ResourceAccessor(typeof(NativeExports).Assembly);
             var libManager = new LibraryManager(
                 new LibraryItem(Platform.Linux, Bitness.x64,
@@ -26,7 +24,7 @@ namespace CailLomecb.ColorerTake5
         #region Regex
         [DllImport("colorertake5", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
         internal static extern int CreateRegex(string regex, out IntPtr regexPointer);
-        
+
         [DllImport("colorertake5", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
         internal static extern void DeleteRegex(IntPtr regexPointer);
 
@@ -40,7 +38,7 @@ namespace CailLomecb.ColorerTake5
 
         [DllImport("colorertake5", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
         internal static extern int MatchesCount(IntPtr matchesPtr);
-        
+
         [DllImport("colorertake5", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
         internal static extern void MatchGet(IntPtr matchesPtr, int index, out int s, out int e);
 
@@ -70,7 +68,7 @@ namespace CailLomecb.ColorerTake5
         internal static extern uint StyledRegionBackgroundColor(IntPtr region);
         [DllImport("colorertake5", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
         internal static extern int StyledRegionStyle(IntPtr region);
-        
+
         #endregion
 
         #region Line Source
@@ -123,7 +121,7 @@ namespace CailLomecb.ColorerTake5
         [DllImport("colorertake5", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
         internal static extern IntPtr BaseEditorPairMatch(IntPtr editor, int line, int position);
         [DllImport("colorertake5", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
-        internal static extern IntPtr BaseEditorReleaseMatch(IntPtr editor, IntPtr pairMatch);      
+        internal static extern IntPtr BaseEditorReleaseMatch(IntPtr editor, IntPtr pairMatch);
         #endregion
 
         #region LineRegion
@@ -154,6 +152,5 @@ namespace CailLomecb.ColorerTake5
 
         [DllImport("colorertake5", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
         internal static extern void AllInOneAction();
-
     }
 }

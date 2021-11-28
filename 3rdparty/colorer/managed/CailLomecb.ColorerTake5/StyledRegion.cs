@@ -8,7 +8,7 @@ namespace CailLomecb.ColorerTake5
     /// <summary>
     /// A style of a region.
     /// </summary>
-    public class StyledRegion 
+    public class StyledRegion
     {
         /// <summary>
         /// Styles that may be applied to a styled region
@@ -16,6 +16,7 @@ namespace CailLomecb.ColorerTake5
         [Flags]
         public enum Styles
         {
+            None = 0,
             Bold = 0x1,
             Italic =0x2,
             Underline = 0x4,
@@ -47,21 +48,5 @@ namespace CailLomecb.ColorerTake5
         /// RFB color for background
         /// </summary>
         public uint Background => NativeExports.StyledRegionBackgroundColor(mRegion);
-    }
-
-    /// <summary>
-    /// The definition of a styled region
-    /// </summary>
-    public class StyledRegionDefinition : StyledRegion
-    {
-        /// <summary>
-        /// The name of the definition.
-        /// </summary>
-        public string Name { get; private set; }
-
-        internal StyledRegionDefinition(IntPtr region, string name) : base(region)
-        {
-            Name = name;
-        }
     }
 }
