@@ -79,7 +79,7 @@ namespace CailLomecb.ColorerTake5
         [DllImport("colorertake5", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
         internal static extern void DeleteColorerLineSourceAdapter(IntPtr nativeAdapter);
         [DllImport("colorertake5", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
-        internal static extern void ColorerLineSourceAdapterAcceptLine(IntPtr nativeAdapter, string line, int length);
+        internal static extern void ColorerLineSourceAdapterAcceptLine(IntPtr nativeAdapter, IntPtr line, int length);
         #endregion
 
         #region Parser Factory

@@ -5,16 +5,28 @@ namespace CailLomecb.ColorerTake5.Debug
 {
     public class Program
     {
-        protected class LocalSource : IColorerLineSource
+        protected class LocalSource : IColorerLineSourceString
         {
-            public string GetLine(int line)
+            public bool GetLine(int line, out string target, out int length)
             {
-                return line switch
+                if (line == 0)
                 {
-                    0 => "<root>",
-                    1 => "</root>",
-                    _ => "",
-                };
+                    target = "<root>";
+                    length = 6;
+                }
+                else if (line == 1)
+                {
+                    target = "</root>";
+                    length = 7;
+                }
+                else
+                {
+                    target = null;
+                    length = 0;
+                    return false;
+                }
+
+                return true;
             }
         }
 

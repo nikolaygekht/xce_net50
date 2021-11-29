@@ -1,0 +1,25 @@
+﻿[*.cs]
+
+# IDE0090: Use 'new(...)'
+dotnet_diagnostic.IDE0090.severity = none
+
+# IDE0063: Use simple 'using' statement
+dotnet_diagnostic.IDE0063.severity = none
+
+# RCS1003: Add braces to if-else (when expression spans over multiple lines).
+dotnet_diagnostic.RCS1003.severity = none
+
+# RCS1123: Add parentheses when necessary.
+dotnet_diagnostic.RCS1123.severity = none
+
+# RCS1001: Add braces (when expression spans over multiple lines).
+dotnet_diagnostic.RCS1001.severity = none
+
+# RCS1180: Inline lazy initialization.
+dotnet_diagnostic.RCS1180.severity = none
+
+# S4136: Method overloads should be grouped together
+dotnet_diagnostic.S4136.severity = none
+
+# RCS1226: Add paragraph to documentation comment.
+dotnet_diagnostic.RCS1226.severity = none

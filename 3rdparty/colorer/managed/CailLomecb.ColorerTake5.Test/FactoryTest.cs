@@ -155,8 +155,7 @@ namespace CailLomecb.ColorerTake5.Test
                 var content = new byte[s.Length];
                 s.Read(content, 0, content.Length);
                 var stringContent = Encoding.ASCII.GetString(content);
-                var stringContent1 = stringContent.Split('\n');
-                foreach (string str in stringContent1)
+                foreach (string str in stringContent.Split('\n'))
                     src.Add(str);
             }
 

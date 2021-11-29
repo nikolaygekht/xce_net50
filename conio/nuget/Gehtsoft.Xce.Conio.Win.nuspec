@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<nuget:package xmlns:nuget="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+  <nuget:metadata>
+    <nuget:dependencies>
+      <nuget:dependency id="Gehtsoft.Xce.Conio" version="0.1" />
+    </nuget:dependencies>
+    <nuget:id>Gehtsoft.Xce.Conio.Win</nuget:id>
+    <nuget:version>0.1</nuget:version>
+    <nuget:authors>Gehtsoft</nuget:authors>
+    <nuget:owners>Gehtsoft</nuget:owners>
+    <nuget:licenseUrl>http://asp.gehtsoftusa.com/doc/privatelicense.html</nuget:licenseUrl>
+    <nuget:projectUrl>http://asp.gehtsoftusa.com/doc/xce</nuget:projectUrl>
+    <nuget:requireLicenseAcceptance>false</nuget:requireLicenseAcceptance>
+    <nuget:description>CUA interface library for a console.</nuget:description>
+    <nuget:releaseNotes>First version</nuget:releaseNotes>
+  </nuget:metadata>
+  <nuget:files>
+    <nuget:file src="D:\develop\work\tools\xce50.tc\conio\Gehtsoft.Xce.Conio.Win\bin/Release/net5.0/Gehtsoft.Xce.Conio.Win.dll" target="lib/net5.0" />
+  </nuget:files>
+</nuget:package>

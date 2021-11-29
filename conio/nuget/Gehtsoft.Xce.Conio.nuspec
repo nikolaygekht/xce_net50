@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<nuget:package xmlns:nuget="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+  <nuget:metadata>
+    <nuget:dependencies />
+    <nuget:id>Gehtsoft.Xce.Conio</nuget:id>
+    <nuget:version>0.1</nuget:version>
+    <nuget:authors>Gehtsoft</nuget:authors>
+    <nuget:owners>Gehtsoft</nuget:owners>
+    <nuget:licenseUrl>http://asp.gehtsoftusa.com/doc/privatelicense.html</nuget:licenseUrl>
+    <nuget:projectUrl>http://asp.gehtsoftusa.com/doc/xce</nuget:projectUrl>
+    <nuget:requireLicenseAcceptance>false</nuget:requireLicenseAcceptance>
+    <nuget:description>Low level console I/O.</nuget:description>
+    <nuget:releaseNotes>First version</nuget:releaseNotes>
+  </nuget:metadata>
+  <nuget:files>
+    <nuget:file src="D:\develop\work\tools\xce50.tc\conio\Gehtsoft.Xce.Conio\bin/Release/netstandard2.1/Gehtsoft.Xce.Conio.dll" target="lib/netstandard2.1" />
+  </nuget:files>
+</nuget:package>
