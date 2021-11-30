@@ -28,28 +28,37 @@ namespace Gehtsoft.Xce.Conio
 
         public ConioMode Mode => ConioMode.Win32;
 
+        private readonly IntPtr mInputHandle;
+
         public Win32ConsoleInput()
         {
-            Win32.SetConsoleMode(Win32.GetStdHandle(Win32.STD_INPUT_HANDLE), Win32.ENABLE_MOUSE_INPUT);
+            mInputHandle = Win32.GetStdHandle(Win32.STD_INPUT_HANDLE);
+            Win32.SetConsoleMode(mInputHandle, Win32.ENABLE_MOUSE_INPUT);
             mLeftButtonPressed = mRightButtonPressed = false;
             mMouseColumn = mMouseRow = -1;
         }
 
         public bool Read(IConsoleInputListener listener, int timeout)
         {
-            IntPtr input = Win32.GetStdHandle(Win32.STD_INPUT_HANDLE);
-
-            if (Win32.WaitForSingleObject(input, timeout) != 0)
-                return false;
+            while (true)
+            {
+                if (Win32.WaitForSingleObject(mInputHandle, 100) == 0)
+                    break;
+                listener.OnIdle();
+            }
 
             Win32.INPUT_RECORD ri = new Win32.INPUT_RECORD();
 
-            Win32.PeekConsoleSingleInput(input, ref ri, 1, out uint ulEvents);
+            Win32.PeekConsoleSingleInput(mInputHandle, ref ri, 1, out uint ulEvents);
+            
+            if (ulEvents == 0)
+                return false;
 
             switch (ri.EventType)
             {
                 case Win32.KEY_EVENT:
                     {
+
                         bool shift = (ri.KeyEvent.dwControlKeyState & Win32.SHIFT_PRESSED) != 0;
                         bool alt = (ri.KeyEvent.dwControlKeyState & Win32.LEFT_ALT_PRESSED) != 0 || (ri.KeyEvent.dwControlKeyState & Win32.RIGHT_ALT_PRESSED) != 0;
                         bool ctrl = (ri.KeyEvent.dwControlKeyState & Win32.LEFT_CTRL_PRESSED) != 0 || (ri.KeyEvent.dwControlKeyState & Win32.RIGHT_CTRL_PRESSED) != 0;
@@ -59,14 +68,14 @@ namespace Gehtsoft.Xce.Conio
 
                         if (ri.KeyEvent.bKeyDown && ri.KeyEvent.wRepeatCount == 1)
                         {
-                            Win32.ReadConsoleSingleInput(input, ref ri, 1, out _);
+                            Win32.ReadConsoleSingleInput(mInputHandle, ref ri, 1, out _);
                             scanCode = ri.KeyEvent.wVirtualKeyCode;
                             chr = ri.KeyEvent.UnicodeChar;
                             press = true;
                         }
                         else if (!ri.KeyEvent.bKeyDown)
                         {
-                            Win32.ReadConsoleSingleInput(input, ref ri, 1, out _);
+                            Win32.ReadConsoleSingleInput(mInputHandle, ref ri, 1, out _);
                             scanCode = ri.KeyEvent.wVirtualKeyCode;
                             chr = ri.KeyEvent.UnicodeChar;
                             press = false;
@@ -74,9 +83,9 @@ namespace Gehtsoft.Xce.Conio
                         else
                         {
                             ulEvents = 0;
-                            Win32.GetNumberOfConsoleInputEvents(input, ref ulEvents);
+                            Win32.GetNumberOfConsoleInputEvents(mInputHandle, ref ulEvents);
                             if (ulEvents > 0)
-                                Win32.ReadConsoleSingleInput(input, ref ri, 1, out ulEvents);
+                                Win32.ReadConsoleSingleInput(mInputHandle, ref ri, 1, out ulEvents);
                         }
 
                         if (scanCode != 0)
@@ -91,9 +100,9 @@ namespace Gehtsoft.Xce.Conio
                 case Win32.MOUSE_EVENT:
                     {
                         ulEvents = 0;
-                        Win32.GetNumberOfConsoleInputEvents(input, ref ulEvents);
+                        Win32.GetNumberOfConsoleInputEvents(mInputHandle, ref ulEvents);
                         if (ulEvents > 0)
-                            Win32.ReadConsoleSingleInput(input, ref ri, 1, out ulEvents);
+                            Win32.ReadConsoleSingleInput(mInputHandle, ref ri, 1, out ulEvents);
 
                         bool shift = (ri.MouseEvent.dwControlKeyState & Win32.SHIFT_PRESSED) != 0;
                         bool alt = (ri.MouseEvent.dwControlKeyState & Win32.LEFT_ALT_PRESSED) != 0 || (ri.MouseEvent.dwControlKeyState & Win32.RIGHT_ALT_PRESSED) != 0;
@@ -162,9 +171,9 @@ namespace Gehtsoft.Xce.Conio
                 case Win32.FOCUS_EVENT:
                     {
                         ulEvents = 0;
-                        Win32.GetNumberOfConsoleInputEvents(input, ref ulEvents);
+                        Win32.GetNumberOfConsoleInputEvents(mInputHandle, ref ulEvents);
                         if (ulEvents > 0)
-                            Win32.ReadConsoleSingleInput(input, ref ri, 1, out ulEvents);
+                            Win32.ReadConsoleSingleInput(mInputHandle, ref ri, 1, out ulEvents);
                         bool ctrl = (Win32.GetKeyState((int)ScanCode.CONTROL) & 0x8000) != 0;
                         bool shift = (Win32.GetKeyState((int)ScanCode.SHIFT) & 0x8000) != 0;
                         bool alt = (Win32.GetKeyState((int)ScanCode.MENU) & 0x8000) != 0;
@@ -174,15 +183,15 @@ namespace Gehtsoft.Xce.Conio
                 case Win32.BUFFER_SIZE_EVENT:
                     listener.OnScreenBufferChanged(ri.WindowBufferSizeEvent.dwSize.Y, ri.WindowBufferSizeEvent.dwSize.X);
                     ulEvents = 0;
-                    Win32.GetNumberOfConsoleInputEvents(input, ref ulEvents);
+                    Win32.GetNumberOfConsoleInputEvents(mInputHandle, ref ulEvents);
                     if (ulEvents > 0)
-                        Win32.ReadConsoleSingleInput(input, ref ri, 1, out ulEvents);
+                        Win32.ReadConsoleSingleInput(mInputHandle, ref ri, 1, out ulEvents);
                     return true;
                 default:
                     ulEvents = 0;
-                    Win32.GetNumberOfConsoleInputEvents(input, ref ulEvents);
+                    Win32.GetNumberOfConsoleInputEvents(mInputHandle, ref ulEvents);
                     if (ulEvents > 0)
-                        Win32.ReadConsoleSingleInput(input, ref ri, 1, out ulEvents);
+                        Win32.ReadConsoleSingleInput(mInputHandle, ref ri, 1, out ulEvents);
                     return true;
             }
             return true;

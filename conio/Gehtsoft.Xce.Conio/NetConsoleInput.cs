@@ -13,6 +13,7 @@ namespace Gehtsoft.Xce.Conio
 
         public bool Read(IConsoleInputListener listener, int timeout)
         {
+            int waited = 0;
             while (true)
             {
                 if (Console.KeyAvailable)
@@ -24,10 +25,13 @@ namespace Gehtsoft.Xce.Conio
                 if (timeout == 0)
                     return false;
                 Thread.Sleep(10);
+                waited += 10;
                 if (timeout > 0 && timeout < 10)
                     timeout = 0;
                 else if (timeout > 0)
                     timeout -= 10;
+                if (waited % 100 == 0)
+                    listener.OnIdle();
             }
         }
     }

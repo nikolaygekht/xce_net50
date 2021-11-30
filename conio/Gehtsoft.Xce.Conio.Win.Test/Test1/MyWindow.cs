@@ -4,16 +4,14 @@ using System.Text;
 
 namespace Gehtsoft.Xce.Conio.Win.Test.Test1
 {
-    class MyWindow : WindowBorderContainer
+    internal class MyWindow : WindowBorderContainer
     {
-        Window mCreator;
-        MyClientArea mClient;
+        private readonly Window mCreator;
 
         public MyWindow(string title, Window creator) : base(title, BoxBorder.Double, Program.CurrentSheme.WindowBackground, true, true)
         {
             mCreator = creator;
-            mClient = new MyClientArea(Program.CurrentSheme.WindowBackground);
-            AttachClientArea(mClient);
+            AttachClientArea(new MyClientArea(Program.CurrentSheme.WindowBackground));
         }
 
         public override void OnCreate()

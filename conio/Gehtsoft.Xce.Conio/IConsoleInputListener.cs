@@ -17,5 +17,7 @@ namespace Gehtsoft.Xce.Conio
         void OnMouseWheelDown(int row, int column, bool shift, bool ctrl, bool alt);
         void OnGetFocus(bool shift, bool ctrl, bool alt);
         void OnScreenBufferChanged(int rows, int columns);
+
+        void OnIdle();
     }
 }

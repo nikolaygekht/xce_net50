@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Text;
 using CanvasColor = Gehtsoft.Xce.Conio.CanvasColor;
 
@@ -55,6 +56,7 @@ namespace Gehtsoft.Xce.Conio.Win
         public void Dispose()
         {
             Dispose(true);
+            GC.SuppressFinalize(this);
         }
 
         /// <summary>
@@ -68,19 +70,14 @@ namespace Gehtsoft.Xce.Conio.Win
         #endregion
 
         #region Parent/Child relationship
-        private LinkedList<Window> mChildren = new LinkedList<Window>();
-        private Window mParent;
+        private readonly LinkedList<Window> mChildren = new LinkedList<Window>();
 
         /// <summary>
         /// Get a parent window
         /// </summary>
-        public Window Parent
-        {
-            get
-            {
-                return mParent;
-            }
-        }
+        public Window Parent => mParent;
+
+        private Window mParent;
 
         public bool Contains(Window win, bool inDepth)
         {
@@ -96,11 +93,11 @@ namespace Gehtsoft.Xce.Conio.Win
 
         internal bool HasParent(Window parent)
         {
-            if (mParent == null)
+            if (Parent == null)
                 return false;
-            if (parent == mParent)
+            if (parent == Parent)
                 return true;
-            return mParent.HasParent(parent);
+            return Parent.HasParent(parent);
         }
 
         internal void BringToFront(Window window)
@@ -132,8 +129,8 @@ namespace Gehtsoft.Xce.Conio.Win
         internal void Create(Window parent)
         {
             mParent = parent;
-            if (mParent != null)
-                mParent.mChildren.AddLast(this);
+            if (Parent != null)
+                Parent.mChildren.AddLast(this);
             mExists = true;
             OnCreate();
         }
@@ -156,12 +153,12 @@ namespace Gehtsoft.Xce.Conio.Win
             while (mChildren.First != null)
                 Manager.Close(mChildren.First.Value);
 
-            if (mParent != null)
+            if (Parent != null)
             {
-                LinkedListNode<Window> _this = mParent.mChildren.Find(this);
+                LinkedListNode<Window> _this = Parent.mChildren.Find(this);
                 if (_this != null)
-                    mParent.mChildren.Remove(_this);
-                mParent.Invalidate();
+                    Parent.mChildren.Remove(_this);
+                Parent.Invalidate();
                 mParent = null;
             }
 
@@ -181,7 +178,7 @@ namespace Gehtsoft.Xce.Conio.Win
 
         #region Position and visibility
         private int mRow, mColumn, mWidth, mHeight;
-        bool mVisible;
+        private bool mVisible;
 
         public int Row
         {
@@ -237,9 +234,9 @@ namespace Gehtsoft.Xce.Conio.Win
         public void Move(int row, int column, int height, int width)
         {
             if (height < 0)
-                throw new ArgumentException(Resources.ArgumentMustNotBeNegative, "height");
+                throw new ArgumentException(Resources.ArgumentMustNotBeNegative, nameof(height));
             if (width < 0)
-                throw new ArgumentException(Resources.ArgumentMustNotBeNegative, "width");
+                throw new ArgumentException(Resources.ArgumentMustNotBeNegative, nameof(width));
             mRow = row;
             mColumn = column;
             if (mHeight != height || mWidth != width)
@@ -298,11 +295,10 @@ namespace Gehtsoft.Xce.Conio.Win
         virtual public void Invalidate()
         {
             mValid = false;
-            if (mParent != null)
-                mParent.Invalidate();
+            Parent?.Invalidate();
         }
 
-        private static CanvasColor mDefaultColor = new CanvasColor(0x03);
+        private static readonly CanvasColor mDefaultColor = new CanvasColor(0x03);
 
         public virtual void OnPaint(Canvas canvas)
         {
@@ -356,10 +352,7 @@ namespace Gehtsoft.Xce.Conio.Win
         {
             windowRow = parentRow - mRow;
             windowColumn = parentColumn - mColumn;
-            if (windowRow >= 0 && windowRow < mHeight && windowColumn >= 0 && windowColumn < mWidth)
-                return true;
-            else
-                return false;
+            return windowRow >= 0 && windowRow < mHeight && windowColumn >= 0 && windowColumn < mWidth;
         }
 
         /// <summary>
@@ -385,12 +378,11 @@ namespace Gehtsoft.Xce.Conio.Win
         /// <returns>true if coordinates matches the window</returns>
         public bool ScreenToWindow(int screenRow, int screenColumn, out int windowRow, out int windowColumn)
         {
-            if (mParent == null)
+            if (Parent == null)
                 return ParentToWindow(screenRow, screenColumn, out windowRow, out windowColumn);
             else
             {
-                int parentRow, parentColumn;
-                mParent.ScreenToWindow(screenRow, screenColumn, out parentRow, out parentColumn);
+                Parent.ScreenToWindow(screenRow, screenColumn, out int parentRow, out int parentColumn);
                 return ParentToWindow(parentRow, parentColumn, out windowRow, out windowColumn);
             }
         }
@@ -404,13 +396,12 @@ namespace Gehtsoft.Xce.Conio.Win
         /// <param name="screenColumn"></param>
         public void WindowToScreen(int windowRow, int windowColumn, out int screenRow, out int screenColumn)
         {
-            if (mParent == null)
+            if (Parent == null)
                 WindowToParent(windowRow, windowColumn, out screenRow, out screenColumn);
             else
             {
-                int parentRow, parentColumn;
-                WindowToParent(windowRow, windowColumn, out parentRow, out parentColumn);
-                mParent.WindowToScreen(parentRow, parentColumn, out screenRow, out screenColumn);
+                WindowToParent(windowRow, windowColumn, out int parentRow, out int parentColumn);
+                Parent.WindowToScreen(parentRow, parentColumn, out screenRow, out screenColumn);
             }
         }
 
@@ -418,11 +409,10 @@ namespace Gehtsoft.Xce.Conio.Win
         {
             for (LinkedListNode<Window> item = mChildren.Last; item != null; item = item.Previous)
             {
-                int childRow, childColumn;
                 Window w = item.Value;
                 if (visibleOnly && !w.Visible)
                     continue;
-                if (w.ParentToWindow(windowRow, windowColumn, out childRow, out childColumn))
+                if (w.ParentToWindow(windowRow, windowColumn, out int childRow, out int childColumn))
                     return w.ChildFromPos(childRow, childColumn, visibleOnly);
             }
             return this;
@@ -481,6 +471,12 @@ namespace Gehtsoft.Xce.Conio.Win
 
         public virtual void OnKeyboardLayoutChanged()
         {
+        }
+
+        public virtual void OnIdle()
+        {
+            foreach (var window in mChildren)
+                window.OnIdle();
         }
         #endregion
     }

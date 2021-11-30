@@ -31,7 +31,6 @@ namespace Gehtsoft.Xce.Conio
         public Win32ConsoleOutput(bool enableTrueColor = true)
         {
             Cursor = new Win32ConsoleCursor(this);
-
             UpdateSize();
             if (enableTrueColor)
             {
@@ -159,17 +158,13 @@ namespace Gehtsoft.Xce.Conio
                 canvas.Rows != mWindowRows && canvas.Columns != mWindowColumns)
                 throw new InvalidOperationException("In true color mode the canvas must exactly match the visible window size");
 
-#pragma warning disable IDE0059 // Unnecessary assignment of a value: false positive
-            Win32.AnnotationHeader header = ZEROHEADER;
-#pragma warning restore IDE0059 
             try
             {
                 if (SupportsTrueColor)
                 {
-                    header = Marshal.PtrToStructure<Win32.AnnotationHeader>(mMapPtr);
+                    var header = Marshal.PtrToStructure<Win32.AnnotationHeader>(mMapPtr);
                     header.Locked = 1;
                     Marshal.StructureToPtr(header, mMapPtr, true);
-
                     int offset = header.StructSize;
                     int size = canvas.Rows * canvas.Columns;
 
@@ -237,9 +232,8 @@ namespace Gehtsoft.Xce.Conio
             {
                 if (SupportsTrueColor)
                 {
-                    header = Marshal.PtrToStructure<Win32.AnnotationHeader>(mMapPtr);
+                    var header = Marshal.PtrToStructure<Win32.AnnotationHeader>(mMapPtr);
                     header.FlushCounter++;
-                    Marshal.StructureToPtr(header, mMapPtr, true);
                     header.Locked = 0;
                     Marshal.StructureToPtr(header, mMapPtr, true);
                 }

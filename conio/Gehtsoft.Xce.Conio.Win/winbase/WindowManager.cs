@@ -7,20 +7,20 @@ namespace Gehtsoft.Xce.Conio.Win
 {
     public class WindowManager : IDisposable, IConsoleInputListener
     {
-        private LinkedList<Window> mTopLevelWindows = new LinkedList<Window>();
+        private readonly LinkedList<Window> mTopLevelWindows = new LinkedList<Window>();
         private Canvas mScreenCanvas;
         private IConsoleOutput mConsoleOutput;
         private IConsoleInput mConsoleInput;
         private bool mForceRedraw = false;
         private Window mFocusWindow;
-        private LinkedList<Window> mModalStack = new LinkedList<Window>();
+        private readonly LinkedList<Window> mModalStack = new LinkedList<Window>();
         private Window mCaptureMouseWindow = null;
         private Window mCaretWindow = null;
         private int mCaretRow, mCaretColumn;
         private int mLayoutCode;
         private KeyboardLayout mLayout = null;
-        private static KeyboardLayouts mLayouts = new KeyboardLayouts();
-        private static CanvasColor mDefaultColor = new CanvasColor(0x03);
+        private readonly static KeyboardLayouts mLayouts = new KeyboardLayouts();
+        private readonly static CanvasColor mDefaultColor = new CanvasColor(0x03);
 
         public int ScreenHeight
         {
@@ -49,7 +49,7 @@ namespace Gehtsoft.Xce.Conio.Win
         }
 
         #region constructor/destuctor
-        public WindowManager(bool save, IConsoleOutput output, IConsoleInput input)
+        public WindowManager(IConsoleOutput output, IConsoleInput input)
         {
             mConsoleOutput = output;
             mScreenCanvas = new Canvas(mConsoleOutput.VisibleRows, mConsoleOutput.VisibleColumns);
@@ -66,6 +66,7 @@ namespace Gehtsoft.Xce.Conio.Win
         public void Dispose()
         {
             Dispose(true);
+            GC.SuppressFinalize(this);
         }
 
         protected virtual void Dispose(bool disposing)
@@ -96,7 +97,7 @@ namespace Gehtsoft.Xce.Conio.Win
         public void Create(Window window, Window parent, int row, int column, int height, int width)
         {
             if (window == null)
-                throw new ArgumentNullException("window");
+                throw new ArgumentNullException(nameof(window));
             window.Manager = this;
             window.Create(parent);
             window.Move(row, column, height, width);
@@ -107,24 +108,21 @@ namespace Gehtsoft.Xce.Conio.Win
         public void DoModal(Window window, int row, int column, int height, int width)
         {
             if (window == null)
-                throw new ArgumentNullException("window");
+                throw new ArgumentNullException(nameof(window));
             CreateModal(window, row, column, height, width);
             Window focus = mFocusWindow;
-            if (focus != null)
-                focus.OnKillFocus();
+            focus?.OnKillFocus();
             window.Show(true);
             SetFocus(window);
             while (window.Exists)
                 PumpMessage(-1);
             mFocusWindow = focus;
-            if (mFocusWindow != null)
-                mFocusWindow.OnSetFocus();
+            mFocusWindow?.OnSetFocus();
         }
 
         public void ShowPopupMenu(PopupMenu menu, int row, int column)
         {
-            int width, height;
-            menu.DoLayout(out height, out width);
+            menu.DoLayout(out int height, out int width);
             DoModal(menu, row, column, height, width);
         }
 
@@ -137,7 +135,7 @@ namespace Gehtsoft.Xce.Conio.Win
         public void Close(Window window)
         {
             if (window == null)
-                throw new ArgumentNullException("window");
+                throw new ArgumentNullException(nameof(window));
             if (window.Exists)
             {
                 if (window.Parent == null)
@@ -171,11 +169,9 @@ namespace Gehtsoft.Xce.Conio.Win
                     return;
             }
 
-            if (mFocusWindow != null)
-                mFocusWindow.OnKillFocus();
+            mFocusWindow?.OnKillFocus();
             mFocusWindow = window;
-            if (mFocusWindow != null)
-                mFocusWindow.OnSetFocus();
+            mFocusWindow?.OnSetFocus();
         }
 
         public Window GetFocus()
@@ -210,8 +206,7 @@ namespace Gehtsoft.Xce.Conio.Win
                 Window window = n.Value;
                 if (visibleOnly && !window.Visible)
                     continue;
-                int windowRow, windowColumn;
-                if (window.ScreenToWindow(row, column, out windowRow, out windowColumn))
+                if (window.ScreenToWindow(row, column, out int windowRow, out int windowColumn))
                     return window.ChildFromPos(windowRow, windowColumn, visibleOnly);
             }
             return null;
@@ -247,8 +242,6 @@ namespace Gehtsoft.Xce.Conio.Win
         }
         #endregion
 
-
-
         #region message
         public void PumpMessage(int timeout)
         {
@@ -256,8 +249,7 @@ namespace Gehtsoft.Xce.Conio.Win
             if (layout != mLayoutCode)
             {
                 mLayoutCode = layout;
-                if (mFocusWindow != null)
-                    mFocusWindow.OnKeyboardLayoutChanged();
+                mFocusWindow?.OnKeyboardLayoutChanged();
             }
 
             bool paint = false;
@@ -338,30 +330,7 @@ namespace Gehtsoft.Xce.Conio.Win
                                 Window topLevelWindow = node.Value;
                                 if (topLevelWindow == mFocusWindow || topLevelWindow.Contains(mFocusWindow, true))
                                 {
-                                    if (node.Next == null)
-                                        node = mTopLevelWindows.First;
-                                    else
-                                        node = node.Next;
-                                    SetFocus(node.Value);
-                                    break;
-                                }
-                            }
-                        }
-                        handled = true;
-                    }
-                    else if (scanCode == ScanCode.N && !ctrl && !shift && !alt)
-                    {
-                        if (!mModalStack.Contains(mFocusWindow) && mTopLevelWindows.Count > 1)
-                        {
-                            for (var node = mTopLevelWindows.First; node != null; node = node.Next)
-                            {
-                                Window topLevelWindow = node.Value;
-                                if (topLevelWindow == mFocusWindow || topLevelWindow.Contains(mFocusWindow, true))
-                                {
-                                    if (node.Next == null)
-                                        node = mTopLevelWindows.First;
-                                    else
-                                        node = node.Next;
+                                    node = node.Next ?? mTopLevelWindows.First;
                                     SetFocus(node.Value);
                                     break;
                                 }
@@ -417,8 +386,7 @@ namespace Gehtsoft.Xce.Conio.Win
             if (layout != mLayoutCode)
             {
                 mLayoutCode = layout;
-                if (mFocusWindow != null)
-                    mFocusWindow.OnKeyboardLayoutChanged();
+                mFocusWindow?.OnKeyboardLayoutChanged();
             }
         }
 
@@ -428,8 +396,7 @@ namespace Gehtsoft.Xce.Conio.Win
             if (layout != mLayoutCode)
             {
                 mLayoutCode = layout;
-                if (mFocusWindow != null)
-                    mFocusWindow.OnKeyboardLayoutChanged();
+                mFocusWindow?.OnKeyboardLayoutChanged();
             }
         }
 
@@ -444,8 +411,7 @@ namespace Gehtsoft.Xce.Conio.Win
             Window window = WindowFromPos(row, column, true);
             if (window != null)
             {
-                int windowRow, windowColumn;
-                window.ScreenToWindow(row, column, out windowRow, out windowColumn);
+                window.ScreenToWindow(row, column, out int windowRow, out int windowColumn);
                 window.OnMouseMove(windowRow, windowColumn, shift, ctrl, alt, lb, rb);
             }
         }
@@ -461,8 +427,7 @@ namespace Gehtsoft.Xce.Conio.Win
             Window window = WindowFromPos(row, column, true);
             if (window != null)
             {
-                int windowRow, windowColumn;
-                window.ScreenToWindow(row, column, out windowRow, out windowColumn);
+                window.ScreenToWindow(row, column, out int windowRow, out int windowColumn);
                 window.OnMouseLButtonDown(windowRow, windowColumn, shift, ctrl, alt);
             }
         }
@@ -478,8 +443,7 @@ namespace Gehtsoft.Xce.Conio.Win
             Window window = WindowFromPos(row, column, true);
             if (window != null)
             {
-                int windowRow, windowColumn;
-                window.ScreenToWindow(row, column, out windowRow, out windowColumn);
+                window.ScreenToWindow(row, column, out int windowRow, out int windowColumn);
                 window.OnMouseLButtonUp(windowRow, windowColumn, shift, ctrl, alt);
             }
         }
@@ -495,8 +459,7 @@ namespace Gehtsoft.Xce.Conio.Win
             Window window = WindowFromPos(row, column, true);
             if (window != null)
             {
-                int windowRow, windowColumn;
-                window.ScreenToWindow(row, column, out windowRow, out windowColumn);
+                window.ScreenToWindow(row, column, out int windowRow, out int windowColumn);
                 window.OnMouseRButtonDown(windowRow, windowColumn, shift, ctrl, alt);
             }
         }
@@ -512,8 +475,7 @@ namespace Gehtsoft.Xce.Conio.Win
             Window window = WindowFromPos(row, column, true);
             if (window != null)
             {
-                int windowRow, windowColumn;
-                window.ScreenToWindow(row, column, out windowRow, out windowColumn);
+                window.ScreenToWindow(row, column, out int windowRow, out int windowColumn);
                 window.OnMouseRButtonUp(windowRow, windowColumn, shift, ctrl, alt);
             }
         }
@@ -522,8 +484,7 @@ namespace Gehtsoft.Xce.Conio.Win
         {
             if (mFocusWindow != null)
             {
-                int windowRow, windowColumn;
-                mFocusWindow.ScreenToWindow(row, column, out windowRow, out windowColumn);
+                mFocusWindow.ScreenToWindow(row, column, out int windowRow, out int windowColumn);
                 mFocusWindow.OnMouseWheelUp(windowRow, windowColumn, shift, ctrl, alt);
             }
         }
@@ -532,8 +493,7 @@ namespace Gehtsoft.Xce.Conio.Win
         {
             if (mFocusWindow != null)
             {
-                int windowRow, windowColumn;
-                mFocusWindow.ScreenToWindow(row, column, out windowRow, out windowColumn);
+                mFocusWindow.ScreenToWindow(row, column, out int windowRow, out int windowColumn);
                 mFocusWindow.OnMouseWheelDown(windowRow, windowColumn, shift, ctrl, alt);
             }
         }
@@ -544,8 +504,7 @@ namespace Gehtsoft.Xce.Conio.Win
             if (layout != mLayoutCode)
             {
                 mLayoutCode = layout;
-                if (mFocusWindow != null)
-                    mFocusWindow.OnKeyboardLayoutChanged();
+                mFocusWindow?.OnKeyboardLayoutChanged();
             }
         }
 
@@ -569,14 +528,9 @@ namespace Gehtsoft.Xce.Conio.Win
 
         private void UpdateCaretPos()
         {
-            int caretType;
-            bool visible;
-            int crow, ccolumn;
-            caretType = mConsoleOutput.Cursor.CursorSize;
-            visible = mConsoleOutput.Cursor.CursorVisible;
-            mConsoleOutput.Cursor.GetCursorPosition(out crow, out ccolumn);
+            mConsoleOutput.Cursor.GetCursorPosition(out int crow, out int ccolumn);
             int row, column;
-            if (mCaretWindow != null && mCaretWindow.Exists)
+            if (mCaretWindow?.Exists == true)
                 mCaretWindow.WindowToScreen(mCaretRow, mCaretColumn, out row, out column);
             else
             {
@@ -596,6 +550,12 @@ namespace Gehtsoft.Xce.Conio.Win
         {
             mConsoleOutput.Cursor.CursorSize = caretSize;
             mConsoleOutput.Cursor.CursorVisible = show;
+        }
+
+        public void OnIdle()
+        {
+            foreach (var window in mTopLevelWindows)
+                window.OnIdle();
         }
         #endregion
     }

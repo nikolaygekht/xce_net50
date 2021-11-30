@@ -7,11 +7,11 @@ namespace Gehtsoft.Xce.Conio.Win
 {
     public class Dialog : WindowBorderContainer
     {
-        class DialogClientArea : Window
+        internal class DialogClientArea : Window
         {
-            CanvasColor mBg;
-            Dialog mDlg;
-            Window mPreviousFocus;
+            private readonly CanvasColor mBg;
+            private readonly Dialog  mDlg;
+            private Window mPreviousFocus;
 
             internal DialogClientArea(Dialog dlg, CanvasColor background)
             {
@@ -46,13 +46,12 @@ namespace Gehtsoft.Xce.Conio.Win
             }
         }
 
-        DialogClientArea mClientArea;
-        private IColorScheme mColors;
-        private List<DialogItem> mItems = new List<DialogItem>();
-        int mDialogResultCode = -1;
+        private readonly DialogClientArea mClientArea;
+        private readonly List<DialogItem> mItems = new List<DialogItem>();
+        private int mDialogResultCode = -1;
         public const int DialogResultOK = 0;
         public const int DialogResultCancel = -1;
-        private int mHeight, mWidth;
+        private readonly int mHeight, mWidth;
 
         public int ResultCode
         {
@@ -62,17 +61,11 @@ namespace Gehtsoft.Xce.Conio.Win
             }
         }
 
-        public IColorScheme Colors
-        {
-            get
-            {
-                return mColors;
-            }
-        }
+        public IColorScheme Colors { get; }
 
         public Dialog(string title, IColorScheme colors, bool sizeable, int height, int width) : base(title, BoxBorder.Single, colors.DialogBorder, true, sizeable)
         {
-            mColors = colors;
+            Colors = colors;
             mClientArea = new DialogClientArea(this, colors.DialogBorder);
             AttachClientArea(mClientArea);
             mHeight = height;
@@ -102,7 +95,7 @@ namespace Gehtsoft.Xce.Conio.Win
                     if (mItems[position] == next)
                         break;
                 if (position == mItems.Count)
-                    throw new ArgumentOutOfRangeException("next");
+                    throw new ArgumentOutOfRangeException(nameof(next));
             }
             mItems.Insert(position, item);
             if (Exists)
@@ -112,8 +105,6 @@ namespace Gehtsoft.Xce.Conio.Win
                 item.Show(true);
             }
         }
-
-
 
         public int DoModal(WindowManager manager)
         {
@@ -150,8 +141,7 @@ namespace Gehtsoft.Xce.Conio.Win
             if (scanCode == ScanCode.TAB)
             {
                 Window focus = Manager.GetFocus();
-                if (focus is DialogItem &&
-                    (focus as DialogItem).Dialog == this)
+                if (focus is DialogItem dlg && dlg.Dialog == this)
                 {
                     int i, curr = -1;
                     for (i = 0; i < mItems.Count; i++)
@@ -263,28 +253,18 @@ namespace Gehtsoft.Xce.Conio.Win
 
         public virtual void OnItemClick(DialogItem item)
         {
-            if (item is DialogItemButton && item.ID == DialogResultOK)
-            {
-                if (OnOK())
-                    EndDialog(DialogResultOK);
-            }
-
-            if (item is DialogItemButton && item.ID == DialogResultCancel)
-            {
-                if (OnCancel())
-                    EndDialog(DialogResultCancel);
-            }
-            return;
+            if (item is DialogItemButton && item.ID == DialogResultOK && OnOK())
+                EndDialog(DialogResultOK);
+            else if (item is DialogItemButton && item.ID == DialogResultCancel && OnCancel())
+                EndDialog(DialogResultCancel);
         }
 
         public virtual void OnItemActivated(DialogItem item)
         {
-            return;
         }
 
         public virtual void OnItemChanged(DialogItem item)
         {
-            return;
         }
 
         public virtual bool OnOK()

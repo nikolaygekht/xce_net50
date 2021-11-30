@@ -7,6 +7,7 @@
         public delegate void MouseButtonDelegate(int row, int column, bool shift, bool ctrl, bool alt);
         public delegate void GetFocusDelegate(bool shift, bool ctrl, bool alt);
         public delegate void ScreenBufferChangedDelegate(int rows, int columns);
+        public delegate void IdleDelegate();
 
         public event KeyDelegate KeyPressed;
         public event KeyDelegate KeyReleased;
@@ -19,6 +20,7 @@
         public event MouseButtonDelegate MouseWheelUp;
         public event GetFocusDelegate Focus;
         public event ScreenBufferChangedDelegate ScreenBufferChanged;
+        public event IdleDelegate Idle;
 
         void IConsoleInputListener.OnKeyPressed(ScanCode scanCode, char character, bool shift, bool ctrl, bool alt)
         {
@@ -73,6 +75,11 @@
         void IConsoleInputListener.OnScreenBufferChanged(int rows, int columns)
         {
             ScreenBufferChanged.Invoke(rows, columns);
+        }
+
+        void IConsoleInputListener.OnIdle()
+        {
+            Idle?.Invoke();
         }
     }
 }

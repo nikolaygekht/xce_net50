@@ -19,12 +19,12 @@ namespace Gehtsoft.Xce.Conio.Win
 
         private Window mClientArea;
         private string mTitle;
-        private CanvasColor mBorderColor;
-        private BoxBorder mBorder;
-        DragMode mDragMode = DragMode.None;
+        private readonly CanvasColor mBorderColor;
+        private readonly BoxBorder mBorder;
+        private DragMode mDragMode = DragMode.None;
         private int mPrevRow, mPrevColumn;
-        private bool mMoveable;
-        private bool mSizeable;
+        private readonly bool mMoveable;
+        private readonly bool mSizeable;
 
         protected WindowBorderContainer(string title, BoxBorder border, CanvasColor borderColor, bool moveable, bool sizeable)
         {
@@ -62,8 +62,7 @@ namespace Gehtsoft.Xce.Conio.Win
 
         public override void OnSetFocus()
         {
-            if (mClientArea != null)
-                mClientArea.SetFocus();
+            mClientArea?.SetFocus();
         }
 
         public override void OnPaint(Canvas canvas)
@@ -84,8 +83,7 @@ namespace Gehtsoft.Xce.Conio.Win
 
         public override void OnSizeChanged()
         {
-            int row, col, height, width;
-            GetClientArea(out row, out col, out height, out width);
+            GetClientArea(out int row, out int col, out int height, out int width);
             mClientArea.Move(row, col, height, width);
         }
 
@@ -118,8 +116,7 @@ namespace Gehtsoft.Xce.Conio.Win
             else if (mDragMode == DragMode.Size)
             {
                 int drow, dcolumn;
-                int wrow, wcolumn;
-                ScreenToWindow(row, column, out wrow, out wcolumn);
+                ScreenToWindow(row, column, out int wrow, out int wcolumn);
                 if (wrow == Height - 1 && wcolumn == Width - 1)
                 {
                     drow = row - mPrevRow;

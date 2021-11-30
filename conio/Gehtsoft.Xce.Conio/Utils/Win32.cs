@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using System.Security;
 using System.Text;
 
 #pragma warning disable S101 // Types should be named in PascalCase
@@ -361,5 +362,35 @@ namespace Gehtsoft.Xce.Conio
         [DllImport("kernel32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool CloseHandle(IntPtr hObject);
+
+        [DllImport("user32.dll")]
+        public static extern IntPtr SetCursor(IntPtr handle);
+
+        [DllImport("user32.dll")]
+        public static extern IntPtr LoadCursor(IntPtr hInstance, int lpCursorName);
+
+        public const int IDC_ARROW = 32512;
+
+        [DllImport("user32.dll")]
+        public static extern uint MsgWaitForMultipleObjectsEx(uint nCount, IntPtr[] pHandles,
+                    int dwMilliseconds, uint dwWakeMask, uint dwFlags);
+
+        public const uint QS_ALLEVENTS = 1215;
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct NativeMessage
+        {
+            public IntPtr handle;
+            public uint msg;
+            public IntPtr wParam;
+            public IntPtr lParam;
+            public uint time;
+            public System.Drawing.Point p;
+        }
+
+        [SuppressUnmanagedCodeSecurity]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        [DllImport("User32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        public static extern bool PeekMessage(out NativeMessage message, uint handle, uint filterMin, uint filterMax, uint flags);
     }
 }
