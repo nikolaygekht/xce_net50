@@ -19,16 +19,16 @@ namespace Gehtsoft.Xce.Conio.Win
     public class FileDialog : Dialog
     {
         private string mCurrentDirectory;
-        private string mCurrentFile;
-        private DialogItemListBox mDirectoryList;
-        private DialogItemLabel mPathLabel;
-        private DialogItemLabel mFileLabel;
-        private DialogItemSingleLineTextBox mFileEdit;
-        private DialogItemButton mOk;
-        private DialogItemButton mCancel;
-        private List<DialogItemListBoxString> mLocations = new List<DialogItemListBoxString>();
-        private DialogItemButton mLocationsButton;
-        private List<DialogItemButton> mBottomButtons = new List<DialogItemButton>();
+        private readonly string mCurrentFile;
+        private readonly DialogItemListBox mDirectoryList;
+        private readonly DialogItemLabel mPathLabel;
+        private readonly DialogItemLabel mFileLabel;
+        private readonly DialogItemSingleLineTextBox mFileEdit;
+        private readonly DialogItemButton mOk;
+        private readonly DialogItemButton mCancel;
+        private readonly List<DialogItemListBoxString> mLocations = new List<DialogItemListBoxString>();
+        private readonly DialogItemButton mLocationsButton;
+        private readonly List<DialogItemButton> mBottomButtons = new List<DialogItemButton>();
 
         public FileDialog(string title, string defaultDirectory, string defaultFile, IColorScheme colors, int height, int width) : base(title, colors, true, height, width)
         {
@@ -57,14 +57,14 @@ namespace Gehtsoft.Xce.Conio.Win
 
             try
             {
-                if (defaultDirectory == "" && defaultFile == "")
+                if (defaultDirectory?.Length == 0 && defaultFile?.Length == 0)
                 {
                     mCurrentDirectory = Path.GetFullPath(".");
                     defaultFile = "";
                     mCurrentFile = "";
                 }
 
-                if (defaultDirectory == "" && defaultFile != "")
+                if (defaultDirectory?.Length == 0 && defaultFile != "")
                 {
                     FileInfo fi = new FileInfo(defaultFile);
                     mCurrentDirectory = Path.GetFullPath(fi.Directory.FullName);
@@ -125,12 +125,12 @@ namespace Gehtsoft.Xce.Conio.Win
                 mPathLabel.Title = mCurrentDirectory;
             else
             {
-                mPathLabel.Title = "..." + mCurrentDirectory.Substring(mCurrentDirectory.Length - (max - 3));
+                mPathLabel.Title = "..." + mCurrentDirectory[^(max - 3)..];
             }
             Invalidate();
         }
 
-        class FileNameComparer : IComparer<string>
+        private sealed class FileNameComparer : IComparer<string>
         {
             public int Compare(string s1, string s2)
             {
@@ -138,7 +138,7 @@ namespace Gehtsoft.Xce.Conio.Win
             }
         }
 
-        private static FileNameComparer mComparer = new FileNameComparer();
+        private readonly static FileNameComparer mComparer = new FileNameComparer();
 
         private void ChangeDirectory(string pattern)
         {
@@ -175,16 +175,14 @@ namespace Gehtsoft.Xce.Conio.Win
         {
             if (item == mOk)
             {
-                if (mFileEdit.Text == "")
+                if (mFileEdit.Text?.Length == 0)
                 {
                     OnItemClick(mDirectoryList);
-                    return;
                 }
                 else if (mFileEdit.Text.Contains("*") || mFileEdit.Text.Contains("?"))
                 {
                     ChangeDirectory(mFileEdit.Text);
                     mFileEdit.Text = "";
-                    return;
                 }
                 else if (mFileEdit.Text == "..")
                 {
@@ -237,7 +235,7 @@ namespace Gehtsoft.Xce.Conio.Win
                         }
                         else
                         {
-                            if (mFileEdit.Text == "")
+                            if (mFileEdit.Text?.Length == 0)
                             {
                                 mFileEdit.Text = (string)selitem.UserData;
                                 OnFileChosen();
@@ -252,8 +250,7 @@ namespace Gehtsoft.Xce.Conio.Win
             }
             else if (item == mLocationsButton)
             {
-                int row, column;
-                mPathLabel.WindowToScreen(0, 0, out row, out column);
+                mPathLabel.WindowToScreen(0, 0, out int row, out int column);
                 row++;
                 ModalListBox list = new ModalListBox(row, column, 10, Width - 2, Colors);
                 int max = Width - 2;
@@ -263,7 +260,7 @@ namespace Gehtsoft.Xce.Conio.Win
                 {
                     string name = (string)s.UserData;
                     if (name.Length >= max)
-                        name = "..." + name.Substring(name.Length - (max - 3));
+                        name = "..." + name[^(max - 3)..];
                     s.Label = name;
                     list.AddItem(s);
                 }
@@ -277,13 +274,7 @@ namespace Gehtsoft.Xce.Conio.Win
 
         private string mFile = "";
 
-        public string File
-        {
-            get
-            {
-                return mFile;
-            }
-        }
+        public string File => mFile;
 
         virtual public void OnFileChosen()
         {
@@ -310,18 +301,13 @@ namespace Gehtsoft.Xce.Conio.Win
         {
             try
             {
-                FileInfo fi = new FileInfo(name);
+                _ = new FileInfo(name);
             }
             catch (Exception)
             {
                 MessageBox.Show(this.Manager, this.Colors, "The file name is invalid", "Error", MessageBoxButtonSet.Ok);
             }
             return true;
-        }
-
-        public override void OnPaint(Canvas canvas)
-        {
-            base.OnPaint(canvas);
         }
 
         protected void AddCustomButton(int id, string title)
@@ -343,7 +329,7 @@ namespace Gehtsoft.Xce.Conio.Win
             NewFilePromprt = 0x2,
         }
 
-        OpenMode mMode;
+        private readonly OpenMode mMode;
 
         public FileOpenDialog(string directory, string defaultFile, OpenMode mode, IColorScheme colors) : base("Open", directory, defaultFile, colors, 20, 60)
         {
@@ -388,7 +374,7 @@ namespace Gehtsoft.Xce.Conio.Win
             OverwritePrompt = 0x1,
         }
 
-        SaveMode mMode;
+        private readonly SaveMode mMode;
 
         public FileSaveDialog(string directory, string defaultFile, SaveMode mode, IColorScheme colors)
             : base("Save", directory, defaultFile, colors, 20, 60)

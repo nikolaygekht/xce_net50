@@ -8,6 +8,11 @@
 //This is auto-generated code. Do NOT modify it.
 //Modify ./auto/colorscheme.xml and ./auto/colorscheme.xslt instead!!!
 //------------------------------------------------------------------------
+#pragma warning disable RCS1036 // Remove redundant empty-line.
+#pragma warning disable RCS1037 // Remove trailing white-space.
+#pragma warning disable RCS1171 // Simplify lazy initialization.
+#pragma warning disable RCS1085 // Use auto-implemented property.
+
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -20,9 +25,11 @@ namespace Gehtsoft.Xce.Conio.Win
         <xsl:for-each select="./color-schemes/class[1]/group">
         #region <xsl:value-of select="./@doc" />
         <xsl:for-each select="./color">
+		<xsl:if test="count(./@doc) > 0">
         ///&lt;summary&gt;
         ///<xsl:value-of select="./@doc" />
         ///&lt;/summary&gt;
+		</xsl:if>
         CanvasColor <xsl:value-of select="../@name" /><xsl:value-of select="./@name" />
         {
             get;
@@ -38,9 +45,11 @@ namespace Gehtsoft.Xce.Conio.Win
         #region <xsl:value-of select="./@doc" />
         <xsl:for-each select="./color">
         private CanvasColor m<xsl:value-of select="../@name" /><xsl:value-of select="./@name" />;
-        ///&lt;summary&gt;
-        ///<xsl:value-of select="./@doc" />
-        ///&lt;/summary&gt;
+		<xsl:if test="count(./@doc) > 0">
+		///&lt;summary&gt;
+		///<xsl:value-of select="./@doc" />
+		///&lt;/summary&gt;
+		</xsl:if>
         public CanvasColor <xsl:value-of select="../@name" /><xsl:value-of select="./@name" />
         {
             get
@@ -72,19 +81,21 @@ namespace Gehtsoft.Xce.Conio.Win
             {
                 if (m<xsl:value-of select="$class-name"/> == null)
                 {
-                    m<xsl:value-of select="$class-name"/> = new ColorScheme();
+                    m<xsl:value-of select="$class-name"/> = new ColorScheme()
+					{
                     <xsl:for-each select="./group">
                     <xsl:for-each select="./color">
                     <xsl:choose>
                     <xsl:when test="count(./@fg) > 0  and count(./@bg) > 0">
-                    m<xsl:value-of select="$class-name"/>.<xsl:value-of select="../@name" /><xsl:value-of select="./@name" /> = new CanvasColor(<xsl:value-of select="./@console" />, CanvasColor.RGB(<xsl:value-of select="./@fg" />), CanvasColor.RGB(<xsl:value-of select="./@bg" />));
+                    <xsl:value-of select="../@name" /><xsl:value-of select="./@name" /> = new CanvasColor(<xsl:value-of select="./@console" />, CanvasColor.RGB(<xsl:value-of select="./@fg" />), CanvasColor.RGB(<xsl:value-of select="./@bg" />)),
                     </xsl:when>
                     <xsl:otherwise>
-                    m<xsl:value-of select="$class-name"/>.<xsl:value-of select="../@name" /><xsl:value-of select="./@name" /> = new CanvasColor(<xsl:value-of select="./@console" />);
+                    <xsl:value-of select="../@name" /><xsl:value-of select="./@name" /> = new CanvasColor(<xsl:value-of select="./@console" />),
                     </xsl:otherwise>
                     </xsl:choose>
                     </xsl:for-each>
                     </xsl:for-each>
+			        };
 			}
 			return m<xsl:value-of select="$class-name"/>;
 			}

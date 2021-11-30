@@ -6,45 +6,19 @@ namespace Gehtsoft.Xce.Conio.Win
 {
     public class DialogItemRadioBox : DialogItem
     {
-        private string mTitle;
         private bool mEnabled;
         private bool mInFocus;
-        private char mHotKey;
-        private int mHotKeyPosition;
+        private readonly char mHotKey;
+        private readonly int mHotKeyPosition;
         private bool mChecked;
-        private bool mGroupStart;
 
-        public string Title
-        {
-            get
-            {
-                return mTitle;
-            }
-        }
+        public string Title { get; }
 
-        public override bool Enabled
-        {
-            get
-            {
-                return mEnabled;
-            }
-        }
+        public override bool Enabled => mEnabled;
 
-        public override bool IsInputElement
-        {
-            get
-            {
-                return true;
-            }
-        }
+        public override bool IsInputElement => true;
 
-        public override bool HasHotKey
-        {
-            get
-            {
-                return mHotKeyPosition >= 0;
-            }
-        }
+        public override bool HasHotKey => mHotKeyPosition >= 0;
 
         public override char HotKey
         {
@@ -64,7 +38,7 @@ namespace Gehtsoft.Xce.Conio.Win
             }
             set
             {
-                if (value == true)
+                if (value)
                 {
                     //uncheck all buttons in the group
                     int count = Dialog.ItemsCount;
@@ -74,7 +48,7 @@ namespace Gehtsoft.Xce.Conio.Win
                     for (i = 0; i < count; i++)
                     {
                         DialogItem item = Dialog.GetItem(i);
-                        if (item is DialogItemRadioBox)
+                        if (item is DialogItemRadioBox dirb)
                         {
                             if (object.ReferenceEquals(this, item))
                             {
@@ -83,7 +57,7 @@ namespace Gehtsoft.Xce.Conio.Win
                                 thisItem = i;
                                 break;
                             }
-                            else if ((item as DialogItemRadioBox).GroupStart)
+                            else if (dirb.GroupStart)
                             {
                                 groupStart = i;
                             }
@@ -99,13 +73,13 @@ namespace Gehtsoft.Xce.Conio.Win
                         for (i = groupStart; i < count; i++)
                         {
                             DialogItem item = Dialog.GetItem(i);
-                            if (!(item is DialogItemRadioBox))
+                            if (item is not DialogItemRadioBox dirb)
                                 break;
                             if (i == thisItem)
                                 continue;
-                            if (i > groupStart && ((item as DialogItemRadioBox).GroupStart))
+                            if (i > groupStart && dirb.GroupStart)
                                 break;
-                            (item as DialogItemRadioBox).Checked = false;
+                            dirb.Checked = false;
                         }
                     }
                 }
@@ -117,17 +91,7 @@ namespace Gehtsoft.Xce.Conio.Win
 
         public char CheckMark { get; set; } = '\u2219';
 
-        public bool GroupStart
-        {
-            get
-            {
-                return mGroupStart;
-            }
-            set
-            {
-                mGroupStart = value;
-            }
-        }
+        public bool GroupStart { get; set; }
 
         public DialogItemRadioBox(string title, int id, bool isChecked, int row, int column, int width, bool groupStart)
             : base(id, row, column)
@@ -136,9 +100,10 @@ namespace Gehtsoft.Xce.Conio.Win
             if (mHotKeyPosition >= 0)
                 mHotKey = title[mHotKeyPosition];
             mChecked = isChecked;
-            mTitle = title;
+            Title = title;
             mEnabled = true;
-            mGroupStart = groupStart;
+            GroupStart = groupStart;
+            SetDimesions(1, width);
         }
 
         public DialogItemRadioBox(string title, int id, bool isChecked, int row, int column, bool groupStart)
@@ -147,11 +112,11 @@ namespace Gehtsoft.Xce.Conio.Win
             mHotKeyPosition = StringUtil.ProcessHotKey(ref title);
             if (mHotKeyPosition >= 0)
                 mHotKey = title[mHotKeyPosition];
-            mTitle = title;
+            Title = title;
             mChecked = isChecked;
             mEnabled = true;
             SetDimesions(1, title.Length + 4);
-            mGroupStart = groupStart;
+            GroupStart = groupStart;
         }
 
         public void Enable(bool enable)
@@ -163,13 +128,10 @@ namespace Gehtsoft.Xce.Conio.Win
 
         public override void Click()
         {
-            if (Enabled)
+            if (Enabled && !Checked)
             {
-                if (!Checked)
-                {
-                    Checked = true;
-                    Dialog.OnItemChanged(this);
-                }
+                Checked = true;
+                Dialog.OnItemChanged(this);
             }
         }
 
@@ -216,7 +178,7 @@ namespace Gehtsoft.Xce.Conio.Win
                 canvas.Write(0, 1, ' ');
             canvas.Write(0, 2, ')');
             canvas.Write(0, 3, ' ');
-            canvas.Write(0, 4, mTitle);
+            canvas.Write(0, 4, Title);
             if (Enabled && HasHotKey)
                 canvas.Write(0, 4 + mHotKeyPosition, mInFocus ? Dialog.Colors.DialogItemCheckBoxHotKeyFocused : Dialog.Colors.DialogItemCheckBoxHotKey);
         }

@@ -9,48 +9,21 @@ namespace Gehtsoft.Xce.Conio.Win
     /// </summary>
     public abstract class DialogItem : Window
     {
-        private int mRow, mColumn, mWidth, mHeight, mID;
+        private int mRow;
+        private int mColumn;
+        private int mWidth;
+        private int mHeight;
         private Dialog mDialog;
 
-        new public int Row
-        {
-            get
-            {
-                return mRow;
-            }
-        }
+        new public int Row => mRow;
 
-        new public int Column
-        {
-            get
-            {
-                return mColumn;
-            }
-        }
+        new public int Column => mColumn;
 
-        new public int Height
-        {
-            get
-            {
-                return mHeight;
-            }
-        }
+        new public int Height => mHeight;
 
-        new public int Width
-        {
-            get
-            {
-                return mWidth;
-            }
-        }
+        new public int Width => mWidth;
 
-        public Dialog Dialog
-        {
-            get
-            {
-                return mDialog;
-            }
-        }
+        public Dialog Dialog => mDialog;
 
         internal void SetDialog(Dialog dlg)
         {
@@ -67,30 +40,11 @@ namespace Gehtsoft.Xce.Conio.Win
             get;
         }
 
-        public virtual bool HasHotKey
-        {
-            get
-            {
-                return false;
-            }
-        }
+        public virtual bool HasHotKey => false;
 
-        public virtual char HotKey
-        {
-            get
-            {
-                throw new NotImplementedException();
-            }
-        }
+        public virtual char HotKey => throw new NotImplementedException();
 
-
-        public int ID
-        {
-            get
-            {
-                return mID;
-            }
-        }
+        public int ID { get; }
 
         public virtual void Click()
         {
@@ -98,16 +52,16 @@ namespace Gehtsoft.Xce.Conio.Win
 
         protected DialogItem(int id, int row, int column, int height, int width)
         {
-            mID = id;
+            ID = id;
             mRow = row;
             mColumn = column;
             mHeight = height;
             mWidth = width;
         }
 
-        internal DialogItem(int id, int row, int column)
+        protected DialogItem(int id, int row, int column)
         {
-            mID = id;
+            ID = id;
             mRow = row;
             mColumn = column;
         }

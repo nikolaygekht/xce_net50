@@ -1,10 +1,10 @@
 ﻿namespace Gehtsoft.Xce.Conio.Win.Test.Test1
 {
-    class MyClientArea : Window
+    internal class MyClientArea : Window
     {
         private bool mInFocus;
         private string mLastMessage;
-        private CanvasColor mWindowColor;
+        private readonly CanvasColor mWindowColor;
 
         internal MyClientArea(CanvasColor windowColor)
         {
@@ -62,7 +62,7 @@
             Invalidate();
         }
 
-        bool mOnClose = false;
+        private bool mOnClose = false;
         public override void OnClose()
         {
             if (mOnClose)
@@ -71,10 +71,6 @@
             if (mInFocus)
                 WindowManager.ShowCaret(false);
             WindowManager.Close(Parent);
-        }
-
-        public override void OnSizeChanged()
-        {
         }
 
         public override void OnKillFocus()

@@ -7,14 +7,14 @@ using Xunit;
 
 namespace Gehtsoft.Xce.Conio.UnitTest
 {
-    public class TypeBuilderFixture : IDisposable
+    public sealed class TypeBuilderFixture : IDisposable
     {
-        private AssemblyBuilder mAssemblyBuilder;
-        private ModuleBuilder mModuleBuilder;
+        private readonly AssemblyBuilder mAssemblyBuilder;
+        private readonly ModuleBuilder mModuleBuilder;
 
         public TypeBuilderFixture()
         {
-            var typeSignature = "DynamicTestTypes";
+            const string typeSignature = "DynamicTestTypes";
             var an = new AssemblyName(typeSignature);
             mAssemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(an, AssemblyBuilderAccess.Run);
             mModuleBuilder = mAssemblyBuilder.DefineDynamicModule("MainModule");
@@ -34,6 +34,7 @@ namespace Gehtsoft.Xce.Conio.UnitTest
 
         public void Dispose()
         {
+            //not required
         }
     }
 

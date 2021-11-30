@@ -6,8 +6,8 @@ namespace Gehtsoft.Xce.Conio.Win
 {
     public enum MessageBoxButton
     {
-        Ok = Dialog.DialogResultOK,
         Cancel = Dialog.DialogResultCancel,
+        Ok = Dialog.DialogResultOK,
         Yes = 1,
         No,
         Abort,
@@ -32,29 +32,14 @@ namespace Gehtsoft.Xce.Conio.Win
 
     public class MessageBoxButtonInfo
     {
-        string mTitle;
-        MessageBoxButton mID;
+        public string Title { get; }
 
-        public string Title
-        {
-            get
-            {
-                return mTitle;
-            }
-        }
-
-        public MessageBoxButton ID
-        {
-            get
-            {
-                return mID;
-            }
-        }
+        public MessageBoxButton ID { get; }
 
         public MessageBoxButtonInfo(string title, MessageBoxButton ID)
         {
-            mTitle = title;
-            mID = ID;
+            Title = title;
+            this.ID = ID;
         }
     }
 
@@ -71,16 +56,16 @@ namespace Gehtsoft.Xce.Conio.Win
         }
     }
 
-    public class MessageBox
+    public static class MessageBox
     {
-        private static string[] mSeparators = new string[] { "\r\n" };
+        private static readonly string[] mSeparators = new string[] { "\r\n" };
 
         public static MessageBoxButton Show(WindowManager mgr, IColorScheme colors, string message, string title, MessageBoxButtonInfo[] buttons)
         {
             int i, j;
 
             if (mgr == null)
-                throw new ArgumentNullException("mgr");
+                throw new ArgumentNullException(nameof(mgr));
             if (colors == null)
                 colors = ColorScheme.White;
             if (message == null)
@@ -88,15 +73,14 @@ namespace Gehtsoft.Xce.Conio.Win
             if (title == null)
                 title = "null";
             if (buttons == null)
-                throw new ArgumentNullException("buttons");
+                throw new ArgumentNullException(nameof(buttons));
             if (buttons.Length < 1 || buttons.Length > 4)
-                throw new ArgumentException("invalid length", "buttons");
+                throw new ArgumentException("invalid length", nameof(buttons));
             for (i = 0; i < buttons.Length; i++)
                 if (buttons[i] == null)
-                    throw new ArgumentException("null item", "buttons");
+                    throw new ArgumentException("null item", nameof(buttons));
 
-            string[] messageLines;
-            messageLines = message.Split(mSeparators, StringSplitOptions.None);
+            string[] messageLines = message.Split(mSeparators, StringSplitOptions.None);
             int messageLinesCount = messageLines.Length;
             if (messageLinesCount > 10)
                 messageLinesCount = 10;
@@ -149,9 +133,7 @@ namespace Gehtsoft.Xce.Conio.Win
 
             for (i = 0; i < buttons.Length; i++)
             {
-                string s = buttons[i].Title;
-                if (s == null)
-                    s = "< null >";
+                string s = buttons[i].Title ?? "< null >";
                 if (s.Length > 16)
                     s = s.Substring(0, 16);
                 dlg.AddItem(new DialogItemButton(s, (int)buttons[i].ID, buttonRow, buttonPos));
@@ -163,34 +145,25 @@ namespace Gehtsoft.Xce.Conio.Win
             return (MessageBoxButton)i;
         }
 
-        private static MessageBoxButtonInfo[] mOkButtons = new MessageBoxButtonInfo[] { new MessageBoxButtonInfo("< &Ok >", MessageBoxButton.Ok) };
-        private static MessageBoxButtonInfo[] mOkCancelButtons = new MessageBoxButtonInfo[] { new MessageBoxButtonInfo("< &Ok >", MessageBoxButton.Ok), new MessageBoxButtonInfo("< &Cancel >", MessageBoxButton.Cancel) };
-        private static MessageBoxButtonInfo[] mYesCancelButtons = new MessageBoxButtonInfo[] { new MessageBoxButtonInfo("< &Yes >", MessageBoxButton.Yes), new MessageBoxButtonInfo("< &Cancel >", MessageBoxButton.Cancel) };
-        private static MessageBoxButtonInfo[] mYesNoButtons = new MessageBoxButtonInfo[] { new MessageBoxButtonInfo("< &Yes >", MessageBoxButton.Yes), new MessageBoxButtonInfo("< &No >", MessageBoxButton.No) };
-        private static MessageBoxButtonInfo[] mYesNoCancelButtons = new MessageBoxButtonInfo[] { new MessageBoxButtonInfo("< &Yes >", MessageBoxButton.Yes), new MessageBoxButtonInfo("< &No >", MessageBoxButton.No), new MessageBoxButtonInfo("< &Cancel >", MessageBoxButton.Cancel) };
-        private static MessageBoxButtonInfo[] mAbortRetryIgnoreButtons = new MessageBoxButtonInfo[] { new MessageBoxButtonInfo("< &Abort >", MessageBoxButton.Abort), new MessageBoxButtonInfo("< &Retry >", MessageBoxButton.Retry), new MessageBoxButtonInfo("< &Ignore >", MessageBoxButton.Ignore) };
-
-
+        private static readonly MessageBoxButtonInfo[] mOkButtons = new MessageBoxButtonInfo[] { new MessageBoxButtonInfo("< &Ok >", MessageBoxButton.Ok) };
+        private static readonly MessageBoxButtonInfo[] mOkCancelButtons = new MessageBoxButtonInfo[] { new MessageBoxButtonInfo("< &Ok >", MessageBoxButton.Ok), new MessageBoxButtonInfo("< &Cancel >", MessageBoxButton.Cancel) };
+        private static readonly MessageBoxButtonInfo[] mYesCancelButtons = new MessageBoxButtonInfo[] { new MessageBoxButtonInfo("< &Yes >", MessageBoxButton.Yes), new MessageBoxButtonInfo("< &Cancel >", MessageBoxButton.Cancel) };
+        private static readonly MessageBoxButtonInfo[] mYesNoButtons = new MessageBoxButtonInfo[] { new MessageBoxButtonInfo("< &Yes >", MessageBoxButton.Yes), new MessageBoxButtonInfo("< &No >", MessageBoxButton.No) };
+        private static readonly MessageBoxButtonInfo[] mYesNoCancelButtons = new MessageBoxButtonInfo[] { new MessageBoxButtonInfo("< &Yes >", MessageBoxButton.Yes), new MessageBoxButtonInfo("< &No >", MessageBoxButton.No), new MessageBoxButtonInfo("< &Cancel >", MessageBoxButton.Cancel) };
+        private static readonly MessageBoxButtonInfo[] mAbortRetryIgnoreButtons = new MessageBoxButtonInfo[] { new MessageBoxButtonInfo("< &Abort >", MessageBoxButton.Abort), new MessageBoxButtonInfo("< &Retry >", MessageBoxButton.Retry), new MessageBoxButtonInfo("< &Ignore >", MessageBoxButton.Ignore) };
 
         public static MessageBoxButton Show(WindowManager mgr, IColorScheme colors, string message, string title, MessageBoxButtonSet buttonSet)
         {
-            switch (buttonSet)
+            return buttonSet switch
             {
-                case MessageBoxButtonSet.Ok:
-                    return Show(mgr, colors, message, title, mOkButtons);
-                case MessageBoxButtonSet.OkCancel:
-                    return Show(mgr, colors, message, title, mOkCancelButtons);
-                case MessageBoxButtonSet.YesCancel:
-                    return Show(mgr, colors, message, title, mYesCancelButtons);
-                case MessageBoxButtonSet.YesNo:
-                    return Show(mgr, colors, message, title, mYesNoButtons);
-                case MessageBoxButtonSet.YesNoCancel:
-                    return Show(mgr, colors, message, title, mYesNoCancelButtons);
-                case MessageBoxButtonSet.AbortRetryIgnore:
-                    return Show(mgr, colors, message, title, mAbortRetryIgnoreButtons);
-                default:
-                    throw new ArgumentException("Unsupported value", "buttonSet");
-            }
+                MessageBoxButtonSet.Ok => Show(mgr, colors, message, title, mOkButtons),
+                MessageBoxButtonSet.OkCancel => Show(mgr, colors, message, title, mOkCancelButtons),
+                MessageBoxButtonSet.YesCancel => Show(mgr, colors, message, title, mYesCancelButtons),
+                MessageBoxButtonSet.YesNo => Show(mgr, colors, message, title, mYesNoButtons),
+                MessageBoxButtonSet.YesNoCancel => Show(mgr, colors, message, title, mYesNoCancelButtons),
+                MessageBoxButtonSet.AbortRetryIgnore => Show(mgr, colors, message, title, mAbortRetryIgnoreButtons),
+                _ => throw new ArgumentException("Unsupported value", nameof(buttonSet)),
+            };
         }
     }
 }

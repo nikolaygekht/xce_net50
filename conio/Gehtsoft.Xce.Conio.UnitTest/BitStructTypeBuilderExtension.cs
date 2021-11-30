@@ -10,8 +10,8 @@ namespace Gehtsoft.Xce.Conio.UnitTest
     {
         public static void AddBitStructClassAttribute(this TypeBuilder typeBuilder)
         {
-            var constructor = typeof(BitStructAttribute).GetConstructor(new Type[] { });
-            typeBuilder.SetCustomAttribute(new CustomAttributeBuilder(constructor, new object[] { }));
+            var constructor = typeof(BitStructAttribute).GetConstructor(Array.Empty<Type>());
+            typeBuilder.SetCustomAttribute(new CustomAttributeBuilder(constructor, Array.Empty<object>()));
         }
 
         public static void AddBitStructClassAttribute(this TypeBuilder typeBuilder, int size)
@@ -22,14 +22,14 @@ namespace Gehtsoft.Xce.Conio.UnitTest
 
         public static void AddField(this TypeBuilder typeBuilder, string name, Type type)
         {
-            var fieldBuilder = typeBuilder.DefineField(name, type, FieldAttributes.Public);
+            _ = typeBuilder.DefineField(name, type, FieldAttributes.Public);
         }
 
         public static void AddBitField(this TypeBuilder typeBuilder, string name, Type type)
         {
             var fieldBuilder = typeBuilder.DefineField(name, type, FieldAttributes.Public);
-            var constructor = typeof(BitFieldAttribute).GetConstructor(new Type[] { });
-            fieldBuilder.SetCustomAttribute(new CustomAttributeBuilder(constructor, new object[] { }));
+            var constructor = typeof(BitFieldAttribute).GetConstructor(Array.Empty<Type>());
+            fieldBuilder.SetCustomAttribute(new CustomAttributeBuilder(constructor, Array.Empty<object>()));
         }
 
         public static void AddBitField(this TypeBuilder typeBuilder, string name, Type type, int bitLength)
@@ -63,7 +63,7 @@ namespace Gehtsoft.Xce.Conio.UnitTest
         {
             object v = GetField(x, name);
             if (v == null)
-                return default(T);
+                return default;
             if (v.GetType() != typeof(T))
                 v = Convert.ChangeType(v, typeof(T));
             return (T)v;

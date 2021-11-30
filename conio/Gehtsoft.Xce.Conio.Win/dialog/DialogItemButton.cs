@@ -9,47 +9,22 @@ namespace Gehtsoft.Xce.Conio.Win
     /// </summary>
     public class DialogItemButton : DialogItem
     {
-        private string mTitle;
         private bool mEnabled;
         private bool mInFocus;
-        private char mHotKey;
-        private int mHotKeyPosition;
+        private readonly char mHotKey;
+        private readonly int mHotKeyPosition;
         private bool mMouseClicked;
 
         /// <summary>
         /// button title
         /// </summary>
-        public string Title
-        {
-            get
-            {
-                return mTitle;
-            }
-        }
+        public string Title { get; }
 
-        public override bool Enabled
-        {
-            get
-            {
-                return mEnabled;
-            }
-        }
+        public override bool Enabled => mEnabled;
 
-        public override bool IsInputElement
-        {
-            get
-            {
-                return true;
-            }
-        }
+        public override bool IsInputElement => true;
 
-        public override bool HasHotKey
-        {
-            get
-            {
-                return mHotKeyPosition >= 0;
-            }
-        }
+        public override bool HasHotKey => mHotKeyPosition >= 0;
 
         public override char HotKey
         {
@@ -76,9 +51,10 @@ namespace Gehtsoft.Xce.Conio.Win
             mHotKeyPosition = StringUtil.ProcessHotKey(ref title);
             if (mHotKeyPosition >= 0)
                 mHotKey = title[mHotKeyPosition];
-            mTitle = title;
+            Title = title;
             mEnabled = true;
             mMouseClicked = false;
+            SetDimesions(1, width);
         }
 
         /// <summary>
@@ -94,7 +70,7 @@ namespace Gehtsoft.Xce.Conio.Win
             mHotKeyPosition = StringUtil.ProcessHotKey(ref title);
             if (mHotKeyPosition >= 0)
                 mHotKey = title[mHotKeyPosition];
-            mTitle = title;
+            Title = title;
             mEnabled = true;
             SetDimesions(1, title.Length);
         }
@@ -123,7 +99,7 @@ namespace Gehtsoft.Xce.Conio.Win
         {
             mInFocus = true;
             Manager.ShowCaret(true);
-            Manager.SetCaretPos(this, 0, Math.Min(2, mTitle.Length - 1));
+            Manager.SetCaretPos(this, 0, Math.Min(2, Title.Length - 1));
             Invalidate();
         }
 
@@ -150,7 +126,7 @@ namespace Gehtsoft.Xce.Conio.Win
                 color = Dialog.Colors.DialogItemButtonColorDisabled;
 
             canvas.Fill(0, 0, 1, Width, color);
-            canvas.Write(0, 0, mTitle);
+            canvas.Write(0, 0, Title);
             if (Enabled && HasHotKey)
                 canvas.Write(0, mHotKeyPosition, mInFocus ? Dialog.Colors.DialogItemButtonHotKeyFocused : Dialog.Colors.DialogItemButtonHotKey);
         }

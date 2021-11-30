@@ -10,7 +10,7 @@ namespace Gehtsoft.Xce.Conio.Win
     /// </summary>
     public abstract class MenuItem
     {
-        public MenuItem()
+        protected MenuItem()
         {
         }
     }
@@ -27,39 +27,25 @@ namespace Gehtsoft.Xce.Conio.Win
 
     public abstract class TitledMenuItem : MenuItem
     {
-        private string mTitle;
-        private char mHotKey;
-        private int mHotkeyPosition;
+        private readonly char mHotKey;
 
-        internal TitledMenuItem(string title)
+        protected TitledMenuItem(string title)
         {
             if (title == null)
-                throw new ArgumentNullException("title");
+                throw new ArgumentNullException(nameof(title));
 
-            mHotkeyPosition = StringUtil.ProcessHotKey(ref title);
-            if (mHotkeyPosition >= 0)
-                mHotKey = title[mHotkeyPosition];
-            mTitle = title;
+            HotKeyPosition = StringUtil.ProcessHotKey(ref title);
+            if (HotKeyPosition >= 0)
+                mHotKey = title[HotKeyPosition];
+            Title = title;
         }
 
         /// <summary>
         /// Command name
         /// </summary>
-        public string Title
-        {
-            get
-            {
-                return mTitle;
-            }
-        }
+        public string Title { get; }
 
-        public bool HasHotkey
-        {
-            get
-            {
-                return mHotkeyPosition >= 0;
-            }
-        }
+        public bool HasHotkey => HotKeyPosition >= 0;
 
         public char HotKey
         {
@@ -72,13 +58,7 @@ namespace Gehtsoft.Xce.Conio.Win
             }
         }
 
-        public int HotKeyPosition
-        {
-            get
-            {
-                return mHotkeyPosition;
-            }
-        }
+        public int HotKeyPosition { get; }
     }
 
     /// <summary>
@@ -86,10 +66,6 @@ namespace Gehtsoft.Xce.Conio.Win
     /// </summary>
     public class CommandMenuItem : TitledMenuItem
     {
-        private string mRightSide;
-        private int mCommand;
-        private bool mEnabled;
-
         /// <summary>
         /// Constructor
         /// </summary>
@@ -97,9 +73,9 @@ namespace Gehtsoft.Xce.Conio.Win
         /// <param name="command">The command object</param>
         public CommandMenuItem(string title, int command) : base(title)
         {
-            mRightSide = null;
-            mCommand = command;
-            mEnabled = true;
+            RightSide = null;
+            Command = command;
+            Enabled = true;
             Checked = false;
         }
 
@@ -111,49 +87,25 @@ namespace Gehtsoft.Xce.Conio.Win
         /// <param name="command">the command object</param>
         public CommandMenuItem(string title, string rightSide, int command) : base(title)
         {
-            mRightSide = rightSide;
-            mCommand = command;
-            mEnabled = true;
+            RightSide = rightSide;
+            Command = command;
+            Enabled = true;
             Checked = false;
         }
-
-
 
         /// <summary>
         /// right-side command comment
         /// </summary>
-        public string RightSide
-        {
-            get
-            {
-                return mRightSide;
-            }
-        }
+        public string RightSide { get; }
 
         /// <summary>
         /// command object
         /// </summary>
-        public int Command
-        {
-            get
-            {
-                return mCommand;
-            }
-        }
+        public int Command { get; }
 
         public bool Checked { get; set; }
 
-        public bool Enabled
-        {
-            get
-            {
-                return mEnabled;
-            }
-            set
-            {
-                mEnabled = value;
-            }
-        }
+        public bool Enabled { get; set; }
     }
 
     /// <summary>
@@ -161,7 +113,7 @@ namespace Gehtsoft.Xce.Conio.Win
     /// </summary>
     public class PopupMenuItem : TitledMenuItem, IEnumerable<MenuItem>
     {
-        private List<MenuItem> mItems = new List<MenuItem>();
+        private readonly List<MenuItem> mItems = new List<MenuItem>();
 
         /// <summary>
         /// Constructor
@@ -174,13 +126,7 @@ namespace Gehtsoft.Xce.Conio.Win
         /// <summary>
         /// Number of menu items
         /// </summary>
-        public int Count
-        {
-            get
-            {
-                return mItems.Count;
-            }
-        }
+        public int Count => mItems.Count;
 
         /// <summary>
         /// Menu item by index

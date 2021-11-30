@@ -4,12 +4,12 @@ using System.Text;
 
 namespace Gehtsoft.Xce.Conio.Win
 {
-    internal class StringUtil
+    internal static class StringUtil
     {
         internal static int ProcessHotKey(ref string label)
         {
             int hkposition = -1;
-            string newLabel = "";
+            StringBuilder newLabel = new StringBuilder();
             bool prevAmp = false;
 
             foreach (char c in label)
@@ -18,7 +18,7 @@ namespace Gehtsoft.Xce.Conio.Win
                 {
                     if (prevAmp)
                     {
-                        newLabel += c;
+                        newLabel.Append(c);
                         prevAmp = false;
                     }
                     else
@@ -34,10 +34,10 @@ namespace Gehtsoft.Xce.Conio.Win
                             hkposition = newLabel.Length;
                         prevAmp = false;
                     }
-                    newLabel += c;
+                    newLabel.Append(c);
                 }
             }
-            label = newLabel;
+            label = newLabel.ToString();
             return hkposition;
         }
     }

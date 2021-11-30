@@ -30,13 +30,7 @@ namespace Gehtsoft.Xce.Conio.Win
             }
         }
 
-        public override bool Enabled
-        {
-            get
-            {
-                return mEnabled;
-            }
-        }
+        public override bool Enabled => mEnabled;
 
         public bool Readonly
         {
@@ -50,22 +44,9 @@ namespace Gehtsoft.Xce.Conio.Win
             }
         }
 
-        public override bool IsInputElement
-        {
-            get
-            {
-                return true;
-            }
-        }
+        public override bool IsInputElement => true;
 
-        protected virtual int EditWidth
-        {
-            get
-            {
-                return Width;
-            }
-        }
-
+        protected virtual int EditWidth => Width;
 
         public DialogItemSingleLineTextBox(string text, int id, int row, int column, int width) : base(id, row, column, 1, width)
         {
@@ -96,8 +77,7 @@ namespace Gehtsoft.Xce.Conio.Win
                 Manager.SetCaretPos(this, 0, mCaret - mOffset);
             if (Exists)
                 Invalidate();
-            if (Dialog != null)
-                Dialog.OnItemChanged(this);
+            Dialog?.OnItemChanged(this);
         }
 
         public void SetSel(int from, int to)
@@ -105,13 +85,9 @@ namespace Gehtsoft.Xce.Conio.Win
             mSelectionStart = from;
             mSelectionEnd = to;
             mCaret = to;
-            if (EditWidth > 0)
-            {
-                if (mCaret - mOffset >= EditWidth)
-                    mOffset = mCaret - EditWidth + 1;
-            }
+            if (EditWidth > 0 && mCaret - mOffset >= EditWidth)
+                mOffset = mCaret - EditWidth + 1;
         }
-
 
         public override void OnCreate()
         {
@@ -200,8 +176,6 @@ namespace Gehtsoft.Xce.Conio.Win
                     Type(character);
             }
         }
-
-
 
         private void Left(bool select)
         {
@@ -323,8 +297,7 @@ namespace Gehtsoft.Xce.Conio.Win
                 if (mCaret < mText.Length)
                 {
                     mText.Remove(mCaret, 1);
-                    if (Dialog != null)
-                        Dialog.OnItemChanged(this);
+                    Dialog?.OnItemChanged(this);
                     OnTextChangedByUser();
                 }
                 Invalidate();
@@ -340,8 +313,7 @@ namespace Gehtsoft.Xce.Conio.Win
             if (mCaret < mText.Length)
             {
                 mText.Remove(mCaret, mText.Length - mCaret);
-                if (Dialog != null)
-                    Dialog.OnItemChanged(this);
+                Dialog?.OnItemChanged(this);
                 OnTextChangedByUser();
             }
             Invalidate();
@@ -365,8 +337,7 @@ namespace Gehtsoft.Xce.Conio.Win
                     mOffset = mCaret - EditWidth + 1;
                 Manager.SetCaretPos(this, 0, mCaret - mOffset);
                 mSelectionStart = mSelectionEnd = -1;
-                if (Dialog != null)
-                    Dialog.OnItemChanged(this);
+                Dialog?.OnItemChanged(this);
 
                 OnTextChangedByUser();
             }
@@ -421,8 +392,7 @@ namespace Gehtsoft.Xce.Conio.Win
                 if (mCaret < mOffset)
                     mOffset = mCaret;
                 Invalidate();
-                if (Dialog != null)
-                    Dialog.OnItemChanged(this);
+                Dialog?.OnItemChanged(this);
             }
             if (c && Dialog != null)
                 Dialog.OnItemChanged(this);
@@ -441,32 +411,26 @@ namespace Gehtsoft.Xce.Conio.Win
             if (Readonly)
                 return;
 
-            bool ch = false;
             if (mSelectionStart >= 0)
-            {
-                ch = true;
                 Delete();
-            }
 
             if (mCaret >= mText.Length)
             {
                 int cc = mCaret - mText.Length + (mInsertMode ? 0 : 1);
                 mText.Append(' ', cc);
-                ch = true;
             }
 
             if (mInsertMode)
                 mText.Insert(mCaret, c);
             else
                 mText[mCaret] = c;
-            ch = true;
+
             mCaret++;
             if (mCaret - mOffset >= EditWidth)
                 mOffset = mCaret - EditWidth + 1;
             Manager.SetCaretPos(this, 0, mCaret - mOffset);
             Invalidate();
-            if (ch && Dialog != null)
-                Dialog.OnItemChanged(this);
+            Dialog?.OnItemChanged(this);
             OnTextChangedByUser();
         }
 
@@ -488,7 +452,7 @@ namespace Gehtsoft.Xce.Conio.Win
             {
                 if (mSelectionEnd >= mText.Length)
                     mSelectionEnd = mText.Length;
-                string selectionText = mText.ToString().Substring(mSelectionStart, mSelectionEnd - mSelectionStart);
+                string selectionText = mText.ToString()[mSelectionStart..mSelectionEnd];
                 TextClipboardFactory.Clipboard.SetText(selectionText);
             }
         }
@@ -516,8 +480,7 @@ namespace Gehtsoft.Xce.Conio.Win
                     mOffset = mCaret - EditWidth + 1;
                 Manager.SetCaretPos(this, 0, mCaret - mOffset);
                 Invalidate();
-                if (Dialog != null)
-                    Dialog.OnItemChanged(this);
+                Dialog?.OnItemChanged(this);
                 OnTextChangedByUser();
             }
         }

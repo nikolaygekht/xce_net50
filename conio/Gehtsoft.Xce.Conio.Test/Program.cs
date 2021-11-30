@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Gehtsoft.Xce.Conio.Test
 {
-    public class Program
+    public static class Program
     {
         public static void Main(string[] args)
         {
@@ -14,8 +14,6 @@ namespace Gehtsoft.Xce.Conio.Test
                     KbTest1();
                 if (args[0] == "input2")
                     KbTest2();
-                else if (args[0] == "output")
-                    OutputTest();
                 else if (args[0] == "debug1")
                     Debug1();
                 else if (args[0] == "debug2w")
@@ -53,7 +51,7 @@ namespace Gehtsoft.Xce.Conio.Test
             Console.WriteLine($"Mouse: {row} {column}");
         }
 
-        static bool mPrevQ = false;
+        private static bool mPrevQ = false;
 
         private static void InputTest_Listener_KeyPressed(ScanCode scanCode, char character, bool shift, bool ctrl, bool alt)
         {
@@ -68,13 +66,6 @@ namespace Gehtsoft.Xce.Conio.Test
             else
                 mPrevQ = false;
         }
-
-        private static void OutputTest()
-        {
-            ConsoleInputEventListener listener = new ConsoleInputEventListener();
-        }
-
-
 
         public static void Debug1()
         {

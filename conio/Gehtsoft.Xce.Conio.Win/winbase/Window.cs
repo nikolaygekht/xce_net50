@@ -13,21 +13,9 @@ namespace Gehtsoft.Xce.Conio.Win
 
         internal WindowManager Manager { get; set; }
 
-        public WindowManager WindowManager
-        {
-            get
-            {
-                return Manager;
-            }
-        }
+        public WindowManager WindowManager => Manager;
 
-        public bool Exists
-        {
-            get
-            {
-                return mExists;
-            }
-        }
+        public bool Exists => mExists;
 
         /// <summary>
         /// Constructor
@@ -115,13 +103,7 @@ namespace Gehtsoft.Xce.Conio.Win
         /// <summary>
         /// Get a list of children windows
         /// </summary>
-        public IEnumerable<Window> Children
-        {
-            get
-            {
-                return mChildren;
-            }
-        }
+        public IEnumerable<Window> Children => mChildren;
 
         /// <summary>
         /// Create a window
@@ -180,45 +162,15 @@ namespace Gehtsoft.Xce.Conio.Win
         private int mRow, mColumn, mWidth, mHeight;
         private bool mVisible;
 
-        public int Row
-        {
-            get
-            {
-                return mRow;
-            }
-        }
+        public int Row => mRow;
 
-        public int Column
-        {
-            get
-            {
-                return mColumn;
-            }
-        }
+        public int Column => mColumn;
 
-        public int Height
-        {
-            get
-            {
-                return mHeight;
-            }
-        }
+        public int Height => mHeight;
 
-        public int Width
-        {
-            get
-            {
-                return mWidth;
-            }
-        }
+        public int Width => mWidth;
 
-        public bool Visible
-        {
-            get
-            {
-                return mVisible;
-            }
-        }
+        public bool Visible => mVisible;
 
         public virtual void OnSizeChanged()
         {
@@ -273,21 +225,9 @@ namespace Gehtsoft.Xce.Conio.Win
         /// <summary>
         /// Returns the flag indicating whether the window is valid
         /// </summary>
-        public bool Valid
-        {
-            get
-            {
-                return mValid;
-            }
-        }
+        public bool Valid => mValid;
 
-        internal Canvas Canvas
-        {
-            get
-            {
-                return mCanvas;
-            }
-        }
+        internal Canvas Canvas => mCanvas;
 
         /// <summary>
         /// Invalidate the whole window

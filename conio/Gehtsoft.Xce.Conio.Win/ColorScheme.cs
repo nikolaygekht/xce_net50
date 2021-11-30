@@ -3,6 +3,11 @@
 //This is auto-generated code. Do NOT modify it.
 //Modify ./auto/colorscheme.xml and ./auto/colorscheme.xslt instead!!!
 //------------------------------------------------------------------------
+#pragma warning disable RCS1036 // Remove redundant empty-line.
+#pragma warning disable RCS1037 // Remove trailing white-space.
+#pragma warning disable RCS1171 // Simplify lazy initialization.
+#pragma warning disable RCS1085 // Use auto-implemented property.
+
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -14,9 +19,6 @@ namespace Gehtsoft.Xce.Conio.Win
     {
         
         #region Window colors
-        ///<summary>
-        ///
-        ///</summary>
         CanvasColor WindowBackground
         {
             get;
@@ -25,49 +27,31 @@ namespace Gehtsoft.Xce.Conio.Win
         #endregion
         
         #region Menu colors
-        ///<summary>
-        ///
-        ///</summary>
         CanvasColor MenuItem
         {
             get;
         }
         
-        ///<summary>
-        ///
-        ///</summary>
         CanvasColor MenuItemSelected
         {
             get;
         }
         
-        ///<summary>
-        ///
-        ///</summary>
         CanvasColor MenuDisabledItem
         {
             get;
         }
         
-        ///<summary>
-        ///
-        ///</summary>
         CanvasColor MenuDisabledItemSelected
         {
             get;
         }
         
-        ///<summary>
-        ///
-        ///</summary>
         CanvasColor MenuHotKey
         {
             get;
         }
         
-        ///<summary>
-        ///
-        ///</summary>
         CanvasColor MenuHotKeySelected
         {
             get;
@@ -76,9 +60,6 @@ namespace Gehtsoft.Xce.Conio.Win
         #endregion
         
         #region Dialog box colors
-        ///<summary>
-        ///
-        ///</summary>
         CanvasColor DialogBorder
         {
             get;
@@ -87,17 +68,11 @@ namespace Gehtsoft.Xce.Conio.Win
         #endregion
         
         #region Dialog box label colors
-        ///<summary>
-        ///
-        ///</summary>
         CanvasColor DialogItemLabelColor
         {
             get;
         }
         
-        ///<summary>
-        ///
-        ///</summary>
         CanvasColor DialogItemLabelHotKey
         {
             get;
@@ -106,41 +81,26 @@ namespace Gehtsoft.Xce.Conio.Win
         #endregion
         
         #region Dialog box check box label colors
-        ///<summary>
-        ///
-        ///</summary>
         CanvasColor DialogItemCheckBoxColor
         {
             get;
         }
         
-        ///<summary>
-        ///
-        ///</summary>
         CanvasColor DialogItemCheckBoxColorFocused
         {
             get;
         }
         
-        ///<summary>
-        ///
-        ///</summary>
         CanvasColor DialogItemCheckBoxHotKey
         {
             get;
         }
         
-        ///<summary>
-        ///
-        ///</summary>
         CanvasColor DialogItemCheckBoxHotKeyFocused
         {
             get;
         }
         
-        ///<summary>
-        ///
-        ///</summary>
         CanvasColor DialogItemCheckBoxColorDisabled
         {
             get;
@@ -149,41 +109,26 @@ namespace Gehtsoft.Xce.Conio.Win
         #endregion
         
         #region Dialog box button colors
-        ///<summary>
-        ///
-        ///</summary>
         CanvasColor DialogItemButtonColor
         {
             get;
         }
         
-        ///<summary>
-        ///
-        ///</summary>
         CanvasColor DialogItemButtonColorDisabled
         {
             get;
         }
         
-        ///<summary>
-        ///
-        ///</summary>
         CanvasColor DialogItemButtonColorFocused
         {
             get;
         }
         
-        ///<summary>
-        ///
-        ///</summary>
         CanvasColor DialogItemButtonHotKey
         {
             get;
         }
         
-        ///<summary>
-        ///
-        ///</summary>
         CanvasColor DialogItemButtonHotKeyFocused
         {
             get;
@@ -192,41 +137,26 @@ namespace Gehtsoft.Xce.Conio.Win
         #endregion
         
         #region Dialog box edit color
-        ///<summary>
-        ///
-        ///</summary>
         CanvasColor DialogItemEditColor
         {
             get;
         }
         
-        ///<summary>
-        ///
-        ///</summary>
         CanvasColor DialogItemEditColorDisabled
         {
             get;
         }
         
-        ///<summary>
-        ///
-        ///</summary>
         CanvasColor DialogItemEditColorFocused
         {
             get;
         }
         
-        ///<summary>
-        ///
-        ///</summary>
         CanvasColor DialogItemEditSelection
         {
             get;
         }
         
-        ///<summary>
-        ///
-        ///</summary>
         CanvasColor DialogItemEditSelectionFocused
         {
             get;
@@ -235,57 +165,36 @@ namespace Gehtsoft.Xce.Conio.Win
         #endregion
         
         #region Dialog box listbox color
-        ///<summary>
-        ///
-        ///</summary>
         CanvasColor DialogItemListBoxColor
         {
             get;
         }
         
-        ///<summary>
-        ///
-        ///</summary>
         CanvasColor DialogItemListBoxColorDisabled
         {
             get;
         }
         
-        ///<summary>
-        ///
-        ///</summary>
         CanvasColor DialogItemListBoxColorFocused
         {
             get;
         }
         
-        ///<summary>
-        ///
-        ///</summary>
         CanvasColor DialogItemListBoxSelection
         {
             get;
         }
         
-        ///<summary>
-        ///
-        ///</summary>
         CanvasColor DialogItemListBoxSelectionFocused
         {
             get;
         }
         
-        ///<summary>
-        ///
-        ///</summary>
         CanvasColor DialogItemListBoxSelectionHighlighted
         {
             get;
         }
         
-        ///<summary>
-        ///
-        ///</summary>
         CanvasColor DialogItemListBoxSelectionFocusedHighlighted
         {
             get;
@@ -300,9 +209,7 @@ namespace Gehtsoft.Xce.Conio.Win
         
         #region Window colors
         private CanvasColor mWindowBackground;
-        ///<summary>
-        ///
-        ///</summary>
+		
         public CanvasColor WindowBackground
         {
             get
@@ -319,9 +226,7 @@ namespace Gehtsoft.Xce.Conio.Win
         
         #region Menu colors
         private CanvasColor mMenuItem;
-        ///<summary>
-        ///
-        ///</summary>
+		
         public CanvasColor MenuItem
         {
             get
@@ -335,9 +240,7 @@ namespace Gehtsoft.Xce.Conio.Win
         }
         
         private CanvasColor mMenuItemSelected;
-        ///<summary>
-        ///
-        ///</summary>
+		
         public CanvasColor MenuItemSelected
         {
             get
@@ -351,9 +254,7 @@ namespace Gehtsoft.Xce.Conio.Win
         }
         
         private CanvasColor mMenuDisabledItem;
-        ///<summary>
-        ///
-        ///</summary>
+		
         public CanvasColor MenuDisabledItem
         {
             get
@@ -367,9 +268,7 @@ namespace Gehtsoft.Xce.Conio.Win
         }
         
         private CanvasColor mMenuDisabledItemSelected;
-        ///<summary>
-        ///
-        ///</summary>
+		
         public CanvasColor MenuDisabledItemSelected
         {
             get
@@ -383,9 +282,7 @@ namespace Gehtsoft.Xce.Conio.Win
         }
         
         private CanvasColor mMenuHotKey;
-        ///<summary>
-        ///
-        ///</summary>
+		
         public CanvasColor MenuHotKey
         {
             get
@@ -399,9 +296,7 @@ namespace Gehtsoft.Xce.Conio.Win
         }
         
         private CanvasColor mMenuHotKeySelected;
-        ///<summary>
-        ///
-        ///</summary>
+		
         public CanvasColor MenuHotKeySelected
         {
             get
@@ -418,9 +313,7 @@ namespace Gehtsoft.Xce.Conio.Win
         
         #region Dialog box colors
         private CanvasColor mDialogBorder;
-        ///<summary>
-        ///
-        ///</summary>
+		
         public CanvasColor DialogBorder
         {
             get
@@ -437,9 +330,7 @@ namespace Gehtsoft.Xce.Conio.Win
         
         #region Dialog box label colors
         private CanvasColor mDialogItemLabelColor;
-        ///<summary>
-        ///
-        ///</summary>
+		
         public CanvasColor DialogItemLabelColor
         {
             get
@@ -453,9 +344,7 @@ namespace Gehtsoft.Xce.Conio.Win
         }
         
         private CanvasColor mDialogItemLabelHotKey;
-        ///<summary>
-        ///
-        ///</summary>
+		
         public CanvasColor DialogItemLabelHotKey
         {
             get
@@ -472,9 +361,7 @@ namespace Gehtsoft.Xce.Conio.Win
         
         #region Dialog box check box label colors
         private CanvasColor mDialogItemCheckBoxColor;
-        ///<summary>
-        ///
-        ///</summary>
+		
         public CanvasColor DialogItemCheckBoxColor
         {
             get
@@ -488,9 +375,7 @@ namespace Gehtsoft.Xce.Conio.Win
         }
         
         private CanvasColor mDialogItemCheckBoxColorFocused;
-        ///<summary>
-        ///
-        ///</summary>
+		
         public CanvasColor DialogItemCheckBoxColorFocused
         {
             get
@@ -504,9 +389,7 @@ namespace Gehtsoft.Xce.Conio.Win
         }
         
         private CanvasColor mDialogItemCheckBoxHotKey;
-        ///<summary>
-        ///
-        ///</summary>
+		
         public CanvasColor DialogItemCheckBoxHotKey
         {
             get
@@ -520,9 +403,7 @@ namespace Gehtsoft.Xce.Conio.Win
         }
         
         private CanvasColor mDialogItemCheckBoxHotKeyFocused;
-        ///<summary>
-        ///
-        ///</summary>
+		
         public CanvasColor DialogItemCheckBoxHotKeyFocused
         {
             get
@@ -536,9 +417,7 @@ namespace Gehtsoft.Xce.Conio.Win
         }
         
         private CanvasColor mDialogItemCheckBoxColorDisabled;
-        ///<summary>
-        ///
-        ///</summary>
+		
         public CanvasColor DialogItemCheckBoxColorDisabled
         {
             get
@@ -555,9 +434,7 @@ namespace Gehtsoft.Xce.Conio.Win
         
         #region Dialog box button colors
         private CanvasColor mDialogItemButtonColor;
-        ///<summary>
-        ///
-        ///</summary>
+		
         public CanvasColor DialogItemButtonColor
         {
             get
@@ -571,9 +448,7 @@ namespace Gehtsoft.Xce.Conio.Win
         }
         
         private CanvasColor mDialogItemButtonColorDisabled;
-        ///<summary>
-        ///
-        ///</summary>
+		
         public CanvasColor DialogItemButtonColorDisabled
         {
             get
@@ -587,9 +462,7 @@ namespace Gehtsoft.Xce.Conio.Win
         }
         
         private CanvasColor mDialogItemButtonColorFocused;
-        ///<summary>
-        ///
-        ///</summary>
+		
         public CanvasColor DialogItemButtonColorFocused
         {
             get
@@ -603,9 +476,7 @@ namespace Gehtsoft.Xce.Conio.Win
         }
         
         private CanvasColor mDialogItemButtonHotKey;
-        ///<summary>
-        ///
-        ///</summary>
+		
         public CanvasColor DialogItemButtonHotKey
         {
             get
@@ -619,9 +490,7 @@ namespace Gehtsoft.Xce.Conio.Win
         }
         
         private CanvasColor mDialogItemButtonHotKeyFocused;
-        ///<summary>
-        ///
-        ///</summary>
+		
         public CanvasColor DialogItemButtonHotKeyFocused
         {
             get
@@ -638,9 +507,7 @@ namespace Gehtsoft.Xce.Conio.Win
         
         #region Dialog box edit color
         private CanvasColor mDialogItemEditColor;
-        ///<summary>
-        ///
-        ///</summary>
+		
         public CanvasColor DialogItemEditColor
         {
             get
@@ -654,9 +521,7 @@ namespace Gehtsoft.Xce.Conio.Win
         }
         
         private CanvasColor mDialogItemEditColorDisabled;
-        ///<summary>
-        ///
-        ///</summary>
+		
         public CanvasColor DialogItemEditColorDisabled
         {
             get
@@ -670,9 +535,7 @@ namespace Gehtsoft.Xce.Conio.Win
         }
         
         private CanvasColor mDialogItemEditColorFocused;
-        ///<summary>
-        ///
-        ///</summary>
+		
         public CanvasColor DialogItemEditColorFocused
         {
             get
@@ -686,9 +549,7 @@ namespace Gehtsoft.Xce.Conio.Win
         }
         
         private CanvasColor mDialogItemEditSelection;
-        ///<summary>
-        ///
-        ///</summary>
+		
         public CanvasColor DialogItemEditSelection
         {
             get
@@ -702,9 +563,7 @@ namespace Gehtsoft.Xce.Conio.Win
         }
         
         private CanvasColor mDialogItemEditSelectionFocused;
-        ///<summary>
-        ///
-        ///</summary>
+		
         public CanvasColor DialogItemEditSelectionFocused
         {
             get
@@ -721,9 +580,7 @@ namespace Gehtsoft.Xce.Conio.Win
         
         #region Dialog box listbox color
         private CanvasColor mDialogItemListBoxColor;
-        ///<summary>
-        ///
-        ///</summary>
+		
         public CanvasColor DialogItemListBoxColor
         {
             get
@@ -737,9 +594,7 @@ namespace Gehtsoft.Xce.Conio.Win
         }
         
         private CanvasColor mDialogItemListBoxColorDisabled;
-        ///<summary>
-        ///
-        ///</summary>
+		
         public CanvasColor DialogItemListBoxColorDisabled
         {
             get
@@ -753,9 +608,7 @@ namespace Gehtsoft.Xce.Conio.Win
         }
         
         private CanvasColor mDialogItemListBoxColorFocused;
-        ///<summary>
-        ///
-        ///</summary>
+		
         public CanvasColor DialogItemListBoxColorFocused
         {
             get
@@ -769,9 +622,7 @@ namespace Gehtsoft.Xce.Conio.Win
         }
         
         private CanvasColor mDialogItemListBoxSelection;
-        ///<summary>
-        ///
-        ///</summary>
+		
         public CanvasColor DialogItemListBoxSelection
         {
             get
@@ -785,9 +636,7 @@ namespace Gehtsoft.Xce.Conio.Win
         }
         
         private CanvasColor mDialogItemListBoxSelectionFocused;
-        ///<summary>
-        ///
-        ///</summary>
+		
         public CanvasColor DialogItemListBoxSelectionFocused
         {
             get
@@ -801,9 +650,7 @@ namespace Gehtsoft.Xce.Conio.Win
         }
         
         private CanvasColor mDialogItemListBoxSelectionHighlighted;
-        ///<summary>
-        ///
-        ///</summary>
+		
         public CanvasColor DialogItemListBoxSelectionHighlighted
         {
             get
@@ -817,9 +664,7 @@ namespace Gehtsoft.Xce.Conio.Win
         }
         
         private CanvasColor mDialogItemListBoxSelectionFocusedHighlighted;
-        ///<summary>
-        ///
-        ///</summary>
+		
         public CanvasColor DialogItemListBoxSelectionFocusedHighlighted
         {
             get
@@ -850,72 +695,42 @@ namespace Gehtsoft.Xce.Conio.Win
             {
                 if (mWhite == null)
                 {
-                    mWhite = new ColorScheme();
+                    mWhite = new ColorScheme()
+					{
+                    WindowBackground = new CanvasColor(0x70),
+                    MenuItem = new CanvasColor(0x80),
+                    MenuItemSelected = new CanvasColor(0x70),
+                    MenuDisabledItem = new CanvasColor(0x87),
+                    MenuDisabledItemSelected = new CanvasColor(0x78),
+                    MenuHotKey = new CanvasColor(0x8e),
+                    MenuHotKeySelected = new CanvasColor(0x7e),
+                    DialogBorder = new CanvasColor(0x80),
+                    DialogItemLabelColor = new CanvasColor(0x80),
+                    DialogItemLabelHotKey = new CanvasColor(0x8e),
+                    DialogItemCheckBoxColor = new CanvasColor(0x80),
+                    DialogItemCheckBoxColorFocused = new CanvasColor(0x80),
+                    DialogItemCheckBoxHotKey = new CanvasColor(0x8e),
+                    DialogItemCheckBoxHotKeyFocused = new CanvasColor(0x8e),
+                    DialogItemCheckBoxColorDisabled = new CanvasColor(0x87),
+                    DialogItemButtonColor = new CanvasColor(0x80),
+                    DialogItemButtonColorDisabled = new CanvasColor(0x87),
+                    DialogItemButtonColorFocused = new CanvasColor(0x8f),
+                    DialogItemButtonHotKey = new CanvasColor(0x8e),
+                    DialogItemButtonHotKeyFocused = new CanvasColor(0x8e),
+                    DialogItemEditColor = new CanvasColor(0x08),
+                    DialogItemEditColorDisabled = new CanvasColor(0x07),
+                    DialogItemEditColorFocused = new CanvasColor(0x0f),
+                    DialogItemEditSelection = new CanvasColor(0x30),
+                    DialogItemEditSelectionFocused = new CanvasColor(0x3f),
+                    DialogItemListBoxColor = new CanvasColor(0x08),
+                    DialogItemListBoxColorDisabled = new CanvasColor(0x07),
+                    DialogItemListBoxColorFocused = new CanvasColor(0x0f),
+                    DialogItemListBoxSelection = new CanvasColor(0x03),
+                    DialogItemListBoxSelectionFocused = new CanvasColor(0xf3),
+                    DialogItemListBoxSelectionHighlighted = new CanvasColor(0x0b),
+                    DialogItemListBoxSelectionFocusedHighlighted = new CanvasColor(0xfb),
                     
-                    mWhite.WindowBackground = new CanvasColor(0x70);
-                    
-                    mWhite.MenuItem = new CanvasColor(0x80);
-                    
-                    mWhite.MenuItemSelected = new CanvasColor(0x70);
-                    
-                    mWhite.MenuDisabledItem = new CanvasColor(0x87);
-                    
-                    mWhite.MenuDisabledItemSelected = new CanvasColor(0x78);
-                    
-                    mWhite.MenuHotKey = new CanvasColor(0x8e);
-                    
-                    mWhite.MenuHotKeySelected = new CanvasColor(0x7e);
-                    
-                    mWhite.DialogBorder = new CanvasColor(0x80);
-                    
-                    mWhite.DialogItemLabelColor = new CanvasColor(0x80);
-                    
-                    mWhite.DialogItemLabelHotKey = new CanvasColor(0x8e);
-                    
-                    mWhite.DialogItemCheckBoxColor = new CanvasColor(0x80);
-                    
-                    mWhite.DialogItemCheckBoxColorFocused = new CanvasColor(0x80);
-                    
-                    mWhite.DialogItemCheckBoxHotKey = new CanvasColor(0x8e);
-                    
-                    mWhite.DialogItemCheckBoxHotKeyFocused = new CanvasColor(0x8e);
-                    
-                    mWhite.DialogItemCheckBoxColorDisabled = new CanvasColor(0x87);
-                    
-                    mWhite.DialogItemButtonColor = new CanvasColor(0x80);
-                    
-                    mWhite.DialogItemButtonColorDisabled = new CanvasColor(0x87);
-                    
-                    mWhite.DialogItemButtonColorFocused = new CanvasColor(0x8f);
-                    
-                    mWhite.DialogItemButtonHotKey = new CanvasColor(0x8e);
-                    
-                    mWhite.DialogItemButtonHotKeyFocused = new CanvasColor(0x8e);
-                    
-                    mWhite.DialogItemEditColor = new CanvasColor(0x08);
-                    
-                    mWhite.DialogItemEditColorDisabled = new CanvasColor(0x07);
-                    
-                    mWhite.DialogItemEditColorFocused = new CanvasColor(0x0f);
-                    
-                    mWhite.DialogItemEditSelection = new CanvasColor(0x30);
-                    
-                    mWhite.DialogItemEditSelectionFocused = new CanvasColor(0x3f);
-                    
-                    mWhite.DialogItemListBoxColor = new CanvasColor(0x08);
-                    
-                    mWhite.DialogItemListBoxColorDisabled = new CanvasColor(0x07);
-                    
-                    mWhite.DialogItemListBoxColorFocused = new CanvasColor(0x0f);
-                    
-                    mWhite.DialogItemListBoxSelection = new CanvasColor(0x03);
-                    
-                    mWhite.DialogItemListBoxSelectionFocused = new CanvasColor(0xf3);
-                    
-                    mWhite.DialogItemListBoxSelectionHighlighted = new CanvasColor(0x0b);
-                    
-                    mWhite.DialogItemListBoxSelectionFocusedHighlighted = new CanvasColor(0xfb);
-                    
+			        };
 			}
 			return mWhite;
 			}
@@ -929,72 +744,42 @@ namespace Gehtsoft.Xce.Conio.Win
             {
                 if (mBlue == null)
                 {
-                    mBlue = new ColorScheme();
+                    mBlue = new ColorScheme()
+					{
+                    WindowBackground = new CanvasColor(0x17),
+                    MenuItem = new CanvasColor(0x3f),
+                    MenuItemSelected = new CanvasColor(0x0f),
+                    MenuDisabledItem = new CanvasColor(0x37),
+                    MenuDisabledItemSelected = new CanvasColor(0x70),
+                    MenuHotKey = new CanvasColor(0x3e),
+                    MenuHotKeySelected = new CanvasColor(0x0e),
+                    DialogBorder = new CanvasColor(0x30),
+                    DialogItemLabelColor = new CanvasColor(0x30),
+                    DialogItemLabelHotKey = new CanvasColor(0x3e),
+                    DialogItemCheckBoxColor = new CanvasColor(0x30),
+                    DialogItemCheckBoxColorFocused = new CanvasColor(0x30),
+                    DialogItemCheckBoxHotKey = new CanvasColor(0x3e),
+                    DialogItemCheckBoxHotKeyFocused = new CanvasColor(0x3e),
+                    DialogItemCheckBoxColorDisabled = new CanvasColor(0x37),
+                    DialogItemButtonColor = new CanvasColor(0x30),
+                    DialogItemButtonColorDisabled = new CanvasColor(0x37),
+                    DialogItemButtonColorFocused = new CanvasColor(0x3f),
+                    DialogItemButtonHotKey = new CanvasColor(0x3e),
+                    DialogItemButtonHotKeyFocused = new CanvasColor(0x3e),
+                    DialogItemEditColor = new CanvasColor(0x03),
+                    DialogItemEditColorDisabled = new CanvasColor(0x07),
+                    DialogItemEditColorFocused = new CanvasColor(0x0b),
+                    DialogItemEditSelection = new CanvasColor(0x10),
+                    DialogItemEditSelectionFocused = new CanvasColor(0x1f),
+                    DialogItemListBoxColor = new CanvasColor(0x03),
+                    DialogItemListBoxColorDisabled = new CanvasColor(0x07),
+                    DialogItemListBoxColorFocused = new CanvasColor(0x0b),
+                    DialogItemListBoxSelection = new CanvasColor(0x10),
+                    DialogItemListBoxSelectionFocused = new CanvasColor(0x1f),
+                    DialogItemListBoxSelectionHighlighted = new CanvasColor(0x1e),
+                    DialogItemListBoxSelectionFocusedHighlighted = new CanvasColor(0x0e),
                     
-                    mBlue.WindowBackground = new CanvasColor(0x17);
-                    
-                    mBlue.MenuItem = new CanvasColor(0x3f);
-                    
-                    mBlue.MenuItemSelected = new CanvasColor(0x0f);
-                    
-                    mBlue.MenuDisabledItem = new CanvasColor(0x37);
-                    
-                    mBlue.MenuDisabledItemSelected = new CanvasColor(0x70);
-                    
-                    mBlue.MenuHotKey = new CanvasColor(0x3e);
-                    
-                    mBlue.MenuHotKeySelected = new CanvasColor(0x0e);
-                    
-                    mBlue.DialogBorder = new CanvasColor(0x30);
-                    
-                    mBlue.DialogItemLabelColor = new CanvasColor(0x30);
-                    
-                    mBlue.DialogItemLabelHotKey = new CanvasColor(0x3e);
-                    
-                    mBlue.DialogItemCheckBoxColor = new CanvasColor(0x30);
-                    
-                    mBlue.DialogItemCheckBoxColorFocused = new CanvasColor(0x30);
-                    
-                    mBlue.DialogItemCheckBoxHotKey = new CanvasColor(0x3e);
-                    
-                    mBlue.DialogItemCheckBoxHotKeyFocused = new CanvasColor(0x3e);
-                    
-                    mBlue.DialogItemCheckBoxColorDisabled = new CanvasColor(0x37);
-                    
-                    mBlue.DialogItemButtonColor = new CanvasColor(0x30);
-                    
-                    mBlue.DialogItemButtonColorDisabled = new CanvasColor(0x37);
-                    
-                    mBlue.DialogItemButtonColorFocused = new CanvasColor(0x3f);
-                    
-                    mBlue.DialogItemButtonHotKey = new CanvasColor(0x3e);
-                    
-                    mBlue.DialogItemButtonHotKeyFocused = new CanvasColor(0x3e);
-                    
-                    mBlue.DialogItemEditColor = new CanvasColor(0x03);
-                    
-                    mBlue.DialogItemEditColorDisabled = new CanvasColor(0x07);
-                    
-                    mBlue.DialogItemEditColorFocused = new CanvasColor(0x0b);
-                    
-                    mBlue.DialogItemEditSelection = new CanvasColor(0x10);
-                    
-                    mBlue.DialogItemEditSelectionFocused = new CanvasColor(0x1f);
-                    
-                    mBlue.DialogItemListBoxColor = new CanvasColor(0x03);
-                    
-                    mBlue.DialogItemListBoxColorDisabled = new CanvasColor(0x07);
-                    
-                    mBlue.DialogItemListBoxColorFocused = new CanvasColor(0x0b);
-                    
-                    mBlue.DialogItemListBoxSelection = new CanvasColor(0x10);
-                    
-                    mBlue.DialogItemListBoxSelectionFocused = new CanvasColor(0x1f);
-                    
-                    mBlue.DialogItemListBoxSelectionHighlighted = new CanvasColor(0x1e);
-                    
-                    mBlue.DialogItemListBoxSelectionFocusedHighlighted = new CanvasColor(0x0e);
-                    
+			        };
 			}
 			return mBlue;
 			}
@@ -1008,72 +793,42 @@ namespace Gehtsoft.Xce.Conio.Win
             {
                 if (mBlack == null)
                 {
-                    mBlack = new ColorScheme();
+                    mBlack = new ColorScheme()
+					{
+                    WindowBackground = new CanvasColor(0x07),
+                    MenuItem = new CanvasColor(0x0f),
+                    MenuItemSelected = new CanvasColor(0x70),
+                    MenuDisabledItem = new CanvasColor(0x07),
+                    MenuDisabledItemSelected = new CanvasColor(0x78),
+                    MenuHotKey = new CanvasColor(0x0e),
+                    MenuHotKeySelected = new CanvasColor(0x7e),
+                    DialogBorder = new CanvasColor(0x0f),
+                    DialogItemLabelColor = new CanvasColor(0x07),
+                    DialogItemLabelHotKey = new CanvasColor(0x0e),
+                    DialogItemCheckBoxColor = new CanvasColor(0x07),
+                    DialogItemCheckBoxColorFocused = new CanvasColor(0x0f),
+                    DialogItemCheckBoxHotKey = new CanvasColor(0x0e),
+                    DialogItemCheckBoxHotKeyFocused = new CanvasColor(0x0e),
+                    DialogItemCheckBoxColorDisabled = new CanvasColor(0x08),
+                    DialogItemButtonColor = new CanvasColor(0x07),
+                    DialogItemButtonColorDisabled = new CanvasColor(0x08),
+                    DialogItemButtonColorFocused = new CanvasColor(0x0f),
+                    DialogItemButtonHotKey = new CanvasColor(0x0e),
+                    DialogItemButtonHotKeyFocused = new CanvasColor(0x0e),
+                    DialogItemEditColor = new CanvasColor(0x70),
+                    DialogItemEditColorDisabled = new CanvasColor(0x78),
+                    DialogItemEditColorFocused = new CanvasColor(0x70),
+                    DialogItemEditSelection = new CanvasColor(0x10),
+                    DialogItemEditSelectionFocused = new CanvasColor(0x1f),
+                    DialogItemListBoxColor = new CanvasColor(0x70),
+                    DialogItemListBoxColorDisabled = new CanvasColor(0x78),
+                    DialogItemListBoxColorFocused = new CanvasColor(0x7f),
+                    DialogItemListBoxSelection = new CanvasColor(0x10),
+                    DialogItemListBoxSelectionFocused = new CanvasColor(0x1f),
+                    DialogItemListBoxSelectionHighlighted = new CanvasColor(0x7e),
+                    DialogItemListBoxSelectionFocusedHighlighted = new CanvasColor(0x1e),
                     
-                    mBlack.WindowBackground = new CanvasColor(0x07);
-                    
-                    mBlack.MenuItem = new CanvasColor(0x0f);
-                    
-                    mBlack.MenuItemSelected = new CanvasColor(0x70);
-                    
-                    mBlack.MenuDisabledItem = new CanvasColor(0x07);
-                    
-                    mBlack.MenuDisabledItemSelected = new CanvasColor(0x78);
-                    
-                    mBlack.MenuHotKey = new CanvasColor(0x0e);
-                    
-                    mBlack.MenuHotKeySelected = new CanvasColor(0x7e);
-                    
-                    mBlack.DialogBorder = new CanvasColor(0x0f);
-                    
-                    mBlack.DialogItemLabelColor = new CanvasColor(0x07);
-                    
-                    mBlack.DialogItemLabelHotKey = new CanvasColor(0x0e);
-                    
-                    mBlack.DialogItemCheckBoxColor = new CanvasColor(0x07);
-                    
-                    mBlack.DialogItemCheckBoxColorFocused = new CanvasColor(0x0f);
-                    
-                    mBlack.DialogItemCheckBoxHotKey = new CanvasColor(0x0e);
-                    
-                    mBlack.DialogItemCheckBoxHotKeyFocused = new CanvasColor(0x0e);
-                    
-                    mBlack.DialogItemCheckBoxColorDisabled = new CanvasColor(0x08);
-                    
-                    mBlack.DialogItemButtonColor = new CanvasColor(0x07);
-                    
-                    mBlack.DialogItemButtonColorDisabled = new CanvasColor(0x08);
-                    
-                    mBlack.DialogItemButtonColorFocused = new CanvasColor(0x0f);
-                    
-                    mBlack.DialogItemButtonHotKey = new CanvasColor(0x0e);
-                    
-                    mBlack.DialogItemButtonHotKeyFocused = new CanvasColor(0x0e);
-                    
-                    mBlack.DialogItemEditColor = new CanvasColor(0x70);
-                    
-                    mBlack.DialogItemEditColorDisabled = new CanvasColor(0x78);
-                    
-                    mBlack.DialogItemEditColorFocused = new CanvasColor(0x70);
-                    
-                    mBlack.DialogItemEditSelection = new CanvasColor(0x10);
-                    
-                    mBlack.DialogItemEditSelectionFocused = new CanvasColor(0x1f);
-                    
-                    mBlack.DialogItemListBoxColor = new CanvasColor(0x70);
-                    
-                    mBlack.DialogItemListBoxColorDisabled = new CanvasColor(0x78);
-                    
-                    mBlack.DialogItemListBoxColorFocused = new CanvasColor(0x7f);
-                    
-                    mBlack.DialogItemListBoxSelection = new CanvasColor(0x10);
-                    
-                    mBlack.DialogItemListBoxSelectionFocused = new CanvasColor(0x1f);
-                    
-                    mBlack.DialogItemListBoxSelectionHighlighted = new CanvasColor(0x7e);
-                    
-                    mBlack.DialogItemListBoxSelectionFocusedHighlighted = new CanvasColor(0x1e);
-                    
+			        };
 			}
 			return mBlack;
 			}

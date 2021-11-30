@@ -13,7 +13,7 @@ namespace Gehtsoft.Xce.Conio.Win
         /// <summary>
         /// Layout of one menu item in vertical menu layout
         /// </summary>
-        class VerticalPopupMenuLayoutItem
+        private sealed class VerticalPopupMenuLayoutItem
         {
             /// <summary>
             /// Offset of the menu item from left corner of menu bar
@@ -37,23 +37,22 @@ namespace Gehtsoft.Xce.Conio.Win
         internal const int PopupCommandRight = -3;
         internal const int PretranslatedButtonEscape = -4;
 
-
         /// <summary>
         /// Menu content
         /// </summary>
-        private PopupMenuItem mMenu;
+        private readonly PopupMenuItem mMenu;
         /// <summary>
         /// Menu colors
         /// </summary>
-        private IColorScheme mColors;
+        private readonly IColorScheme mColors;
         /// <summary>
         /// Parent menu
         /// </summary>
-        private PopupMenu mParent;
+        private readonly PopupMenu mParent;
         /// <summary>
         /// Menu Bar layout type
         /// </summary>
-        private bool mVertical;
+        private readonly bool mVertical;
         /// <summary>
         /// Layout for vertical bar
         /// </summary>
@@ -70,13 +69,7 @@ namespace Gehtsoft.Xce.Conio.Win
         /// <summary>
         /// Chosen command
         /// </summary>
-        public int CommandChosen
-        {
-            get
-            {
-                return mCommand;
-            }
-        }
+        public int CommandChosen => mCommand;
         #endregion
 
         #region constructor
@@ -89,9 +82,7 @@ namespace Gehtsoft.Xce.Conio.Win
         /// <param name="vertical">flag indicating whether the bar must be vertical or horizonal</param>
         internal PopupMenu(PopupMenu parent, PopupMenuItem menu, IColorScheme colors, bool vertical)
         {
-            if (menu == null)
-                throw new ArgumentNullException("menu");
-            mMenu = menu;
+            mMenu = menu ?? throw new ArgumentNullException(nameof(menu));
             mColors = colors;
             mVertical = vertical;
             mParent = parent;
@@ -106,9 +97,7 @@ namespace Gehtsoft.Xce.Conio.Win
         /// <param name="vertical">flag indicating whether the bar must be vertical or horizonal</param>
         public PopupMenu(PopupMenuItem menu, IColorScheme colors, bool vertical)
         {
-            if (menu == null)
-                throw new ArgumentNullException("menu");
-            mMenu = menu;
+            mMenu = menu ?? throw new ArgumentNullException(nameof(menu));
             mColors = colors;
             mVertical = vertical;
             mParent = null;
@@ -160,9 +149,8 @@ namespace Gehtsoft.Xce.Conio.Win
                         CommandMenuItem cmd = item as CommandMenuItem;
                         if (cmd.Title.Length > leftWidth)
                             leftWidth = cmd.Title.Length;
-                        if (cmd.RightSide != null)
-                            if (cmd.RightSide.Length > rightWidth)
-                                rightWidth = cmd.RightSide.Length;
+                        if (cmd.RightSide != null && cmd.RightSide.Length > rightWidth)
+                            rightWidth = cmd.RightSide.Length;
                     }
                     else if (item is PopupMenuItem)
                     {
@@ -233,12 +221,11 @@ namespace Gehtsoft.Xce.Conio.Win
             if (mCurSel >= 0 && mCurSel < mMenu.Count)
             {
                 MenuItem item = mMenu[mCurSel];
-                if (item is CommandMenuItem && !onlypopup)
+                if (item is CommandMenuItem menuItem && !onlypopup)
                 {
-                    CommandMenuItem menuItem = (item as CommandMenuItem);
                     if (menuItem.Enabled)
                     {
-                        mCommand = (item as CommandMenuItem).Command;
+                        mCommand = menuItem.Command;
                         Manager.Close(this);
                     }
                     return true;
@@ -392,8 +379,7 @@ namespace Gehtsoft.Xce.Conio.Win
 
         public override void OnMouseLButtonDown(int row, int column, bool shift, bool ctrl, bool alt)
         {
-            int winRow, winColumn;
-            if (ScreenToWindow(row, column, out winRow, out winColumn))
+            if (ScreenToWindow(row, column, out int winRow, out int winColumn))
             {
                 int newSel = -1;
                 if (mVertical)
@@ -410,7 +396,7 @@ namespace Gehtsoft.Xce.Conio.Win
                 }
                 else
                 {
-                    winRow = winRow - 1;
+                    winRow--;
                     if (winRow >= 0 && winRow < mMenu.Count)
                     {
                         MenuItem item = mMenu[winRow];
@@ -431,12 +417,11 @@ namespace Gehtsoft.Xce.Conio.Win
                 }
             }
 
-            if (mParent != null)
-                if (mParent.PreTranslateLButtonDown(row, column))
-                {
-                    mCommand = PretranslatedButtonEscape;
-                    Manager.Close(this);
-                }
+            if (mParent?.PreTranslateLButtonDown(row, column) == true)
+            {
+                mCommand = PretranslatedButtonEscape;
+                Manager.Close(this);
+            }
         }
 
         internal int mPretranslatedRow, mPretranslatedColumn;
@@ -444,8 +429,7 @@ namespace Gehtsoft.Xce.Conio.Win
         internal bool PreTranslateLButtonDown(int row, int column)
         {
             bool rc;
-            int t1, t2;
-            if (ScreenToWindow(row, column, out t1, out t2))
+            if (ScreenToWindow(row, column, out int _, out int _))
             {
                 rc = true;
             }
@@ -582,7 +566,6 @@ namespace Gehtsoft.Xce.Conio.Win
                     else if (item is PopupMenuItem)
                     {
                         PopupMenuItem cmd = item as PopupMenuItem;
-                        string title = cmd.Title;
                         if (mCurSel == i)
                             color = mColors.MenuItemSelected;
                         else

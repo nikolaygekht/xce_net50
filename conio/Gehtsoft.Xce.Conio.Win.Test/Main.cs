@@ -9,23 +9,67 @@ namespace Gehtsoft.Xce.Conio.Win.Test
         public static bool Quit { get; set; } = false;
         public static IColorScheme CurrentSheme { get; set; }
 
+        private static bool ProcessCommandLineArgs(string[] args, out ConioMode input, out ConioMode output)
+        {
+            input = output = ConioFactory.DefaultMode;
+            ConioFactory.EnableTrueColor = false;
+
+            if (args.Length == 0)
+                return false;
+            
+            foreach (string arg in args)
+            {
+                switch (arg)
+                {
+                    case "win32":
+                        input = output = ConioMode.Win32;
+                        break;
+                    case "console":
+                        input = output = ConioMode.CompatibleConsole;
+                        break;
+                    case "conemu":
+                        input = output = ConioMode.Win32;
+                        ConioFactory.EnableTrueColor = true;
+                        break;
+                    case "win32-input":
+                        input = ConioMode.Win32;
+                        break;
+                    case "win32-output":
+                        output = ConioMode.Win32;
+                        break;
+                    case "console-input":
+                        input = ConioMode.CompatibleConsole;
+                        break;
+                    case "console-output":
+                        output = ConioMode.CompatibleConsole;
+                        break;
+                    case "conemu-output":
+                        output = ConioMode.Win32;
+                        ConioFactory.EnableTrueColor = true;
+                        break;
+                    case "default":
+                        input = output = ConioFactory.DefaultMode;
+                        ConioFactory.EnableTrueColor = false;
+                        break;
+                    default:
+                        return false;
+                }
+            }
+            return true;
+        }
+
         public static void Main(string[] args)
         {
-            ConioMode mode = ConioFactory.DefaultMode;
-            if (args.Length > 0 && args[0] == "win32")
-                mode = ConioMode.Win32;
-            if (args.Length > 0 && args[0] == "win32-pure")
+            if (!ProcessCommandLineArgs(args, out var inputMode, out var outputMode))
             {
-                mode = ConioMode.Win32;
-                ConioFactory.EnableTrueColor = false;
+                Console.WriteLine("Usage: app.exe mode(s)");
+                Console.WriteLine(" Where mode could be:");
+                Console.WriteLine("    win32 win32-input win32-output conemu conemu-output console-input console-output default");
+                return;
             }
-            else if (args.Length > 0 && args[0] == "conemu")
-                mode = ConioMode.Win32;
-            else if (args.Length > 0 && args[0] == "console")
-                mode = ConioMode.CompatibleConsole;
 
-            IConsoleInput input = ConioFactory.CreateInput(mode);
-            using IConsoleOutput output = ConioFactory.CreateOutput(mode);
+            IConsoleInput input = ConioFactory.CreateInput(inputMode);
+            using IConsoleOutput output = ConioFactory.CreateOutput(outputMode);
             CurrentSheme = ColorScheme.White;
 
             output.CaptureOnStart();

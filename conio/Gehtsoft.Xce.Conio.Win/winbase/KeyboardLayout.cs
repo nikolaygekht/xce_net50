@@ -7,44 +7,27 @@ namespace Gehtsoft.Xce.Conio.Win
 {
     public class KeyboardLayout
     {
-        private int mLayoutCode;
+        public int LayoutCode { get; }
 
-        public int LayoutCode
-        {
-            get
-            {
-                return mLayoutCode;
-            }
-        }
-
-        private string mLayoutName;
-
-        public string LayoutName
-        {
-            get
-            {
-                return mLayoutName;
-            }
-        }
+        public string LayoutName { get; }
 
         internal KeyboardLayout(string name, int code)
         {
-            mLayoutName = name;
-            mLayoutCode = code;
+            LayoutName = name;
+            LayoutCode = code;
         }
     };
 
     internal class KeyboardLayouts
     {
-        private Dictionary<int, KeyboardLayout> mList = new Dictionary<int, KeyboardLayout>();
-        private KeyboardLayout mUnknown = new KeyboardLayout("??", -1);
+        private readonly Dictionary<int, KeyboardLayout> mList = new Dictionary<int, KeyboardLayout>();
+        private readonly KeyboardLayout mUnknown = new KeyboardLayout("??", -1);
 
         public KeyboardLayout this[int index]
         {
             get
             {
-                KeyboardLayout l;
-                if (mList.TryGetValue(index, out l))
+                if (mList.TryGetValue(index, out KeyboardLayout l))
                     return l;
                 else
                     return mUnknown;

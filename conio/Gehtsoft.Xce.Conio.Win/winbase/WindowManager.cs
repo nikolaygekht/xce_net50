@@ -22,21 +22,9 @@ namespace Gehtsoft.Xce.Conio.Win
         private readonly static KeyboardLayouts mLayouts = new KeyboardLayouts();
         private readonly static CanvasColor mDefaultColor = new CanvasColor(0x03);
 
-        public int ScreenHeight
-        {
-            get
-            {
-                return mConsoleOutput.VisibleRows;
-            }
-        }
+        public int ScreenHeight => mConsoleOutput.VisibleRows;
 
-        public int ScreenWidth
-        {
-            get
-            {
-                return mConsoleOutput.VisibleColumns;
-            }
-        }
+        public int ScreenWidth => mConsoleOutput.VisibleColumns;
 
         public KeyboardLayout KeyboardLayout
         {

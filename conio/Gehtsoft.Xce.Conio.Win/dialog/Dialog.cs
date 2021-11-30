@@ -53,13 +53,7 @@ namespace Gehtsoft.Xce.Conio.Win
         public const int DialogResultCancel = -1;
         private readonly int mHeight, mWidth;
 
-        public int ResultCode
-        {
-            get
-            {
-                return mDialogResultCode;
-            }
-        }
+        public int ResultCode => mDialogResultCode;
 
         public IColorScheme Colors { get; }
 
@@ -128,13 +122,7 @@ namespace Gehtsoft.Xce.Conio.Win
             Manager.Close(this);
         }
 
-        public IEnumerable<DialogItem> Items
-        {
-            get
-            {
-                return mItems;
-            }
-        }
+        public IEnumerable<DialogItem> Items => mItems;
 
         virtual public bool PretranslateOnKeyPressed(ScanCode scanCode, char character, bool shift, bool ctrl, bool alt)
         {
@@ -320,13 +308,7 @@ namespace Gehtsoft.Xce.Conio.Win
             CenterButtons(new DialogItemButton[] { b1, b2, b3, b4 });
         }
 
-        public int ItemsCount
-        {
-            get
-            {
-                return mItems.Count;
-            }
-        }
+        public int ItemsCount => mItems.Count;
 
         public DialogItem GetItem(int index)
         {

@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Gehtsoft.Xce.Conio.Win.Test
 {
-    static class MainMenuFactory
+    internal static class MainMenuFactory
     {
         private static PopupMenu gMenu;
 
@@ -14,7 +14,6 @@ namespace Gehtsoft.Xce.Conio.Win.Test
         public const int TestFileDialogId = 4;
         public const int TestDialog1Id = 5;
         public const int TestDialog2Id = 6;
-
 
         public static PopupMenu Menu
         {
@@ -29,9 +28,7 @@ namespace Gehtsoft.Xce.Conio.Win.Test
         private static void CreateMenu()
         {
             PopupMenuItem bar = new PopupMenuItem("bar");
-            PopupMenuItem submenu;
-
-            submenu = bar.CreatePopup("Examples");
+            PopupMenuItem submenu = bar.CreatePopup("Examples");
             submenu.CreateCommand("Show &Message Box", MessageBoxId);
             submenu.CreateCommand("Test &Focus", TestFocusId);
             submenu.CreateCommand("Test F&ile Dialog", TestFileDialogId);

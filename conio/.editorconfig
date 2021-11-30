@@ -20,3 +20,9 @@ dotnet_diagnostic.RCS1180.severity = none
 
 # S4136: Method overloads should be grouped together
 dotnet_diagnostic.S4136.severity = none
+
+# S1121: Assignments should not be made from within sub-expressions
+dotnet_diagnostic.S1121.severity = none
+
+# S2292: Trivial properties should be auto-implemented
+dotnet_diagnostic.S2292.severity = none

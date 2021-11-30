@@ -6,44 +6,19 @@ namespace Gehtsoft.Xce.Conio.Win
 {
     public class DialogItemCheckBox : DialogItem
     {
-        private string mTitle;
         private bool mEnabled;
         private bool mInFocus;
-        private char mHotKey;
-        private int mHotKeyPosition;
+        private readonly char mHotKey;
+        private readonly int mHotKeyPosition;
         private bool mChecked;
 
-        public string Title
-        {
-            get
-            {
-                return mTitle;
-            }
-        }
+        public string Title { get; }
 
-        public override bool Enabled
-        {
-            get
-            {
-                return mEnabled;
-            }
-        }
+        public override bool Enabled => mEnabled;
 
-        public override bool IsInputElement
-        {
-            get
-            {
-                return true;
-            }
-        }
+        public override bool IsInputElement => true;
 
-        public override bool HasHotKey
-        {
-            get
-            {
-                return mHotKeyPosition >= 0;
-            }
-        }
+        public override bool HasHotKey => mHotKeyPosition >= 0;
 
         public override char HotKey
         {
@@ -78,8 +53,9 @@ namespace Gehtsoft.Xce.Conio.Win
             if (mHotKeyPosition >= 0)
                 mHotKey = title[mHotKeyPosition];
             mChecked = isChecked;
-            mTitle = title;
+            Title = title;
             mEnabled = true;
+            SetDimesions(1, width);
         }
 
         public DialogItemCheckBox(string title, int id, bool isChecked, int row, int column)
@@ -88,7 +64,7 @@ namespace Gehtsoft.Xce.Conio.Win
             mHotKeyPosition = StringUtil.ProcessHotKey(ref title);
             if (mHotKeyPosition >= 0)
                 mHotKey = title[mHotKeyPosition];
-            mTitle = title;
+            Title = title;
             mChecked = isChecked;
             mEnabled = true;
             SetDimesions(1, title.Length + 4);
@@ -153,7 +129,7 @@ namespace Gehtsoft.Xce.Conio.Win
                 canvas.Write(0, 1, ' ');
             canvas.Write(0, 2, ']');
             canvas.Write(0, 3, ' ');
-            canvas.Write(0, 4, mTitle);
+            canvas.Write(0, 4, Title);
             if (Enabled && HasHotKey)
                 canvas.Write(0, 4 + mHotKeyPosition, mInFocus ? Dialog.Colors.DialogItemCheckBoxHotKeyFocused : Dialog.Colors.DialogItemCheckBoxHotKey);
         }

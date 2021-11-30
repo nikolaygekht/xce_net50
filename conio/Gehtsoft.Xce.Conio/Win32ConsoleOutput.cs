@@ -92,7 +92,7 @@ namespace Gehtsoft.Xce.Conio
             {
                 Win32.AnnotationHeader header = Marshal.PtrToStructure<Win32.AnnotationHeader>(mMapPtr);
                 header.Locked = 1;
-                Marshal.StructureToPtr(header, mMapPtr, true);
+                Marshal.StructureToPtr(header, mMapPtr, false);
 
                 int offset = header.StructSize;
                 int size = canvas.Rows * canvas.Columns;
@@ -119,7 +119,7 @@ namespace Gehtsoft.Xce.Conio
                 }
 
                 header.Locked = 0;
-                Marshal.StructureToPtr(header, mMapPtr, true);
+                Marshal.StructureToPtr(header, mMapPtr, false);
             }
 
             using (var pointer = canvas.Data.GetPointer())
@@ -150,8 +150,6 @@ namespace Gehtsoft.Xce.Conio
 
         public Canvas ScreenToCanvas() => BufferToCanvas(mWindowTop, mWindowLeft, mWindowRows, mWindowColumns);
 
-        private readonly static Win32.AnnotationHeader ZEROHEADER = new Win32.AnnotationHeader();
-
         public void PaintCanvasToBuffer(Canvas canvas, int bufferRow = 0, int bufferColumn = 0)
         {
             if (SupportsTrueColor && bufferRow != mWindowTop && bufferColumn != mWindowLeft &&
@@ -164,7 +162,8 @@ namespace Gehtsoft.Xce.Conio
                 {
                     var header = Marshal.PtrToStructure<Win32.AnnotationHeader>(mMapPtr);
                     header.Locked = 1;
-                    Marshal.StructureToPtr(header, mMapPtr, true);
+                    Marshal.StructureToPtr(header, mMapPtr, false);
+
                     int offset = header.StructSize;
                     int size = canvas.Rows * canvas.Columns;
 
@@ -235,12 +234,13 @@ namespace Gehtsoft.Xce.Conio
                     var header = Marshal.PtrToStructure<Win32.AnnotationHeader>(mMapPtr);
                     header.FlushCounter++;
                     header.Locked = 0;
-                    Marshal.StructureToPtr(header, mMapPtr, true);
+                    Marshal.StructureToPtr(header, mMapPtr, false);
                 }
             }
         }
 
         public void PaintCanvasToScreen(Canvas canvas, int screenRow = 0, int screenColumn = 0) => PaintCanvasToBuffer(canvas, mWindowTop + screenRow, mWindowLeft + screenColumn);
+
         public void Clear()
         {
             Console.Clear();
@@ -256,9 +256,8 @@ namespace Gehtsoft.Xce.Conio
                     MarshalEx.BitFieldStructToPtr(info, mMapPtr, offset + i * 32);
 
                 header.FlushCounter++;
-                Marshal.StructureToPtr(header, mMapPtr, true);
                 header.Locked = 0;
-                Marshal.StructureToPtr(header, mMapPtr, true);
+                Marshal.StructureToPtr(header, mMapPtr, false);
             }
         }
 

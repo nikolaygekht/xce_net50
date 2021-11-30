@@ -40,17 +40,19 @@ namespace Gehtsoft.Xce.Conio
 
         public bool Read(IConsoleInputListener listener, int timeout)
         {
-            while (true)
+            while (Win32.WaitForSingleObject(mInputHandle, 100) != 0)
             {
-                if (Win32.WaitForSingleObject(mInputHandle, 100) == 0)
-                    break;
+                if (timeout >= 0 && timeout <= 100)
+                    return false;
+                if (timeout > 100)
+                    timeout -= 100;
                 listener.OnIdle();
             }
 
             Win32.INPUT_RECORD ri = new Win32.INPUT_RECORD();
 
             Win32.PeekConsoleSingleInput(mInputHandle, ref ri, 1, out uint ulEvents);
-            
+
             if (ulEvents == 0)
                 return false;
 
@@ -58,7 +60,6 @@ namespace Gehtsoft.Xce.Conio
             {
                 case Win32.KEY_EVENT:
                     {
-
                         bool shift = (ri.KeyEvent.dwControlKeyState & Win32.SHIFT_PRESSED) != 0;
                         bool alt = (ri.KeyEvent.dwControlKeyState & Win32.LEFT_ALT_PRESSED) != 0 || (ri.KeyEvent.dwControlKeyState & Win32.RIGHT_ALT_PRESSED) != 0;
                         bool ctrl = (ri.KeyEvent.dwControlKeyState & Win32.LEFT_CTRL_PRESSED) != 0 || (ri.KeyEvent.dwControlKeyState & Win32.RIGHT_CTRL_PRESSED) != 0;

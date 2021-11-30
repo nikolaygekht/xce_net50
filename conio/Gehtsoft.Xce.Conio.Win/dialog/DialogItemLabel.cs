@@ -27,9 +27,7 @@ namespace Gehtsoft.Xce.Conio.Win
             }
             set
             {
-                string title = value;
-                if (title == null)
-                    title = "";
+                string title = value ?? "";
                 mHotKeyPosition = StringUtil.ProcessHotKey(ref title);
                 if (mHotKeyPosition >= 0)
                     mHotKey = title[mHotKeyPosition];
@@ -39,13 +37,7 @@ namespace Gehtsoft.Xce.Conio.Win
             }
         }
 
-        public override bool HasHotKey
-        {
-            get
-            {
-                return mHotKeyPosition >= 0;
-            }
-        }
+        public override bool HasHotKey => mHotKeyPosition >= 0;
 
         public override char HotKey
         {
@@ -57,21 +49,9 @@ namespace Gehtsoft.Xce.Conio.Win
             }
         }
 
-        public override bool IsInputElement
-        {
-            get
-            {
-                return false;
-            }
-        }
+        public override bool IsInputElement => false;
 
-        public override bool Enabled
-        {
-            get
-            {
-                return true;
-            }
-        }
+        public override bool Enabled => true;
 
         public override void OnPaint(Canvas canvas)
         {

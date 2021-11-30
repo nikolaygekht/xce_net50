@@ -18,9 +18,7 @@ namespace Gehtsoft.Xce.Conio.Win
             }
             set
             {
-                if (value == null)
-                    throw new ArgumentNullException("value");
-                mLabel = value;
+                mLabel = value ?? throw new ArgumentNullException(nameof(value));
             }
         }
 
@@ -45,19 +43,13 @@ namespace Gehtsoft.Xce.Conio.Win
 
     public class DialogItemListBox : DialogItem, IEnumerable<DialogItemListBoxString>
     {
-        private List<DialogItemListBoxString> mItems = new List<DialogItemListBoxString>();
+        private readonly List<DialogItemListBoxString> mItems = new List<DialogItemListBoxString>();
         private int mCurSel = -1;
         private int mOffset = 0;
         private bool mInFocus = false;
         private bool mEnabled;
 
-        public int Count
-        {
-            get
-            {
-                return mItems.Count;
-            }
-        }
+        public int Count => mItems.Count;
 
         public DialogItemListBoxString this[int index]
         {
@@ -91,21 +83,9 @@ namespace Gehtsoft.Xce.Conio.Win
             return mItems.GetEnumerator();
         }
 
-        public override bool Enabled
-        {
-            get
-            {
-                return mEnabled;
-            }
-        }
+        public override bool Enabled => mEnabled;
 
-        public override bool IsInputElement
-        {
-            get
-            {
-                return true;
-            }
-        }
+        public override bool IsInputElement => true;
 
         public void Enable(bool enable)
         {
@@ -159,7 +139,6 @@ namespace Gehtsoft.Xce.Conio.Win
             Invalidate();
         }
 
-
         public void EnsureVisible(int index)
         {
             if (index >= 0 && index < mItems.Count)
@@ -177,7 +156,7 @@ namespace Gehtsoft.Xce.Conio.Win
         public DialogItemListBox(int id, int row, int column, int height, int width) : base(id, row, column, height, width)
         {
             if (height < 3)
-                throw new ArgumentException(Resources.ListBoxHeight3, "height");
+                throw new ArgumentException(Resources.ListBoxHeight3, nameof(height));
 
             mEnabled = true;
         }
@@ -202,8 +181,6 @@ namespace Gehtsoft.Xce.Conio.Win
             else
                 color = Dialog.Colors.DialogItemListBoxColorDisabled;
             canvas.Box(0, 0, Height, Width, BoxBorder.Single, color, ' ');
-
-
 
             if (mItems.Count > Height - 2)
             {
@@ -379,10 +356,12 @@ namespace Gehtsoft.Xce.Conio.Win
                         EnsureVisible(mCurSel);
                         Invalidate();
                     }
-                    else if (index >= 0 && index == mCurSel && wasInFocus)
+                    else if (index >= 0 &&
+                        index == mCurSel &&
+                        wasInFocus &&
+                        Dialog.Exists)
                     {
-                        if (Dialog.Exists)
-                            Dialog.OnItemClick(this);
+                        Dialog.OnItemClick(this);
                     }
                 }
 

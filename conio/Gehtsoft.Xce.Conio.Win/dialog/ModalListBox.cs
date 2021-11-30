@@ -7,20 +7,14 @@ namespace Gehtsoft.Xce.Conio.Win
 {
     public class ModalListBox : Window, IEnumerable<DialogItemListBoxString>
     {
-        private List<DialogItemListBoxString> mItems = new List<DialogItemListBoxString>();
+        private readonly List<DialogItemListBoxString> mItems = new List<DialogItemListBoxString>();
         private int mCurSel = -1;
         private int mOffset = 0;
-        private int mRow, mColumn, mWidth, mHeight;
+        private readonly int mRow, mColumn, mWidth, mHeight;
         private WindowManager mManager;
         private bool mOk;
 
-        public int Count
-        {
-            get
-            {
-                return mItems.Count;
-            }
-        }
+        public int Count => mItems.Count;
 
         public DialogItemListBoxString this[int index]
         {
@@ -68,7 +62,7 @@ namespace Gehtsoft.Xce.Conio.Win
 
         public int AddItem(string item, object userData)
         {
-            mItems.Add(new DialogItemListBoxString(item, null));
+            mItems.Add(new DialogItemListBoxString(item, userData));
             if (Exists)
                 Invalidate();
             return mItems.Count - 1;
@@ -103,7 +97,6 @@ namespace Gehtsoft.Xce.Conio.Win
             Invalidate();
         }
 
-
         public void EnsureVisible(int index)
         {
             if (index >= 0 && index < mItems.Count)
@@ -118,12 +111,12 @@ namespace Gehtsoft.Xce.Conio.Win
             }
         }
 
-        private IColorScheme mColors;
+        private readonly IColorScheme mColors;
 
         public ModalListBox(int row, int column, int height, int width, IColorScheme colors) : base()
         {
             if (height < 3)
-                throw new ArgumentException(Resources.ListBoxHeight3, "height");
+                throw new ArgumentException(Resources.ListBoxHeight3, nameof(height));
             mRow = row;
             mColumn = column;
             mHeight = height;
@@ -141,8 +134,7 @@ namespace Gehtsoft.Xce.Conio.Win
 
         public override void OnPaint(Canvas canvas)
         {
-            CanvasColor color;
-            color = mColors.DialogItemListBoxColor;
+            CanvasColor color = mColors.DialogItemListBoxColor;
             canvas.Box(0, 0, Height, Width, BoxBorder.Single, color, ' ');
 
             if (mItems.Count > Height - 2)
@@ -194,7 +186,6 @@ namespace Gehtsoft.Xce.Conio.Win
             double scroll = (mCurSel >= 0 ? mCurSel : mOffset) / linesPerScroll;
             return (int)Math.Floor(scroll);
         }
-
 
         public override void OnCreate()
         {
@@ -304,20 +295,19 @@ namespace Gehtsoft.Xce.Conio.Win
             }
         }
 
-        public override void OnMouseLButtonDown(int _row, int _column, bool shift, bool ctrl, bool alt)
+        public override void OnMouseLButtonDown(int row, int column, bool shift, bool ctrl, bool alt)
         {
-            int row, column;
-            bool inWindow = ScreenToWindow(_row, _column, out row, out column);
+            bool inWindow = ScreenToWindow(row, column, out int windowRow, out int windowColumn);
             if (!inWindow)
             {
                 mOk = false;
                 Manager.Close(this);
             }
 
-            if (row >= 1 && row < Height - 1 &&
-                column >= 1 && column < Width - 1)
+            if (windowRow >= 1 && windowRow < Height - 1 &&
+                windowColumn >= 1 && windowColumn < Width - 1)
             {
-                int index = mOffset + row - 1;
+                int index = mOffset + windowRow - 1;
                 if (index >= 0 && index < mItems.Count && index != mCurSel)
                 {
                     mCurSel = index;
@@ -331,15 +321,15 @@ namespace Gehtsoft.Xce.Conio.Win
                 }
             }
 
-            if (column == Width - 1)
+            if (windowColumn == Width - 1)
             {
-                if (row == 0)
+                if (windowRow == 0)
                     OnKeyPressed(ScanCode.UP, ' ', false, false, false);
-                else if (row == Height - 1 && column == Width - 1)
+                else if (windowRow == Height - 1 && windowColumn == Width - 1)
                     OnKeyPressed(ScanCode.DOWN, ' ', false, false, false);
                 else
                 {
-                    int pos = ThumbToOffset(row - 1);
+                    int pos = ThumbToOffset(windowRow - 1);
                     mCurSel = pos;
                     if (mCurSel >= mItems.Count)
                         mCurSel = mItems.Count - 1;
@@ -360,7 +350,6 @@ namespace Gehtsoft.Xce.Conio.Win
             base.OnMouseWheelUp(row, column, shift, ctrl, alt);
             OnKeyPressed(ScanCode.DOWN, ' ', false, false, false);
         }
-
 
         public override void OnSizeChanged()
         {

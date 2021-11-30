@@ -7,15 +7,9 @@ namespace Gehtsoft.Xce.Conio.Win
 {
     public class DialogItemComboBox : DialogItemSingleLineTextBox, IEnumerable<DialogItemListBoxString>
     {
-        protected override int EditWidth
-        {
-            get
-            {
-                return Width - 1;
-            }
-        }
+        protected override int EditWidth => Width - 1;
 
-        List<DialogItemListBoxString> mItems = new List<DialogItemListBoxString>();
+        private readonly List<DialogItemListBoxString> mItems = new List<DialogItemListBoxString>();
 
         private int mCurSel = -1;
 
@@ -32,7 +26,7 @@ namespace Gehtsoft.Xce.Conio.Win
                 mText.Append(mItems[value].Label);
                 mOffset = mCaret = 0;
                 mCurSel = value;
-                if (Dialog != null && Dialog.Exists)
+                if (Dialog?.Exists == true)
                     Dialog.OnItemChanged(this);
                 if (Exists)
                     Invalidate();
@@ -43,13 +37,7 @@ namespace Gehtsoft.Xce.Conio.Win
         {
         }
 
-        public int Count
-        {
-            get
-            {
-                return mItems.Count;
-            }
-        }
+        public int Count => mItems.Count;
 
         public DialogItemListBoxString this[int index]
         {
@@ -141,8 +129,7 @@ namespace Gehtsoft.Xce.Conio.Win
 
         private void ShowCombo()
         {
-            int row, column;
-            WindowToScreen(0, 0, out row, out column);
+            WindowToScreen(0, 0, out int row, out int column);
             row++;
             ModalListBox list = new ModalListBox(row, column, 10, Width, Dialog.Colors);
             foreach (DialogItemListBoxString s in mItems)

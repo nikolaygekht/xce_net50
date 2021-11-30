@@ -11,12 +11,11 @@ namespace Gehtsoft.Xce.Conio.UnitTest
     [Collection("TypeBuilder")]
     public class BitStruct
     {
-        TypeBuilderFixture mTypeBuilderFixture;
+        private readonly TypeBuilderFixture mTypeBuilderFixture;
         public BitStruct(TypeBuilderFixture typeBuilderFixture)
         {
             mTypeBuilderFixture = typeBuilderFixture;
         }
-
 
         [Fact]
         public void DefaultLength_LessOneByte()
@@ -205,18 +204,18 @@ namespace Gehtsoft.Xce.Conio.UnitTest
             IntPtr v = MarshalEx.BitFieldStructToPtr(o);
             object o1 = MarshalEx.PtrToBitFieldStruct(type, v);
 
-            o1.GetField<uint>("a").Should().Be((iv) & 0x7);
-            o1.GetField<uint>("b").Should().Be((iv) & 0xff);
-            o1.GetField<uint>("c").Should().Be((iv) & 0x3);
-            o1.GetField<uint>("d").Should().Be((iv) & 0xfff);
-            o1.GetField<uint>("e").Should().Be((iv));
-            o1.GetField<uint>("f").Should().Be((iv) & 0x7f);
+            o1.GetField<uint>("a").Should().Be(iv & 0x7);
+            o1.GetField<uint>("b").Should().Be(iv & 0xff);
+            o1.GetField<uint>("c").Should().Be(iv & 0x3);
+            o1.GetField<uint>("d").Should().Be(iv & 0xfff);
+            o1.GetField<uint>("e").Should().Be(iv);
+            o1.GetField<uint>("f").Should().Be(iv & 0x7f);
         }
 
         [Fact]
         public void CleanUpRest()
         {
-            var tb = mTypeBuilderFixture.CreateTypeBuilder($"CleanUpRest");
+            var tb = mTypeBuilderFixture.CreateTypeBuilder("CleanUpRest");
             tb.AddBitStructClassAttribute(4);
             tb.AddBitField<uint>("a", 3);
             tb.AddBitField<uint>("b", 8);
@@ -243,7 +242,7 @@ namespace Gehtsoft.Xce.Conio.UnitTest
         [Fact]
         public void NotOverShoot()
         {
-            var tb = mTypeBuilderFixture.CreateTypeBuilder($"NotOverShoot");
+            var tb = mTypeBuilderFixture.CreateTypeBuilder("NotOverShoot");
             tb.AddBitStructClassAttribute();
             tb.AddBitField<uint>("a", 3);
             tb.AddBitField<uint>("b", 8);
