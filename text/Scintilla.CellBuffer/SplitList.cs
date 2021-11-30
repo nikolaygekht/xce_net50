@@ -39,7 +39,7 @@ namespace Scintilla.CellBuffer
             public bool MoveNext()
             {
                 mPosition++;
-                return mPosition <= mList.Count;
+                return mPosition < mList.Count;
             }
 
             public void Reset()
@@ -62,6 +62,7 @@ namespace Scintilla.CellBuffer
 
         public T this[int index]
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 if (index < Part1Length)
@@ -69,6 +70,7 @@ namespace Scintilla.CellBuffer
                 else
                     return mContent[index + GapLength];
             }
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             set
             {
                 if (index < Part1Length)
@@ -111,13 +113,20 @@ namespace Scintilla.CellBuffer
             if (position == Part1Length)
                 return;
 
-            mContent.EnsureCapacity(Count + DefaultGapSize);
+            int newLength = Count + DefaultGapSize;
+            mContent.EnsureCapacity(newLength);
+           
             //close gap
-            mContent.Move(Part1Length, Part1Length + GapLength, Part2Length);
+            if (Part2Length > 0)
+                mContent.Move(Part1Length + GapLength, Part1Length, Part2Length);
+
             //create gap at new location
-            mContent.Move(position, position + DefaultGapSize, Part2Length);
+            if (Count - position > 0)
+                mContent.Move(position, position + DefaultGapSize, Count - position);
+            
             Part1Length = position;
             GapLength = DefaultGapSize;
+            mContent.AdjustLength(newLength);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -126,25 +135,44 @@ namespace Scintilla.CellBuffer
             if (count <= 0)
                 return;
 
+            if (GapLength == 0 && count == 1)
+                count = DefaultGapSize;
+
             if (GapLength < count)
             {
                 int required = count - GapLength;
                 mContent.EnsureCapacity(Count + count);
+                int newLength = Part1Length + Part2Length + GapLength + required;
                 mContent.Move(Part1Length + GapLength, Part1Length + GapLength + required, Part2Length);
-                GapLength += count;
+                mContent.AdjustLength(newLength);
+                GapLength = count;
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Add(T value)
+        {
+            if (Part1Length != Count)
+                GapTo(Count);
+
+            if (GapLength < 1)
+                RoomFor(DefaultGapSize);
+            mContent[Part1Length++] = value;
+            GapLength--;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void InsertAt(int index, T value)
         {
             GapTo(index);
-            RoomFor(1);
+            if (GapLength < 1)
+                RoomFor(DefaultGapSize);
             mContent[Part1Length] = value;
             Part1Length++;
             GapLength--;
         }
 
-        public void InsertAt(int index, ICollection<T> values)
+        public void InsertAt(int index, IReadOnlyCollection<T> values)
         {
             GapTo(index);
             RoomFor(values.Count);
@@ -153,6 +181,7 @@ namespace Scintilla.CellBuffer
             GapLength -= values.Count;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void RemoveAt(int index, int count = 1)
         {
             GapTo(index);
@@ -165,14 +194,21 @@ namespace Scintilla.CellBuffer
         {
             if (sourceIndex + length <= Part1Length)
                 mContent.ToArray(sourceIndex, length, target, targetIndex);
-            else if (sourceIndex > Part1Length)
+            else if (sourceIndex >= Part1Length)
                 mContent.ToArray(sourceIndex + GapLength, length, target, targetIndex);
             else
             {
                 var inPart1 = Part1Length - sourceIndex;
                 ToArray(sourceIndex, inPart1, target, targetIndex);
-                ToArray(sourceIndex + inPart1, length - inPart1, target, targetIndex + inPart1);
+                ToArray(Part1Length, length - inPart1, target, targetIndex + inPart1);
             }
+        }
+
+        public T[] ToArray()
+        {
+            T[] r = new T[Count];
+            ToArray(0, Count, r, 0);
+            return r;
         }
 
         public IEnumerator<T> GetEnumerator() => new SplitListEnumerator(this);

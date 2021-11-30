@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
 namespace Scintilla.CellBuffer
@@ -9,11 +11,43 @@ namespace Scintilla.CellBuffer
     /// A simple vector is an analogues of a list, but with ability to move the blocks of content inside the vector fast
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    internal class SimpleList<T>
+    internal class SimpleList<T> : IReadOnlyList<T>
     {
         private T[] mContent;
         private int mCapacity;
         private int mLength;
+
+        private sealed class SimpleListEnumerator : IEnumerator<T>
+        {
+            private readonly SimpleList<T> mList;
+            private int mPosition;
+
+            public SimpleListEnumerator(SimpleList<T> list)
+            {
+                mList = list;
+                mPosition = -1;
+            }
+
+            public T Current => mList[mPosition];
+
+            object IEnumerator.Current => Current;
+
+            public void Dispose()
+            {
+                //nothing to dispose
+            }
+
+            public bool MoveNext()
+            {
+                mPosition++;
+                return mPosition < mList.Count;
+            }
+
+            public void Reset()
+            {
+                mPosition = -1;
+            }
+        }
 
         /// <summary>
         /// Returns the number of items
@@ -43,6 +77,10 @@ namespace Scintilla.CellBuffer
                 mCapacity = value;
             }
         }
+
+        int IReadOnlyCollection<T>.Count => throw new NotImplementedException();
+
+        T IReadOnlyList<T>.this[int index] => throw new NotImplementedException();
 
         /// <summary>
         /// Gets or sets an item
@@ -157,7 +195,14 @@ namespace Scintilla.CellBuffer
         /// <param name="destinationIndex"></param>
         /// <param name="count"></param>
         public void Move(int sourceIndex, int destinationIndex, int count)
-            => Array.Copy(mContent, sourceIndex, mContent, destinationIndex, count);
+        { 
+            Array.Copy(mContent, sourceIndex, mContent, destinationIndex, count);
+        }
+
+        internal void AdjustLength(int newLength)
+        {
+            mLength = newLength;
+        }
 
         /// <summary>
         /// Copies content to array
@@ -168,5 +213,16 @@ namespace Scintilla.CellBuffer
         /// <param name="targetIndex"></param>
         public void ToArray(int sourceIndex, int length, T[] target, int targetIndex)
             => Array.Copy(mContent, sourceIndex, target, targetIndex, length);
+
+        public T[] ToArray()
+        {
+            T[] r = new T[Count];
+            ToArray(0, Count, r, 0);
+            return r;
+        }
+
+        public IEnumerator<T> GetEnumerator() => new SimpleListEnumerator(this);
+
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
 }
