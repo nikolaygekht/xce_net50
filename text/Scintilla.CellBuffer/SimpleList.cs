@@ -116,6 +116,16 @@ namespace Scintilla.CellBuffer
         }
 
         /// <summary>
+        /// Constructor
+        /// </summary>
+        public SimpleList(T[] initialContent)
+        {
+            EnsureCapacity(initialContent.Length);
+            Array.Copy(initialContent, mContent, initialContent.Length);
+            mLength = initialContent.Length;
+        }
+
+        /// <summary>
         /// Ensures that the array is capable to keep the specified number of items
         /// </summary>
         /// <param name="size"></param>
@@ -195,7 +205,7 @@ namespace Scintilla.CellBuffer
         /// <param name="destinationIndex"></param>
         /// <param name="count"></param>
         public void Move(int sourceIndex, int destinationIndex, int count)
-        { 
+        {
             Array.Copy(mContent, sourceIndex, mContent, destinationIndex, count);
         }
 

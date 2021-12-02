@@ -1,31 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
 using Scintilla.CellBuffer;
 
 namespace Gehtsoft.Xce.TextBuffer
 {
-
     /// <summary>
     /// The text buffer
     /// </summary>
-    public class TextBuffer
+    public class TextBuffer : IDisposable
     {
-        /// <summary>
-        /// The event invoked when the text buffer is changed
-        /// </summary>
-        public event TextBufferChangedDelegate TextBufferChanged;
-
-        /// <summary>
-        /// The object for synchronization of operations with buffer
-        /// </summary>
-        public object SyncRoot { get; } = new object();
-
-        /// <summary>
-        /// The file name of associated with the text buffer
-        /// </summary>
-        public string FileName { get; set; }
+        private readonly MutexSlim mSyncRoot = new MutexSlim();
 
         private readonly SplitList<SplitList<char>> mContent = new SplitList<SplitList<char>>();
 
@@ -34,26 +22,36 @@ namespace Gehtsoft.Xce.TextBuffer
         /// </summary>
         public int LinesCount => mContent.Count;
 
-        /// <summary>
-        /// The buffer encoding code page
-        /// </summary>
-        public int Codepage { get; set; }
-
-        /// <summary>
-        /// The end of line mode
-        /// </summary>
-        public EolMode EolMode { get; set; }
-
-        /// <summary>
-        /// The list of the markers
-        /// </summary>
         private readonly List<PositionMarker> mMarkers = new List<PositionMarker>();
+
+        private TextBufferStatus mStatus;
+
+        public TextBufferStatus Status
+        {
+            get => mStatus;
+            set
+            {
+                mStatus = value;
+
+                mMarkers[0] = mStatus.CursorPosition;
+                mMarkers[1] = mStatus.BlockStart;
+                mMarkers[2] = mStatus.BlockEnd;
+            }
+        }
+
+        public IReadOnlyList<PositionMarker> SavedPositions { get; } = new PositionMarkerCollection();
 
         /// <summary>
         /// Constructor
         /// </summary>
         public TextBuffer()
         {
+            mMarkers.Add(null);
+            mMarkers.Add(null);
+            mMarkers.Add(null);
+            Status = new TextBufferStatus();
+            for (int i = 0; i < SavedPositions.Count; i++)
+                mMarkers.Add(SavedPositions[i]);
         }
 
         /// <summary>
@@ -63,6 +61,8 @@ namespace Gehtsoft.Xce.TextBuffer
         /// <param name="target"></param>
         public void GetLine(int line, out char[] target)
         {
+            using var @lock = mSyncRoot.Lock();
+
             if (line < 0)
                 throw new ArgumentOutOfRangeException(nameof(line));
             if (line >= mContent.Count)
@@ -75,7 +75,7 @@ namespace Gehtsoft.Xce.TextBuffer
                 else
                 {
                     target = new char[lineContent.Count];
-                    GetLine(line, target, out _);
+                    lineContent.ToArray(0, target.Length, target, 0);
                 }
             }
         }
@@ -87,6 +87,8 @@ namespace Gehtsoft.Xce.TextBuffer
         /// <param name="target"></param>
         public void GetLine(int line, char[] target, out int length)
         {
+            using var @lock = mSyncRoot.Lock();
+
             if (line < 0)
                 throw new ArgumentOutOfRangeException(nameof(line));
             if (line >= mContent.Count)
@@ -94,6 +96,10 @@ namespace Gehtsoft.Xce.TextBuffer
                 length = 0;
                 return;
             }
+            
+            if (target == null)
+                throw new ArgumentNullException(nameof(target));
+
             var lineContent = mContent[line];
             length = lineContent.Count;
             if (length > target.Length)
@@ -119,6 +125,8 @@ namespace Gehtsoft.Xce.TextBuffer
         /// <param name="target"></param>
         public void GetSubstring(int line, int column, int length, out char[] target)
         {
+            using var @lock = mSyncRoot.Lock();
+
             if (line < 0)
                 throw new ArgumentOutOfRangeException(nameof(line));
             if (column < 0)
@@ -150,10 +158,14 @@ namespace Gehtsoft.Xce.TextBuffer
         /// <param name="target"></param>
         public void GetSubstring(int line, int column, int length, char[] target, out int actualLength)
         {
+            using var @lock = mSyncRoot.Lock();
+
             if (line < 0)
                 throw new ArgumentOutOfRangeException(nameof(line));
             if (column < 0)
                 throw new ArgumentOutOfRangeException(nameof(column));
+            if (target == null)
+                throw new ArgumentNullException(nameof(target));
             if (line >= mContent.Count)
                 actualLength = 0;
             else
@@ -191,38 +203,197 @@ namespace Gehtsoft.Xce.TextBuffer
             return new string(characters);
         }
 
-        internal void AppendLine(string line) => AppendLine(line.ToCharArray());
+        internal void AppendLine(string text) => AppendLine(text.ToCharArray());
 
-        internal void InsertLine(int index, string line) => InsertLine(index, line.ToCharArray());
+        internal void InsertLine(int line, string text) => InsertLine(line, text.ToCharArray());
 
-        internal void InsertSubstring(int index, int position, string substring) => InsertSubstring(index, position, substring.ToCharArray());
+        internal void InsertSubstring(int line, int position, string text) => InsertSubstring(line, position, text.ToCharArray());
 
-        internal void InsertCharacter(int index, int position, char character)
+        internal void AppendLine(char[] text)
         {
+            using var @lock = mSyncRoot.Lock();
+
+            if (text == null)
+                throw new ArgumentNullException(nameof(text));
+
+            mContent.Add(new SplitList<char>(text));
+            UpdateMarkersLineInserted(mContent.Count, 1);
         }
 
-        internal void AppendLine(char[] line)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private int AdjustLines(int line)
         {
+            var count = 0;
+            while (mContent.Count < line)
+            {
+                mContent.Add(new SplitList<char>());
+                count++;
+            }
+            return count;
         }
 
-        internal void InsertLine(int index, char[] line)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private int AdjustLineContent(SplitList<char> line, int position)
         {
+            if (line.Count >= position)
+                return 0;
+            int count = position - line.Count;
+            line.Add(' ', count);
+            return count;
         }
 
-        internal void InsertSubstring(int index, int position, char[] substring)
+        internal void InsertLine(int line, char[] text)
         {
+            using var @lock = mSyncRoot.Lock();
+
+            if (line < 0)
+                throw new ArgumentOutOfRangeException(nameof(line));
+
+            AdjustLines(line);
+
+            if (text == null)
+                throw new ArgumentNullException(nameof(text));
+
+            if (line == mContent.Count)
+                mContent.Add(new SplitList<char>(text));
+            else
+                mContent.InsertAt(line, new SplitList<char>(text));
+            UpdateMarkersLineInserted(line, 1);
         }
 
-        internal void RemoveSubstring(int index, int position, int length)
+        internal void InsertCharacter(int line, int position, char character)
         {
+            Span<char> v = stackalloc char[1];
+            v[0] = character;
+            InsertSubstring(line, position, v);
         }
 
-        internal void RemoveLine(int index)
+        private void InsertSubstring(int line, int position, char[] text)
         {
+            if (text == null)
+                throw new ArgumentNullException(nameof(text));
+
+            InsertSubstring(line, position, new Span<char>(text));
         }
 
-        internal void RemoveLines(int index, int count)
+        private void InsertSubstring(int line, int position, Span<char> text)
         {
+            using var @lock = mSyncRoot.Lock();
+
+            if (line < 0)
+                throw new ArgumentOutOfRangeException(nameof(line));
+
+            AdjustLines(line + 1);
+
+            var lineContent = mContent[line];
+
+            if (position < 0)
+                throw new ArgumentOutOfRangeException(nameof(position));
+
+            AdjustLineContent(lineContent, position);
+
+            if (text.Length > 0)
+            {
+                lineContent.InsertAt(position, text);
+                UpdateMarkersCharactersInserted(line, position, text.Length);
+            }
+        }
+
+        internal void RemoveSubstring(int line, int position, int length)
+        {
+            using var @lock = mSyncRoot.Lock();
+
+            if (line < 0 || line > mContent.Count)
+                throw new ArgumentOutOfRangeException(nameof(line));
+
+            var lineContent = mContent[line];
+
+            if (position < 0 || position + length > lineContent.Count)
+                throw new ArgumentOutOfRangeException(nameof(position));
+
+            lineContent.RemoveAt(position, length);
+            UpdateMarkersCharactersRemoved(line, position, length);
+        }
+
+        internal void RemoveLine(int line) => RemoveLines(line, 1);
+
+        internal void RemoveLines(int line, int count)
+        {
+            using var @lock = mSyncRoot.Lock();
+
+            if (line < 0 || line + count > mContent.Count)
+                throw new ArgumentOutOfRangeException(nameof(line));
+
+            mContent.RemoveAt(line, count);
+            UpdateMarkersLineRemoved(line, count);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void UpdateMarkersLineInserted(int line, int count)
+        {
+            for (int i = 0; i < mMarkers.Count; i++)
+            {
+                var m = mMarkers[i];
+                if (m.Line >= line)
+                    m.Line += count;
+            }
+            ValidateBlockMode();
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void UpdateMarkersLineRemoved(int line, int count)
+        {
+            for (int i = 0; i < mMarkers.Count; i++)
+            {
+                var m = mMarkers[i];
+                if (m.Line > line)
+                    m.Line -= count;
+            }
+            ValidateBlockMode();
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void UpdateMarkersCharactersInserted(int line, int position, int count)
+        {
+            for (int i = 0; i < mMarkers.Count; i++)
+            {
+                var m = mMarkers[i];
+                if (m.Line == line && m.Column >= position)
+                    m.Column += count;
+            }
+            ValidateBlockMode();
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void UpdateMarkersCharactersRemoved(int line, int position, int count)
+        {
+            for (int i = 0; i < mMarkers.Count; i++)
+            {
+                var m = mMarkers[i];
+                if (m.Line == line && m.Column > position)
+                    m.Column -= count;
+            }
+            ValidateBlockMode();
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void ValidateBlockMode()
+        {
+            if (Status.BlockMode != BlockMode.None && Status.BlockStart > Status.BlockEnd)
+                Status.BlockMode = BlockMode.None;
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            mSyncRoot.Dispose();
         }
     }
 }
+
+

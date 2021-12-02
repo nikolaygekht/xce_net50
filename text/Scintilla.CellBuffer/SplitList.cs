@@ -48,7 +48,7 @@ namespace Scintilla.CellBuffer
             }
         }
 
-        private readonly SimpleList<T> mContent = new SimpleList<T>();
+        private readonly SimpleList<T> mContent;
         private const int DefaultGapSize = 16;
 
         /// <summary>
@@ -98,8 +98,17 @@ namespace Scintilla.CellBuffer
         /// </summary>
         public SplitList()
         {
+            mContent = new SimpleList<T>();
             mContent.AddEmptyElements(DefaultGapSize);
             Part1Length = 0;
+            GapLength = DefaultGapSize;
+        }
+
+        public SplitList(T[] initialContent)
+        {
+            mContent = new SimpleList<T>(initialContent);
+            mContent.AddEmptyElements(DefaultGapSize);
+            Part1Length = initialContent.Length;
             GapLength = DefaultGapSize;
         }
 
@@ -115,7 +124,7 @@ namespace Scintilla.CellBuffer
 
             int newLength = Count + DefaultGapSize;
             mContent.EnsureCapacity(newLength);
-           
+
             //close gap
             if (Part2Length > 0)
                 mContent.Move(Part1Length + GapLength, Part1Length, Part2Length);
@@ -123,7 +132,7 @@ namespace Scintilla.CellBuffer
             //create gap at new location
             if (Count - position > 0)
                 mContent.Move(position, position + DefaultGapSize, Count - position);
-            
+
             Part1Length = position;
             GapLength = DefaultGapSize;
             mContent.AdjustLength(newLength);
@@ -162,6 +171,22 @@ namespace Scintilla.CellBuffer
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Add(T value, int count)
+        {
+            if (Part1Length != Count)
+                GapTo(Count);
+
+            if (GapLength < count)
+                RoomFor(DefaultGapSize + count);
+            while (count > 0)
+            {
+                mContent[Part1Length++] = value;
+                GapLength--;
+                count--;
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void InsertAt(int index, T value)
         {
             GapTo(index);
@@ -179,6 +204,18 @@ namespace Scintilla.CellBuffer
             foreach (var value in values)
                 mContent[Part1Length++] = value;
             GapLength -= values.Count;
+        }
+
+        public void InsertAt(int index, T[] values)
+            => InsertAt(index, new Span<T>(values));
+
+        public void InsertAt(int index, Span<T> values)
+        {
+            GapTo(index);
+            RoomFor(values.Length);
+            foreach (var value in values)
+                mContent[Part1Length++] = value;
+            GapLength -= values.Length;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
