@@ -180,11 +180,8 @@ namespace Gehtsoft.Xce.TextBuffer
                 if (length > target.Length)
                     length = target.Length;
 
-                if (length != 0)
-                {
-                    target = new char[length];
+                if (length > 0)
                     lineContent.ToArray(column, length, target, 0);
-                }
 
                 actualLength = length;
             }
@@ -203,11 +200,11 @@ namespace Gehtsoft.Xce.TextBuffer
             return new string(characters);
         }
 
-        internal void AppendLine(string text) => AppendLine(text.ToCharArray());
+        internal void AppendLine(string text) => AppendLine(text?.ToCharArray());
 
-        internal void InsertLine(int line, string text) => InsertLine(line, text.ToCharArray());
+        internal void InsertLine(int line, string text) => InsertLine(line, text?.ToCharArray());
 
-        internal void InsertSubstring(int line, int position, string text) => InsertSubstring(line, position, text.ToCharArray());
+        internal void InsertSubstring(int line, int position, string text) => InsertSubstring(line, position, text?.ToCharArray());
 
         internal void AppendLine(char[] text)
         {
@@ -258,6 +255,7 @@ namespace Gehtsoft.Xce.TextBuffer
                 mContent.Add(new SplitList<char>(text));
             else
                 mContent.InsertAt(line, new SplitList<char>(text));
+            
             UpdateMarkersLineInserted(line, 1);
         }
 
@@ -268,7 +266,7 @@ namespace Gehtsoft.Xce.TextBuffer
             InsertSubstring(line, position, v);
         }
 
-        private void InsertSubstring(int line, int position, char[] text)
+        internal void InsertSubstring(int line, int position, char[] text)
         {
             if (text == null)
                 throw new ArgumentNullException(nameof(text));
@@ -303,13 +301,23 @@ namespace Gehtsoft.Xce.TextBuffer
         {
             using var @lock = mSyncRoot.Lock();
 
-            if (line < 0 || line > mContent.Count)
+            if (line < 0)
                 throw new ArgumentOutOfRangeException(nameof(line));
+
+            if (line >= mContent.Count)
+                return;
 
             var lineContent = mContent[line];
 
-            if (position < 0 || position + length > lineContent.Count)
+            if (position < 0)
                 throw new ArgumentOutOfRangeException(nameof(position));
+
+            if (position + length > lineContent.Count)
+            {
+                length = lineContent.Count - position;
+                if (length <= 0)
+                    return;
+            }
 
             lineContent.RemoveAt(position, length);
             UpdateMarkersCharactersRemoved(line, position, length);
@@ -321,8 +329,15 @@ namespace Gehtsoft.Xce.TextBuffer
         {
             using var @lock = mSyncRoot.Lock();
 
-            if (line < 0 || line + count > mContent.Count)
+            if (line < 0)
                 throw new ArgumentOutOfRangeException(nameof(line));
+
+            if (line + count > mContent.Count)
+            {
+                count = mContent.Count - line;
+                if (count <= 0)
+                    return;
+            }
 
             mContent.RemoveAt(line, count);
             UpdateMarkersLineRemoved(line, count);
