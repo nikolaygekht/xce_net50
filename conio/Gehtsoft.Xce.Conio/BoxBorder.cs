@@ -15,7 +15,7 @@ namespace Gehtsoft.Xce.Conio
         public char Bottom { get; }
         public char BottomRight { get; }
 
-        public BoxBorder(char topLeft, char top, char topRight, char left, char right, char bottomLeft, char bottom, char bottomRight)
+        public BoxBorder(char topLeft, char top, char topRight, char left, char right, char bottomLeft, char bottom, char bottomRight)  //NOSONAR
         {
             TopLeft = topLeft;
             Top = top;

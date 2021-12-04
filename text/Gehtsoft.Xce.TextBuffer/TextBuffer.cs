@@ -96,7 +96,7 @@ namespace Gehtsoft.Xce.TextBuffer
                 length = 0;
                 return;
             }
-            
+
             if (target == null)
                 throw new ArgumentNullException(nameof(target));
 
@@ -200,13 +200,13 @@ namespace Gehtsoft.Xce.TextBuffer
             return new string(characters);
         }
 
-        internal void AppendLine(string text) => AppendLine(text?.ToCharArray());
+        internal void AppendLine(string text, bool suppressUndo = false) => AppendLine(text?.ToCharArray(), suppressUndo);
 
-        internal void InsertLine(int line, string text) => InsertLine(line, text?.ToCharArray());
+        internal void InsertLine(int line, string text, bool suppressUndo = false) => InsertLine(line, text?.ToCharArray(), suppressUndo);
 
-        internal void InsertSubstring(int line, int position, string text) => InsertSubstring(line, position, text?.ToCharArray());
+        internal void InsertSubstring(int line, int position, string text, bool suppressUndo = false) => InsertSubstring(line, position, text?.ToCharArray(), suppressUndo);
 
-        internal void AppendLine(char[] text)
+        internal void AppendLine(char[] text, bool suppressUndo = false)
         {
             using var @lock = mSyncRoot.Lock();
 
@@ -230,7 +230,7 @@ namespace Gehtsoft.Xce.TextBuffer
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private int AdjustLineContent(SplitList<char> line, int position)
+        private static int AdjustLineContent(SplitList<char> line, int position)
         {
             if (line.Count >= position)
                 return 0;
@@ -239,7 +239,7 @@ namespace Gehtsoft.Xce.TextBuffer
             return count;
         }
 
-        internal void InsertLine(int line, char[] text)
+        internal void InsertLine(int line, char[] text, bool suppressUndo = false)
         {
             using var @lock = mSyncRoot.Lock();
 
@@ -255,26 +255,26 @@ namespace Gehtsoft.Xce.TextBuffer
                 mContent.Add(new SplitList<char>(text));
             else
                 mContent.InsertAt(line, new SplitList<char>(text));
-            
+
             UpdateMarkersLineInserted(line, 1);
         }
 
-        internal void InsertCharacter(int line, int position, char character)
+        internal void InsertCharacter(int line, int position, char character, bool suppressUndo = false)
         {
             Span<char> v = stackalloc char[1];
             v[0] = character;
-            InsertSubstring(line, position, v);
+            InsertSubstring(line, position, v, suppressUndo);
         }
 
-        internal void InsertSubstring(int line, int position, char[] text)
+        internal void InsertSubstring(int line, int position, char[] text, bool suppressUndo = false)
         {
             if (text == null)
                 throw new ArgumentNullException(nameof(text));
 
-            InsertSubstring(line, position, new Span<char>(text));
+            InsertSubstring(line, position, new Span<char>(text), suppressUndo);
         }
 
-        private void InsertSubstring(int line, int position, Span<char> text)
+        private void InsertSubstring(int line, int position, Span<char> text, bool suppressUndo)
         {
             using var @lock = mSyncRoot.Lock();
 
@@ -297,7 +297,7 @@ namespace Gehtsoft.Xce.TextBuffer
             }
         }
 
-        internal void RemoveSubstring(int line, int position, int length)
+        internal void RemoveSubstring(int line, int position, int length, bool suppressUndo = false)
         {
             using var @lock = mSyncRoot.Lock();
 
@@ -323,9 +323,9 @@ namespace Gehtsoft.Xce.TextBuffer
             UpdateMarkersCharactersRemoved(line, position, length);
         }
 
-        internal void RemoveLine(int line) => RemoveLines(line, 1);
+        internal void RemoveLine(int line, bool suppressUndo = false) => RemoveLines(line, 1, suppressUndo);
 
-        internal void RemoveLines(int line, int count)
+        internal void RemoveLines(int line, int count, bool suppressUndo = false)
         {
             using var @lock = mSyncRoot.Lock();
 
@@ -361,7 +361,15 @@ namespace Gehtsoft.Xce.TextBuffer
             for (int i = 0; i < mMarkers.Count; i++)
             {
                 var m = mMarkers[i];
-                if (m.Line > line)
+                var ml = m.Line;
+                if (ml >= line && ml < line + count)
+                {
+                    if (m.RemoveWhenLineDeleted)
+                        m.Line = -1;
+                    else
+                        m.Line = line;
+                }
+                else if (m.Line >= line + count)
                     m.Line -= count;
             }
             ValidateBlockMode();
@@ -385,8 +393,19 @@ namespace Gehtsoft.Xce.TextBuffer
             for (int i = 0; i < mMarkers.Count; i++)
             {
                 var m = mMarkers[i];
-                if (m.Line == line && m.Column > position)
-                    m.Column -= count;
+                var mc = m.Column;
+                if (m.Line == line)
+                {
+                    if (mc >= position && mc < position + count)
+                    {
+                        if (m.RemoveWhenLineDeleted)
+                            m.Line = m.Column = -1;
+                        else
+                            m.Column = position;
+                    }
+                    else if (mc >= position + count)
+                        m.Column -= count;
+                }
             }
             ValidateBlockMode();
         }
@@ -394,7 +413,7 @@ namespace Gehtsoft.Xce.TextBuffer
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void ValidateBlockMode()
         {
-            if (Status.BlockMode != BlockMode.None && Status.BlockStart > Status.BlockEnd)
+            if (Status.BlockMode != BlockMode.None && (Status.BlockStart > Status.BlockEnd || Status.BlockStart.Line < 0 || Status.BlockEnd.Line < 0))
                 Status.BlockMode = BlockMode.None;
         }
 

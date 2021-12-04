@@ -10,7 +10,7 @@ namespace Gehtsoft.Xce.Conio.Win
         internal class DialogClientArea : Window
         {
             private readonly CanvasColor mBg;
-            private readonly Dialog  mDlg;
+            private readonly Dialog mDlg;
             private Window mPreviousFocus;
 
             internal DialogClientArea(Dialog dlg, CanvasColor background)
@@ -128,115 +128,158 @@ namespace Gehtsoft.Xce.Conio.Win
         {
             if (scanCode == ScanCode.TAB)
             {
-                Window focus = Manager.GetFocus();
-                if (focus is DialogItem dlg && dlg.Dialog == this)
-                {
-                    int i, curr = -1;
-                    for (i = 0; i < mItems.Count; i++)
-                    {
-                        if (mItems[i] == focus)
-                        {
-                            curr = i;
-                            break;
-                        }
-                    }
-
-                    if (curr != -1)
-                    {
-                        if (!shift && !ctrl && !alt)
-                        {
-                            for (i = curr + 1; i != curr; i++)
-                            {
-                                if (i == mItems.Count)
-                                {
-                                    i = -1;
-                                    continue;
-                                }
-                                if (mItems[i].IsInputElement && mItems[i].Enabled)
-                                {
-                                    Manager.SetFocus(mItems[i]);
-                                    break;
-                                }
-                            }
-                        }
-                        else if (shift && !ctrl && !alt)
-                        {
-                            for (i = curr - 1; i != curr; i--)
-                            {
-                                if (i == -1)
-                                {
-                                    i = mItems.Count;
-                                    continue;
-                                }
-
-                                if (mItems[i].IsInputElement && mItems[i].Enabled)
-                                {
-                                    Manager.SetFocus(mItems[i]);
-                                    break;
-                                }
-                            }
-                        }
-                        return true;
-                    }
-                }
+                return PretranslateKey_HandleTab(shift, ctrl, alt);
             }
             else if (scanCode == ScanCode.RETURN)
             {
-                if (!shift && !ctrl && !alt)
-                {
-                    //find OK button
-                    foreach (DialogItem item in mItems)
-                        if (item.ID == Dialog.DialogResultOK)
-                        {
-                            item.Click();
-                            return true;
-                        }
-                }
-                return false;
+                return PretranslateKey_HandleReturn(shift, ctrl, alt);
             }
             else if (scanCode == ScanCode.ESCAPE)
             {
-                if (!shift && !ctrl && !alt)
-                {
-                    //find OK button
-                    foreach (DialogItem item in mItems)
-                        if (item.ID == Dialog.DialogResultCancel)
-                        {
-                            item.Click();
-                            return true;
-                        }
-                }
-                return false;
+                return PretranslateKey_HandleEscape(shift, ctrl, alt);
             }
-
             if (!ctrl && alt && character > ' ')
             {
-                for (int i = 0; i < mItems.Count; i++)
-                {
-                    DialogItem item = mItems[i];
-                    if (item.HasHotKey && item.Enabled && char.ToUpper(item.HotKey) == char.ToUpper(character))
-                    {
-                        if (item.IsInputElement)
-                        {
-                            Manager.SetFocus(item);
-                            item.OnHotkeyActivated();
-                        }
-                        else
-                        {
-                            if (i != mItems.Count - 1)
-                            {
-                                item = mItems[i + 1];
-                                if (item.Enabled && item.IsInputElement)
-                                {
-                                    Manager.SetFocus(item);
-                                    item.OnHotkeyActivated();
-                                }
-                            }
-                        }
-                    }
-                }
+                return PretranslateKey_AltCharacter(character);
             }
             return false;
+        }
+
+        private bool PretranslateKey_AltCharacter(char character)
+        {
+            for (int i = 0; i < mItems.Count; i++)
+            {
+                DialogItem item = mItems[i];
+                if (item.HasHotKey && item.Enabled && char.ToUpper(item.HotKey) == char.ToUpper(character) &&
+                    PretranslateKey_AltCharacter_ProcessItem(item, i == mItems.Count - 1 ? null : mItems[i + 1]))
+                    return true;
+            }
+            return false;
+        }
+
+        private bool PretranslateKey_AltCharacter_ProcessItem(DialogItem item, DialogItem nextItem)
+        {
+            if (item.IsInputElement)
+            {
+                Manager.SetFocus(item);
+                item.OnHotkeyActivated();
+                return true;
+            }
+            else
+            {
+                if (nextItem != null)
+                {
+                    item = nextItem;
+                    if (item.Enabled && item.IsInputElement)
+                    {
+                        Manager.SetFocus(item);
+                        item.OnHotkeyActivated();
+                    }
+                }
+                return true;
+            }
+        }
+
+        private bool PretranslateKey_HandleReturn(bool shift, bool ctrl, bool alt)
+        {
+            if (shift || ctrl || alt)
+                return false;
+
+            //find OK button
+            foreach (DialogItem item in mItems)
+                if (item.ID == Dialog.DialogResultOK)
+                {
+                    item.Click();
+                    return true;
+                }
+            return false;
+        }
+
+        private bool PretranslateKey_HandleEscape(bool shift, bool ctrl, bool alt)
+        {
+            if (shift || ctrl || alt)
+                return false;
+
+            //find OK button
+            foreach (DialogItem item in mItems)
+                if (item.ID == Dialog.DialogResultCancel)
+                {
+                    item.Click();
+                    return true;
+                }
+            return false;
+        }
+
+        private bool PretranslateKey_HandleTab(bool shift, bool ctrl, bool alt)
+        {
+            if (ctrl || alt)
+                return false;
+
+            Window focus = Manager.GetFocus();
+
+            if (focus is not DialogItem dlg || dlg.Dialog != this)
+                return false;
+
+            int curr = PretranslateKey_HandleTab_FindCurrentItem(focus);
+
+            if (curr == -1)
+                return false;
+
+            if (!shift)
+                PretranslateKey_HandleTab_SkipForward(curr);
+            else
+                PretranslateKey_HandleTab_SkipBackward(curr);
+
+            return true;
+        }
+
+        private int PretranslateKey_HandleTab_FindCurrentItem(Window focus)
+        {
+            int i, curr = -1;
+            for (i = 0; i < mItems.Count; i++)
+            {
+                if (mItems[i] == focus)
+                {
+                    curr = i;
+                    break;
+                }
+            }
+            return curr;
+        }
+
+        private void PretranslateKey_HandleTab_SkipForward(int curr)
+        {
+            for (int i = curr + 1; i != curr; i++)
+            {
+                if (i == mItems.Count)
+                {
+                    i = -1;
+                    continue;
+                }
+                if (mItems[i].IsInputElement && mItems[i].Enabled)
+                {
+                    Manager.SetFocus(mItems[i]);
+                    break;
+                }
+            }
+        }
+
+        private void PretranslateKey_HandleTab_SkipBackward(int curr)
+        {
+            for (int i = curr - 1; i != curr; i--)
+            {
+                if (i == -1)
+                {
+                    i = mItems.Count;
+                    continue;
+                }
+
+                if (mItems[i].IsInputElement && mItems[i].Enabled)
+                {
+                    Manager.SetFocus(mItems[i]);
+                    break;
+                }
+            }
         }
 
         public virtual void OnItemClick(DialogItem item)

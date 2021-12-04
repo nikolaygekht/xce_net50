@@ -1,5 +1,7 @@
 .vs/
 .nuget/
+.sonarqube/
 TestResults/
 bin/
 obj/
+sonarqube.bat

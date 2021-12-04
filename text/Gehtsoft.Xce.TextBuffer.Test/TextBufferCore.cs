@@ -192,7 +192,7 @@ namespace Gehtsoft.Xce.TextBuffer.Test
             char[] target = new char[1];
             ((Action)(() => buffer.GetLine(-1, target, out _))).Should().Throw<ArgumentOutOfRangeException>();
         }
-        
+
         [Fact]
         public void Access_GetLineToArray_LineBeyondEnd()
         {
@@ -259,7 +259,6 @@ namespace Gehtsoft.Xce.TextBuffer.Test
             using var buffer = CreateTestBuffer();
             buffer.GetSubstring(0, 1, 2, out var target);
             target.Should().BeEquivalentTo(new char[] { 'i', 'n' });
-
         }
 
         [Fact]

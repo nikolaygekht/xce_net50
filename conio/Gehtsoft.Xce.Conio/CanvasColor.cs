@@ -7,7 +7,7 @@ namespace Gehtsoft.Xce.Conio
     public sealed class CanvasColor : IEquatable<CanvasColor>
     {
         [Flags]
-        public enum ConsoleStyle
+        public enum ConsoleStyles
         {
             None = 0,
             Bold = 1,
@@ -24,15 +24,15 @@ namespace Gehtsoft.Xce.Conio
         public ushort PalColor { get; }
         public int RgbFg { get; }
         public int RgbBg { get; }
-        public ConsoleStyle Style { get; }
+        public ConsoleStyles Style { get; }
 
-        public CanvasColor(ushort palColor) : this(palColor, -1, -1, ConsoleStyle.None)
+        public CanvasColor(ushort palColor) : this(palColor, -1, -1, ConsoleStyles.None)
         {
         }
-        public CanvasColor(ushort palColor, int rgbFg, int rgbBg) : this(palColor, rgbFg, rgbBg, ConsoleStyle.None)
+        public CanvasColor(ushort palColor, int rgbFg, int rgbBg) : this(palColor, rgbFg, rgbBg, ConsoleStyles.None)
         {
         }
-        public CanvasColor(ushort palColor, int rgbFg, int rgbBg, ConsoleStyle style)
+        public CanvasColor(ushort palColor, int rgbFg, int rgbBg, ConsoleStyles style)
         {
             PalColor = palColor;
             RgbFg = rgbFg;

@@ -268,7 +268,7 @@ namespace Gehtsoft.Xce.Conio
             int fg = ForegroundColor[row, column];
             int bg = BackgroundColor[row, column];
             int s = Style[row, column];
-            return new CanvasCell((char)ci.UnicodeChar, new CanvasColor(ci.Attributes, fg, bg, (CanvasColor.ConsoleStyle)s));
+            return new CanvasCell((char)ci.UnicodeChar, new CanvasColor(ci.Attributes, fg, bg, (CanvasColor.ConsoleStyles)s));
         }
     }
 }

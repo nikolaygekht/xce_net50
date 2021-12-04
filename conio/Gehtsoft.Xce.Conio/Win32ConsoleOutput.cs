@@ -81,46 +81,11 @@ namespace Gehtsoft.Xce.Conio
             if (columns == -1)
                 columns = mScreenBufferColumns - column;
 
-            if (SupportsTrueColor && row != mWindowTop && column != mWindowLeft &&
-                rows != mWindowRows && columns != mWindowColumns)
-                throw new InvalidOperationException("In true color mode the canvas must exactly match the visible window size");
-
             Canvas canvas = new Canvas(rows, columns);
 
             //output true color
             if (SupportsTrueColor)
-            {
-                Win32.AnnotationHeader header = Marshal.PtrToStructure<Win32.AnnotationHeader>(mMapPtr);
-                header.Locked = 1;
-                Marshal.StructureToPtr(header, mMapPtr, false);
-
-                int offset = header.StructSize;
-                int size = canvas.Rows * canvas.Columns;
-                int[] fg = canvas.ForegroundColor.Raw;
-                int[] bg = canvas.BackgroundColor.Raw;
-                int[] style = canvas.Style.Raw;
-
-                Win32.AnnotationInfo info;
-                for (int i = 0; i < size; i++)
-                {
-                    info = MarshalEx.PtrToBitFieldStruct<Win32.AnnotationInfo>(mMapPtr, offset + i * 32);
-
-                    if (info.fg_valid != 0)
-                        fg[i] = info.fg_color;
-                    else
-                        fg[i] = -1;
-
-                    if (info.bk_valid != 0)
-                        bg[i] = info.bk_color;
-                    else
-                        bg[i] = -1;
-
-                    style[i] = info.style;
-                }
-
-                header.Locked = 0;
-                Marshal.StructureToPtr(header, mMapPtr, false);
-            }
+                BufferToCanvasTrueColor(canvas, row, column, rows, columns);
 
             using (var pointer = canvas.Data.GetPointer())
             {
@@ -148,93 +113,147 @@ namespace Gehtsoft.Xce.Conio
             return canvas;
         }
 
+        private void BufferToCanvasTrueColor(Canvas canvas, int row, int column, int rows, int columns)
+        {
+            if (row != mWindowTop && column != mWindowLeft &&
+                rows != mWindowRows && columns != mWindowColumns)
+                throw new InvalidOperationException("In true color mode the canvas must exactly match the visible window size");
+            Win32.AnnotationHeader header = Marshal.PtrToStructure<Win32.AnnotationHeader>(mMapPtr);
+            header.Locked = 1;
+            Marshal.StructureToPtr(header, mMapPtr, false);
+
+            int offset = header.StructSize;
+            int size = canvas.Rows * canvas.Columns;
+            int[] fg = canvas.ForegroundColor.Raw;
+            int[] bg = canvas.BackgroundColor.Raw;
+            int[] style = canvas.Style.Raw;
+
+            Win32.AnnotationInfo info;
+            for (int i = 0; i < size; i++)
+            {
+                info = MarshalEx.PtrToBitFieldStruct<Win32.AnnotationInfo>(mMapPtr, offset + i * 32);
+
+                if (info.fg_valid != 0)
+                    fg[i] = info.fg_color;
+                else
+                    fg[i] = -1;
+
+                if (info.bk_valid != 0)
+                    bg[i] = info.bk_color;
+                else
+                    bg[i] = -1;
+
+                style[i] = info.style;
+            }
+
+            header.Locked = 0;
+            Marshal.StructureToPtr(header, mMapPtr, false);
+        }
+
         public Canvas ScreenToCanvas() => BufferToCanvas(mWindowTop, mWindowLeft, mWindowRows, mWindowColumns);
 
         public void PaintCanvasToBuffer(Canvas canvas, int bufferRow = 0, int bufferColumn = 0)
         {
-            if (SupportsTrueColor && bufferRow != mWindowTop && bufferColumn != mWindowLeft &&
+            if (SupportsTrueColor)
+                PaintCanvasToBufferTrueColors(canvas, bufferRow, bufferColumn);
+
+            using var finalAction = new PaintCanvasToBufferFinalAction(this);
+
+            //output regular console
+            using (var pointer = canvas.Data.GetPointer())
+            {
+                Win32.COORD canvaSize = new Win32.COORD()
+                {
+                    Y = (short)canvas.Rows,
+                    X = (short)canvas.Columns,
+                };
+
+                Win32.COORD canvaCoord = new Win32.COORD()
+                {
+                    X = 0,
+                    Y = 0
+                };
+
+                Win32.SMALL_RECT region = new Win32.SMALL_RECT()
+                {
+                    Top = (short)bufferRow,
+                    Bottom = (short)(bufferRow + canvas.Rows - 1),
+                    Left = (short)bufferColumn,
+                    Right = (short)(bufferColumn + canvas.Columns - 1),
+                };
+
+                Win32.WriteConsoleOutput(Win32.GetStdHandle(Win32.STD_OUTPUT_HANDLE), pointer.Pointer, canvaSize, canvaCoord, ref region);
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void PaintCanvasToBufferTrueColors(Canvas canvas, int bufferRow, int bufferColumn)
+        {
+            if (bufferRow != mWindowTop && bufferColumn != mWindowLeft &&
                 canvas.Rows != mWindowRows && canvas.Columns != mWindowColumns)
                 throw new InvalidOperationException("In true color mode the canvas must exactly match the visible window size");
 
-            try
+            var header = Marshal.PtrToStructure<Win32.AnnotationHeader>(mMapPtr);
+            header.Locked = 1;
+            Marshal.StructureToPtr(header, mMapPtr, false);
+
+            int offset = header.StructSize;
+            int size = canvas.Rows * canvas.Columns;
+
+            int[] fg = canvas.ForegroundColor.Raw;
+            int[] bg = canvas.BackgroundColor.Raw;
+            int[] style = canvas.Style.Raw;
+
+            Win32.AnnotationInfo info = new Win32.AnnotationInfo();
+            for (int i = 0; i < size; i++)
             {
-                if (SupportsTrueColor)
+                int canvasRow = i / canvas.Columns;
+                int canvasColumn = i - canvasRow * canvas.Columns;
+                if (fg[i] != -1 && bg[i] != -1)
                 {
-                    var header = Marshal.PtrToStructure<Win32.AnnotationHeader>(mMapPtr);
-                    header.Locked = 1;
-                    Marshal.StructureToPtr(header, mMapPtr, false);
-
-                    int offset = header.StructSize;
-                    int size = canvas.Rows * canvas.Columns;
-
-                    int[] fg = canvas.ForegroundColor.Raw;
-                    int[] bg = canvas.BackgroundColor.Raw;
-                    int[] style = canvas.Style.Raw;
-                    Win32.AnnotationInfo info = new Win32.AnnotationInfo();
-                    for (int i = 0; i < size; i++)
-                    {
-                        int canvasRow = i / canvas.Columns;
-                        int canvasColumn = i - canvasRow * canvas.Columns;
-                        if (fg[i] != -1 && bg[i] != -1)
-                        {
-                            info.fg_valid = 1;
-                            info.fg_color = fg[i];
-                            info.bk_valid = 1;
-                            info.bk_color = bg[i];
-                        }
-                        else
-                        {
-                            info.fg_valid = 0;
-                            info.fg_color = 0;
-                            info.bk_valid = 0;
-                            info.bk_color = 0;
-                        }
-
-                        if (style[i] >= 0 && style[i] < 512)
-                            info.style = style[i];
-                        else
-                            info.style = 0;
-
-                        int cellOffset = (bufferRow + canvasRow) * mScreenBufferColumns + bufferColumn + canvasColumn;
-                        int valueOffset = offset + cellOffset * 32;
-                        MarshalEx.BitFieldStructToPtr(info, mMapPtr, valueOffset);
-                    }
+                    info.fg_valid = 1;
+                    info.fg_color = fg[i];
+                    info.bk_valid = 1;
+                    info.bk_color = bg[i];
+                }
+                else
+                {
+                    info.fg_valid = 0;
+                    info.fg_color = 0;
+                    info.bk_valid = 0;
+                    info.bk_color = 0;
                 }
 
-                //output regular console
-                using (var pointer = canvas.Data.GetPointer())
-                {
-                    Win32.COORD canvaSize = new Win32.COORD()
-                    {
-                        Y = (short)canvas.Rows,
-                        X = (short)canvas.Columns,
-                    };
+                if (style[i] >= 0 && style[i] < 512)
+                    info.style = style[i];
+                else
+                    info.style = 0;
 
-                    Win32.COORD canvaCoord = new Win32.COORD()
-                    {
-                        X = 0,
-                        Y = 0
-                    };
-
-                    Win32.SMALL_RECT region = new Win32.SMALL_RECT()
-                    {
-                        Top = (short)bufferRow,
-                        Bottom = (short)(bufferRow + canvas.Rows - 1),
-                        Left = (short)bufferColumn,
-                        Right = (short)(bufferColumn + canvas.Columns - 1),
-                    };
-
-                    Win32.WriteConsoleOutput(Win32.GetStdHandle(Win32.STD_OUTPUT_HANDLE), pointer.Pointer, canvaSize, canvaCoord, ref region);
-                }
+                int cellOffset = (bufferRow + canvasRow) * mScreenBufferColumns + bufferColumn + canvasColumn;
+                int valueOffset = offset + cellOffset * 32;
+                MarshalEx.BitFieldStructToPtr(info, mMapPtr, valueOffset);
             }
-            finally
+        }
+
+        private sealed class PaintCanvasToBufferFinalAction : IDisposable
+        {
+            private readonly Win32ConsoleOutput mOutput;
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public PaintCanvasToBufferFinalAction(Win32ConsoleOutput output)
             {
-                if (SupportsTrueColor)
+                mOutput = output;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public void Dispose()
+            {
+                if (mOutput.SupportsTrueColor)
                 {
-                    var header = Marshal.PtrToStructure<Win32.AnnotationHeader>(mMapPtr);
+                    var header = Marshal.PtrToStructure<Win32.AnnotationHeader>(mOutput.mMapPtr);
                     header.FlushCounter++;
                     header.Locked = 0;
-                    Marshal.StructureToPtr(header, mMapPtr, false);
+                    Marshal.StructureToPtr(header, mOutput.mMapPtr, false);
                 }
             }
         }

@@ -322,16 +322,16 @@ namespace Gehtsoft.Xce.Conio.Win
     public class FileOpenDialog : FileDialog
     {
         [Flags]
-        public enum OpenMode
+        public enum OpenModes
         {
             None = 0,
             ExistingFilesOnly = 0x1,
             NewFilePromprt = 0x2,
         }
 
-        private readonly OpenMode mMode;
+        private readonly OpenModes mMode;
 
-        public FileOpenDialog(string directory, string defaultFile, OpenMode mode, IColorScheme colors) : base("Open", directory, defaultFile, colors, 20, 60)
+        public FileOpenDialog(string directory, string defaultFile, OpenModes mode, IColorScheme colors) : base("Open", directory, defaultFile, colors, 20, 60)
         {
             mMode = mode;
         }
@@ -349,13 +349,13 @@ namespace Gehtsoft.Xce.Conio.Win
                 return false;
             }
 
-            if (!fi.Exists && ((mMode & OpenMode.ExistingFilesOnly) == OpenMode.ExistingFilesOnly))
+            if (!fi.Exists && ((mMode & OpenModes.ExistingFilesOnly) == OpenModes.ExistingFilesOnly))
             {
                 MessageBox.Show(this.Manager, this.Colors, "The file chosen does not exist", "Error", MessageBoxButtonSet.Ok);
                 return false;
             }
 
-            if (!fi.Exists && ((mMode & OpenMode.NewFilePromprt) == OpenMode.NewFilePromprt))
+            if (!fi.Exists && ((mMode & OpenModes.NewFilePromprt) == OpenModes.NewFilePromprt))
             {
                 MessageBoxButton answer = MessageBox.Show(this.Manager, this.Colors, "The file chosen does not exist. Create a new one?", "Error", MessageBoxButtonSet.YesNo);
                 if (answer != MessageBoxButton.Yes)
@@ -368,15 +368,15 @@ namespace Gehtsoft.Xce.Conio.Win
     public class FileSaveDialog : FileDialog
     {
         [Flags]
-        public enum SaveMode
+        public enum SaveModes
         {
             None = 0,
             OverwritePrompt = 0x1,
         }
 
-        private readonly SaveMode mMode;
+        private readonly SaveModes mMode;
 
-        public FileSaveDialog(string directory, string defaultFile, SaveMode mode, IColorScheme colors)
+        public FileSaveDialog(string directory, string defaultFile, SaveModes mode, IColorScheme colors)
             : base("Save", directory, defaultFile, colors, 20, 60)
         {
             mMode = mode;
@@ -395,7 +395,7 @@ namespace Gehtsoft.Xce.Conio.Win
                 return false;
             }
 
-            if (fi.Exists && ((mMode & SaveMode.OverwritePrompt) == SaveMode.OverwritePrompt))
+            if (fi.Exists && ((mMode & SaveModes.OverwritePrompt) == SaveModes.OverwritePrompt))
             {
                 MessageBoxButton answer = MessageBox.Show(this.Manager, this.Colors, "The file chosen exists. Do you want overwrite it?", "Error", MessageBoxButtonSet.YesNo);
                 if (answer != MessageBoxButton.Yes)

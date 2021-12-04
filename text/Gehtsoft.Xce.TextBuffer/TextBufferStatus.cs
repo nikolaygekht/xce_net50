@@ -8,7 +8,7 @@ namespace Gehtsoft.Xce.TextBuffer
     public sealed class TextBufferStatus : IEquatable<TextBufferStatus>
     {
         /// <summary>
-        /// Position of cursor
+        /// The position of the cursor
         /// </summary>
         public PositionMarker CursorPosition { get; }
 
@@ -32,7 +32,7 @@ namespace Gehtsoft.Xce.TextBuffer
         /// </summary>
         public TextBufferStatus()
         {
-            CursorPosition = new PositionMarker("cursor", 0, 0);
+            CursorPosition = new PositionMarker("cursor", 0, 0, false);
             BlockStart = new PositionMarker("blockStart", 0, 0);
             BlockEnd = new PositionMarker("blockEnd", 0, 0);
             BlockMode = BlockMode.None;

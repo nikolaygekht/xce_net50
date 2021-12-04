@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Reflection.PortableExecutable;
 using System.Text;
 
 namespace Gehtsoft.Xce.Conio.Win
@@ -240,10 +241,31 @@ namespace Gehtsoft.Xce.Conio.Win
 
         public override void OnKeyPressed(ScanCode scanCode, char character, bool shift, bool ctrl, bool alt)
         {
-            if (!Dialog.PretranslateOnKeyPressed(scanCode, character, shift, ctrl, alt))
+            if (Dialog.PretranslateOnKeyPressed(scanCode, character, shift, ctrl, alt))
+                return;
+
+            bool noModifiers = !ctrl && !alt && !shift;
+
+            if (noModifiers)
             {
-                if (!ctrl && !alt && !shift && scanCode == ScanCode.UP)
-                {
+                OnKeyPressed_ItemNavigationByKey(scanCode);
+            }
+            else if (ctrl && !alt && !shift && scanCode == ScanCode.C)
+            {
+                if (mCurSel >= 0 && mCurSel < mItems.Count && mItems[mCurSel].Label != null)
+                    TextClipboardFactory.Clipboard.SetText(mItems[mCurSel].Label);
+                return;
+            }
+
+            if (!ctrl && !alt && (character >= ' '))
+                OnKeyPressed_SeekForItemByChar(character);
+        }
+
+        private void OnKeyPressed_ItemNavigationByKey(ScanCode scanCode)
+        {
+            switch (scanCode)
+            {
+                case ScanCode.UP:
                     if (mCurSel > 0)
                     {
                         mCurSel--;
@@ -251,9 +273,8 @@ namespace Gehtsoft.Xce.Conio.Win
                     }
                     EnsureVisible(mCurSel);
                     Invalidate();
-                }
-                else if (!ctrl && !alt && !shift && scanCode == ScanCode.DOWN)
-                {
+                    break;
+                case ScanCode.DOWN:
                     if (mCurSel < mItems.Count - 1)
                     {
                         mCurSel++;
@@ -261,127 +282,128 @@ namespace Gehtsoft.Xce.Conio.Win
                     }
                     EnsureVisible(mCurSel);
                     Invalidate();
-                }
-                if (!ctrl && !alt && !shift && scanCode == ScanCode.PRIOR)
-                {
+                    break;
+                case ScanCode.PRIOR:
                     mCurSel -= (Height - 2);
                     if (mCurSel < 0)
                         mCurSel = 0;
                     Dialog.OnItemChanged(this);
                     EnsureVisible(mCurSel);
                     Invalidate();
-                }
-                else if (!ctrl && !alt && !shift && scanCode == ScanCode.NEXT)
-                {
+                    break;
+                case ScanCode.NEXT:
                     mCurSel += (Height - 2);
                     if (mCurSel >= mItems.Count - 1)
                         mCurSel = mItems.Count - 1;
                     Dialog.OnItemChanged(this);
                     EnsureVisible(mCurSel);
                     Invalidate();
-                }
-                else if (!ctrl && !alt && !shift && scanCode == ScanCode.HOME)
-                {
+                    break;
+                case ScanCode.HOME:
                     mCurSel = 0;
                     Dialog.OnItemChanged(this);
                     EnsureVisible(mCurSel);
                     Invalidate();
-                }
-                else if (!ctrl && !alt && !shift && scanCode == ScanCode.END)
-                {
+                    break;
+                case ScanCode.END:
                     mCurSel = mItems.Count - 1;
                     Dialog.OnItemChanged(this);
                     EnsureVisible(mCurSel);
                     Invalidate();
-                }
-                else if (ctrl && !alt && !shift && scanCode == ScanCode.C)
-                {
-                    if (mCurSel >= 0 && mCurSel < mItems.Count && mItems[mCurSel].Label != null)
-                        TextClipboardFactory.Clipboard.SetText(mItems[mCurSel].Label);
-                }
-                else if (!ctrl && !alt && (character >= ' '))
-                {
-                    int item = mCurSel + 1;
-                    int stop;
-                    if (mCurSel < 1)
-                        stop = mItems.Count;
-                    else
-                        stop = mCurSel;
-                    if (item == mItems.Count)
-                        item = 0;
+                    break;
+            }
+        }
 
-                    while (item != stop)
-                    {
-                        if (mItems[item].Label.Length > 0 &&
-                            Char.ToUpper(mItems[item].Label[0]) == Char.ToUpper(character))
-                        {
-                            mCurSel = item;
-                            EnsureVisible(item);
-                            Invalidate();
-                            Dialog.OnItemChanged(this);
-                            break;
-                        }
+        private void OnKeyPressed_SeekForItemByChar(char character)
+        {
+            int item = mCurSel + 1;
 
-                        item++;
-                        if (item == stop)
-                            break;
-                        if (item == mItems.Count)
-                            item = 0;
-                    }
+            int stop;
+
+            if (mCurSel < 1)
+                stop = mItems.Count;
+            else
+                stop = mCurSel;
+
+            if (item == mItems.Count)
+                item = 0;
+
+            while (item != stop)
+            {
+                if (mItems[item].Label.Length > 0 &&
+                    Char.ToUpper(mItems[item].Label[0]) == Char.ToUpper(character))
+                {
+                    mCurSel = item;
+                    EnsureVisible(item);
+                    Invalidate();
+                    Dialog.OnItemChanged(this);
+                    break;
                 }
+
+                item++;
+                if (item == stop)
+                    break;
+                if (item == mItems.Count)
+                    item = 0;
             }
         }
 
         public override void OnMouseLButtonDown(int row, int column, bool shift, bool ctrl, bool alt)
         {
-            if (Enabled)
+            if (!Enabled)
+                return;
+
+            bool wasInFocus = false;
+            if (!mInFocus)
             {
-                bool wasInFocus = false;
-                if (!mInFocus)
-                {
-                    Manager.SetFocus(this);
-                    Invalidate();
-                }
-                else
-                    wasInFocus = true;
+                Manager.SetFocus(this);
+                Invalidate();
+            }
+            else
+                wasInFocus = true;
 
-                if (row >= 1 && row < Height - 1 &&
-                    column >= 1 && column < Width - 1)
-                {
-                    int index = mOffset + row - 1;
-                    if (index >= 0 && index < mItems.Count && index != mCurSel)
-                    {
-                        mCurSel = index;
-                        Dialog.OnItemChanged(this);
-                        EnsureVisible(mCurSel);
-                        Invalidate();
-                    }
-                    else if (index >= 0 &&
-                        index == mCurSel &&
-                        wasInFocus &&
-                        Dialog.Exists)
-                    {
-                        Dialog.OnItemClick(this);
-                    }
-                }
+            if (row >= 1 && row < Height - 1 &&
+                column >= 1 && column < Width - 1)
+                OnMouseLButtonDown_ItemClick(row, wasInFocus);
 
-                if (column == Width - 1)
-                {
-                    if (row == 0)
-                        OnKeyPressed(ScanCode.UP, ' ', false, false, false);
-                    else if (row == Height - 1 && column == Width - 1)
-                        OnKeyPressed(ScanCode.DOWN, ' ', false, false, false);
-                    else
-                    {
-                        int pos = ThumbToOffset(row - 1);
-                        mCurSel = pos;
-                        if (mCurSel >= mItems.Count)
-                            mCurSel = mItems.Count - 1;
-                        Dialog.OnItemChanged(this);
-                        EnsureVisible(mCurSel);
-                        Invalidate();
-                    }
-                }
+            if (column == Width - 1)
+                OnMouseLButtonDown_ScrollBarClick(row, column);
+        }
+
+        private void OnMouseLButtonDown_ItemClick(int row, bool wasInFocus)
+        {
+            int index = mOffset + row - 1;
+            if (index >= 0 && index < mItems.Count && index != mCurSel)
+            {
+                mCurSel = index;
+                Dialog.OnItemChanged(this);
+                EnsureVisible(mCurSel);
+                Invalidate();
+            }
+            else if (index >= 0 &&
+                index == mCurSel &&
+                wasInFocus &&
+                Dialog.Exists)
+            {
+                Dialog.OnItemClick(this);
+            }
+        }
+
+        private void OnMouseLButtonDown_ScrollBarClick(int row, int column)
+        {
+            if (row == 0)
+                OnKeyPressed(ScanCode.UP, ' ', false, false, false);
+            else if (row == Height - 1 && column == Width - 1)
+                OnKeyPressed(ScanCode.DOWN, ' ', false, false, false);
+            else
+            {
+                int pos = ThumbToOffset(row - 1);
+                mCurSel = pos;
+                if (mCurSel >= mItems.Count)
+                    mCurSel = mItems.Count - 1;
+                Dialog.OnItemChanged(this);
+                EnsureVisible(mCurSel);
+                Invalidate();
             }
         }
 

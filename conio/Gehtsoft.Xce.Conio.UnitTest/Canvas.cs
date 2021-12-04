@@ -26,7 +26,7 @@ namespace Gehtsoft.Xce.Conio.UnitTest
                 for (int c = 0; c < 20; c++)
                 {
                     int ix = r * 20 + c;
-                    cv.Write(r, c, (char)('A' + ix), new CanvasColor((ushort)ix, 0x1000 + ix, 0x2000 + ix, (CanvasColor.ConsoleStyle)ix));
+                    cv.Write(r, c, (char)('A' + ix), new CanvasColor((ushort)ix, 0x1000 + ix, 0x2000 + ix, (CanvasColor.ConsoleStyles)ix));
                 }
 
             for (int r = 0; r < 4; r++)
@@ -35,7 +35,7 @@ namespace Gehtsoft.Xce.Conio.UnitTest
                     CanvasCell cell = cv.Get(r, c);
                     int ix = r * 20 + c;
                     cell.Character.Should().Be((char)('A' + ix));
-                    cell.Color.Should().Be(new CanvasColor((ushort)ix, 0x1000 + ix, 0x2000 + ix, (CanvasColor.ConsoleStyle)ix));
+                    cell.Color.Should().Be(new CanvasColor((ushort)ix, 0x1000 + ix, 0x2000 + ix, (CanvasColor.ConsoleStyles)ix));
                 }
         }
 

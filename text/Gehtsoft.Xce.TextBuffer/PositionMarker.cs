@@ -21,11 +21,14 @@ namespace Gehtsoft.Xce.TextBuffer
         /// </summary>
         public int Column { get; set; }
 
-        public PositionMarker(string name, int line, int column)
+        public bool RemoveWhenLineDeleted { get; }
+
+        public PositionMarker(string name, int line, int column, bool removeWhenLineDeleted = true)
         {
             Name = name;
             Line = line;
             Column = column;
+            RemoveWhenLineDeleted = removeWhenLineDeleted;
         }
 
         /// <summary>
@@ -34,7 +37,7 @@ namespace Gehtsoft.Xce.TextBuffer
         /// <returns></returns>
         public PositionMarker Clone()
         {
-            return new PositionMarker(Name, Line, Column);
+            return new PositionMarker(Name, Line, Column, RemoveWhenLineDeleted);
         }
 
         /// <summary>
@@ -70,6 +73,12 @@ namespace Gehtsoft.Xce.TextBuffer
         public bool Equals(PositionMarker pm) => CompareTo(pm) == 0 && Name == pm.Name;
 
         public bool EqualsTo(int line, int column) => CompareTo(line, column) == 0;
+
+        public void Set(int line, int column)
+        {
+            Line = line;
+            Column = column;
+        }
 
         /// <summary>
         /// Checks whether position markets are equal

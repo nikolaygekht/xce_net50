@@ -16,7 +16,7 @@ namespace Gehtsoft.Xce.Conio.Win.Test
 
             if (args.Length == 0)
                 return false;
-            
+
             foreach (string arg in args)
             {
                 switch (arg)

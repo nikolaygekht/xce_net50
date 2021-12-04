@@ -121,7 +121,8 @@ namespace Scintilla.CellBuffer
         public SimpleList(T[] initialContent)
         {
             EnsureCapacity(initialContent.Length);
-            Array.Copy(initialContent, mContent, initialContent.Length);
+            if (initialContent.Length > 0)
+                Array.Copy(initialContent, mContent, initialContent.Length);
             mLength = initialContent.Length;
         }
 
