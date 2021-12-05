@@ -268,7 +268,7 @@ namespace Gehtsoft.Xce.Conio
         internal static extern bool CloseClipboard();
 
         [DllImport("user32.dll", SetLastError = true)]
-        internal static extern bool OpenClipboard();
+        internal static extern bool OpenClipboard(uint handle);
 
         [DllImport("user32.dll")]
         internal static extern bool EmptyClipboard();

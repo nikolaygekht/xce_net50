@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Net.Mail;
 using System.Text;
 using Gehtsoft.Xce.Conio;
 
@@ -141,39 +143,58 @@ namespace Gehtsoft.Xce.Conio.Win
 
         public override void OnKeyPressed(ScanCode scanCode, char character, bool shift, bool ctrl, bool alt)
         {
-            if (!Dialog.PretranslateOnKeyPressed(scanCode, character, shift, ctrl, alt))
-            {
-                if (!ctrl && !alt && scanCode == ScanCode.LEFT)
-                    Left(shift);
-                if (!ctrl && !alt && scanCode == ScanCode.RIGHT)
-                    Right(shift);
-                if (!ctrl && !alt && scanCode == ScanCode.HOME)
-                    Home(shift);
-                if (!ctrl && !alt && scanCode == ScanCode.END)
-                    End(shift);
-                if (!ctrl && !alt && !shift && scanCode == ScanCode.DEL)
-                    Delete();
-                if (ctrl && !alt && !shift && scanCode == ScanCode.DEL)
-                    DeleteToEnd();
-                if (!ctrl && !alt && !shift && scanCode == ScanCode.BACK)
-                    Backspace();
-                if (ctrl && !alt && !shift && scanCode == ScanCode.BACK)
-                    BackspaceToBegin();
-                if (!ctrl && !alt && !shift && scanCode == ScanCode.INSERT)
-                    ToggleInsert();
-                if (ctrl && !alt && !shift && scanCode == ScanCode.X)
-                    Cut();
-                if (ctrl && !alt && !shift && scanCode == ScanCode.C)
-                    Copy();
-                if (ctrl && !alt && !shift && scanCode == ScanCode.V)
-                    Paste();
-                if (ctrl && !alt && !shift && scanCode == ScanCode.INSERT)
-                    Copy();
-                if (!ctrl && !alt && shift && scanCode == ScanCode.INSERT)
-                    Paste();
+            if (Dialog.PretranslateOnKeyPressed(scanCode, character, shift, ctrl, alt))
+                return;
 
-                if (!ctrl && !alt && character >= ' ')
-                    Type(character);
+            bool anyShift = !ctrl && !alt;
+            bool onlyShift = shift && !alt && !ctrl;
+            bool onlyControl = !shift && !alt && ctrl;
+            bool noModifiers = !ctrl && !alt && !shift;
+
+            switch (scanCode)
+            {
+                case ScanCode.LEFT when anyShift:
+                    Left(shift);
+                    break;
+                case ScanCode.RIGHT when anyShift:
+                    Right(shift);
+                    break;
+                case ScanCode.HOME when anyShift:
+                    Home(shift);
+                    break;
+                case ScanCode.END when anyShift:
+                    End(shift);
+                    break;
+                case ScanCode.DEL when noModifiers:
+                    Delete();
+                    break;
+                case ScanCode.DEL when onlyControl:
+                    DeleteToEnd();
+                    break;
+                case ScanCode.BACK when noModifiers:
+                    Backspace();
+                    break;
+                case ScanCode.BACK when onlyControl:
+                    BackspaceToBegin();
+                    break;
+                case ScanCode.INSERT when noModifiers:
+                    ToggleInsert();
+                    break;
+                case ScanCode.X when onlyControl:
+                    Cut();
+                    break;
+                case ScanCode.C when onlyControl:
+                case ScanCode.INSERT when onlyControl:
+                    Copy();
+                    break;
+                case ScanCode.V when onlyControl:
+                case ScanCode.INSERT when onlyShift:
+                    Paste();
+                    break;
+                default:
+                    if (anyShift && character >= ' ')
+                        Type(character);
+                    break;
             }
         }
 
@@ -270,39 +291,46 @@ namespace Gehtsoft.Xce.Conio.Win
         {
             if (Readonly)
                 return;
+
             if (mSelectionStart >= 0)
-            {
-                bool c = false;
-                if (mSelectionEnd >= mText.Length)
-                    mSelectionEnd = mText.Length;
-                if (mSelectionStart < mSelectionEnd)
-                {
-                    mText.Remove(mSelectionStart, mSelectionEnd - mSelectionStart);
-                    c = true;
-                }
-                Invalidate();
-                mCaret = mSelectionStart;
-                if (mCaret < mOffset)
-                    mOffset = mCaret;
-                if (mCaret - mOffset >= EditWidth)
-                    mOffset = mCaret - EditWidth + 1;
-                Manager.SetCaretPos(this, 0, mCaret - mOffset);
-                mSelectionStart = mSelectionEnd = -1;
-                OnTextChangedByUser();
-                if (c && Dialog != null)
-                    Dialog.OnItemChanged(this);
-            }
+                DeleteSelection();
             else
-            {
-                if (mCaret < mText.Length)
-                {
-                    mText.Remove(mCaret, 1);
-                    Dialog?.OnItemChanged(this);
-                    OnTextChangedByUser();
-                }
-                Invalidate();
-            }
+                DeleteCharacter();
             Manager.SetCaretPos(this, 0, mCaret - mOffset);
+        }
+
+        private void DeleteSelection()
+        {
+            bool changed = false;
+            if (mSelectionEnd >= mText.Length)
+                mSelectionEnd = mText.Length;
+            if (mSelectionStart < mSelectionEnd)
+            {
+                mText.Remove(mSelectionStart, mSelectionEnd - mSelectionStart);
+                changed = true;
+            }
+            Invalidate();
+            mCaret = mSelectionStart;
+            if (mCaret < mOffset)
+                mOffset = mCaret;
+            if (mCaret - mOffset >= EditWidth)
+                mOffset = mCaret - EditWidth + 1;
+            Manager.SetCaretPos(this, 0, mCaret - mOffset);
+            mSelectionStart = mSelectionEnd = -1;
+            OnTextChangedByUser();
+            if (changed && Dialog != null)
+                Dialog.OnItemChanged(this);
+        }
+
+        private void DeleteCharacter()
+        {
+            if (mCaret < mText.Length)
+            {
+                mText.Remove(mCaret, 1);
+                Dialog?.OnItemChanged(this);
+                OnTextChangedByUser();
+            }
+            Invalidate();
         }
 
         private void DeleteToEnd()
@@ -325,40 +353,22 @@ namespace Gehtsoft.Xce.Conio.Win
                 return;
 
             if (mSelectionStart >= 0)
+                DeleteSelection();
+            else if (mCaret > 0)
             {
-                if (mSelectionEnd >= mText.Length)
-                    mSelectionEnd = mText.Length;
-                mText.Remove(mSelectionStart, mSelectionEnd - mSelectionStart);
-                Invalidate();
-                mCaret = mSelectionStart;
+                bool c = false;
+                if (mText.Length > mCaret - 1)
+                {
+                    mText.Remove(mCaret - 1, 1);
+                    c = true;
+                }
+                mCaret--;
                 if (mCaret < mOffset)
                     mOffset = mCaret;
-                if (mCaret - mOffset >= EditWidth)
-                    mOffset = mCaret - EditWidth + 1;
-                Manager.SetCaretPos(this, 0, mCaret - mOffset);
-                mSelectionStart = mSelectionEnd = -1;
-                Dialog?.OnItemChanged(this);
-
+                Invalidate();
+                if (c && Dialog != null)
+                    Dialog.OnItemChanged(this);
                 OnTextChangedByUser();
-            }
-            else
-            {
-                if (mCaret > 0)
-                {
-                    bool c = false;
-                    if (mText.Length > mCaret - 1)
-                    {
-                        mText.Remove(mCaret - 1, 1);
-                        c = true;
-                    }
-                    mCaret--;
-                    if (mCaret < mOffset)
-                        mOffset = mCaret;
-                    Invalidate();
-                    if (c && Dialog != null)
-                        Dialog.OnItemChanged(this);
-                    OnTextChangedByUser();
-                }
             }
             Manager.SetCaretPos(this, 0, mCaret - mOffset);
         }

@@ -208,90 +208,92 @@ namespace Gehtsoft.Xce.Conio.Win
 
         public override void OnKeyPressed(ScanCode scanCode, char character, bool shift, bool ctrl, bool alt)
         {
-            if (scanCode == ScanCode.TAB || scanCode == ScanCode.RETURN)
+            bool noModifier = !ctrl && !alt && !shift;
+            bool anyShift = !ctrl && !alt;
+
+            if (anyShift && (character >= ' '))
             {
-                mOk = true;
-                Manager.Close(this);
+                FindItemByFirstCharacter(character);
+                return;
             }
-            else if (scanCode == ScanCode.ESCAPE)
+
+            switch (scanCode)
             {
-                mOk = false;
-                Manager.Close(this);
-            }
-            else if (!ctrl && !alt && !shift && scanCode == ScanCode.UP)
-            {
-                if (mCurSel > 0)
-                {
-                    mCurSel--;
-                }
-                EnsureVisible(mCurSel);
-                Invalidate();
-            }
-            else if (!ctrl && !alt && !shift && scanCode == ScanCode.DOWN)
-            {
-                if (mCurSel < mItems.Count - 1)
-                {
-                    mCurSel++;
-                }
-                EnsureVisible(mCurSel);
-                Invalidate();
-            }
-            if (!ctrl && !alt && !shift && scanCode == ScanCode.PRIOR)
-            {
-                mCurSel -= (Height - 2);
-                if (mCurSel < 0)
+                case ScanCode.TAB:
+                case ScanCode.RETURN:
+                    mOk = true;
+                    Manager.Close(this);
+                    break;
+                case ScanCode.ESCAPE:
+                    mOk = false;
+                    Manager.Close(this);
+                    break;
+                case ScanCode.UP when noModifier:
+                    if (mCurSel > 0)
+                        mCurSel--;
+                    EnsureVisible(mCurSel);
+                    Invalidate();
+                    break;
+                case ScanCode.DOWN when noModifier:
+                    if (mCurSel < mItems.Count - 1)
+                        mCurSel++;
+                    EnsureVisible(mCurSel);
+                    Invalidate();
+                    break;
+                case ScanCode.PRIOR when noModifier:
+                    mCurSel -= Height - 2;
+                    if (mCurSel < 0)
+                        mCurSel = 0;
+                    EnsureVisible(mCurSel);
+                    Invalidate();
+                    break;
+                case ScanCode.NEXT when noModifier:
+                    mCurSel += Height - 2;
+                    if (mCurSel >= mItems.Count - 1)
+                        mCurSel = mItems.Count - 1;
+                    EnsureVisible(mCurSel);
+                    Invalidate();
+                    break;
+                case ScanCode.HOME when noModifier:
                     mCurSel = 0;
-                EnsureVisible(mCurSel);
-                Invalidate();
-            }
-            else if (!ctrl && !alt && !shift && scanCode == ScanCode.NEXT)
-            {
-                mCurSel += (Height - 2);
-                if (mCurSel >= mItems.Count - 1)
+                    EnsureVisible(mCurSel);
+                    Invalidate();
+                    break;
+                case ScanCode.END when noModifier:
                     mCurSel = mItems.Count - 1;
-                EnsureVisible(mCurSel);
-                Invalidate();
+                    EnsureVisible(mCurSel);
+                    Invalidate();
+                    break;
             }
-            else if (!ctrl && !alt && !shift && scanCode == ScanCode.HOME)
+        }
+
+        private void FindItemByFirstCharacter(char character)
+        {
+            int item = mCurSel + 1;
+            int stop;
+            if (mCurSel < 1)
+                stop = mItems.Count;
+            else
+                stop = mCurSel;
+            if (item == mItems.Count)
+                item = 0;
+
+            while (item != stop)
             {
-                mCurSel = 0;
-                EnsureVisible(mCurSel);
-                Invalidate();
-            }
-            else if (!ctrl && !alt && !shift && scanCode == ScanCode.END)
-            {
-                mCurSel = mItems.Count - 1;
-                EnsureVisible(mCurSel);
-                Invalidate();
-            }
-            else if (!ctrl && !alt && (character >= ' '))
-            {
-                int item = mCurSel + 1;
-                int stop;
-                if (mCurSel < 1)
-                    stop = mItems.Count;
-                else
-                    stop = mCurSel;
+                if (mItems[item].Label.Length > 0 &&
+                    Char.ToUpper(mItems[item].Label[0]) == Char.ToUpper(character))
+                {
+                    mCurSel = item;
+                    EnsureVisible(item);
+                    Invalidate();
+                    break;
+                }
+
+                item++;
+                if (item == stop)
+                    break;
                 if (item == mItems.Count)
                     item = 0;
-
-                while (item != stop)
-                {
-                    if (mItems[item].Label.Length > 0 &&
-                        Char.ToUpper(mItems[item].Label[0]) == Char.ToUpper(character))
-                    {
-                        mCurSel = item;
-                        EnsureVisible(item);
-                        Invalidate();
-                        break;
-                    }
-
-                    item++;
-                    if (item == stop)
-                        break;
-                    if (item == mItems.Count)
-                        item = 0;
-                }
             }
         }
 
@@ -302,40 +304,45 @@ namespace Gehtsoft.Xce.Conio.Win
             {
                 mOk = false;
                 Manager.Close(this);
+                return;
             }
 
             if (windowRow >= 1 && windowRow < Height - 1 &&
                 windowColumn >= 1 && windowColumn < Width - 1)
-            {
-                int index = mOffset + windowRow - 1;
-                if (index >= 0 && index < mItems.Count && index != mCurSel)
-                {
-                    mCurSel = index;
-                    EnsureVisible(mCurSel);
-                    Invalidate();
-                }
-                else if (index >= 0 && index == mCurSel)
-                {
-                    mOk = true;
-                    Manager.Close(this);
-                }
-            }
+                OnMouseLButtonDownInClientArea(windowRow);
+            else if (windowColumn == Width - 1)
+                OnMouseLButtonDownInScroolBarArea(windowRow, windowColumn);
+        }
 
-            if (windowColumn == Width - 1)
+        private void OnMouseLButtonDownInClientArea(int windowRow)
+        {
+            int index = mOffset + windowRow - 1;
+            if (index >= 0 && index < mItems.Count && index != mCurSel)
             {
-                if (windowRow == 0)
-                    OnKeyPressed(ScanCode.UP, ' ', false, false, false);
-                else if (windowRow == Height - 1 && windowColumn == Width - 1)
-                    OnKeyPressed(ScanCode.DOWN, ' ', false, false, false);
-                else
-                {
-                    int pos = ThumbToOffset(windowRow - 1);
-                    mCurSel = pos;
-                    if (mCurSel >= mItems.Count)
-                        mCurSel = mItems.Count - 1;
-                    EnsureVisible(mCurSel);
-                    Invalidate();
-                }
+                mCurSel = index;
+                EnsureVisible(mCurSel);
+                Invalidate();
+            }
+            else if (index >= 0 && index == mCurSel)
+            {
+                mOk = true;
+                Manager.Close(this);
+            }
+        }
+
+        private void OnMouseLButtonDownInScroolBarArea(int windowRow, int windowColumn)
+        {
+            if (windowRow == 0)
+                OnKeyPressed(ScanCode.UP, ' ', false, false, false);
+            else if (windowRow == Height - 1 && windowColumn == Width - 1)
+                OnKeyPressed(ScanCode.DOWN, ' ', false, false, false);
+            else
+            {
+                mCurSel = ThumbToOffset(windowRow - 1);
+                if (mCurSel >= mItems.Count)
+                    mCurSel = mItems.Count - 1;
+                EnsureVisible(mCurSel);
+                Invalidate();
             }
         }
 
@@ -360,3 +367,4 @@ namespace Gehtsoft.Xce.Conio.Win
         }
     }
 }
+

@@ -32,60 +32,63 @@ namespace Gehtsoft.Xce.Conio.Win
 
         public bool Checked
         {
-            get
-            {
-                return mChecked;
-            }
+            get => mChecked;
             set
             {
                 if (value)
-                {
-                    //uncheck all buttons in the group
-                    int count = Dialog.ItemsCount;
-                    int groupStart = -1;
-                    int thisItem = -1;
-                    int i;
-                    for (i = 0; i < count; i++)
-                    {
-                        DialogItem item = Dialog.GetItem(i);
-                        if (item is DialogItemRadioBox dirb)
-                        {
-                            if (object.ReferenceEquals(this, item))
-                            {
-                                if (groupStart == -1 || this.GroupStart)
-                                    groupStart = i;
-                                thisItem = i;
-                                break;
-                            }
-                            else if (dirb.GroupStart)
-                            {
-                                groupStart = i;
-                            }
-                        }
-                        else
-                        {
-                            groupStart = -1;
-                        }
-                    }
+                    UncheckAllInGroup();
 
-                    if (groupStart >= 0 && thisItem >= 0)
-                    {
-                        for (i = groupStart; i < count; i++)
-                        {
-                            DialogItem item = Dialog.GetItem(i);
-                            if (item is not DialogItemRadioBox dirb)
-                                break;
-                            if (i == thisItem)
-                                continue;
-                            if (i > groupStart && dirb.GroupStart)
-                                break;
-                            dirb.Checked = false;
-                        }
-                    }
-                }
                 mChecked = value;
                 if (Exists)
                     Invalidate();
+            }
+        }
+
+        private void FindGroup(out int from)
+        {
+            int thisIndex = -1;
+
+            //find this
+            for (int i = 0; i < Dialog.Items.Count && thisIndex == -1; i++)
+                if (ReferenceEquals(Dialog.Items[i], this))
+                    thisIndex = i;
+
+            from = thisIndex;
+            if (from == -1)
+                return;
+
+            while (from >= 0)
+            {
+                if (Dialog.Items[from] is not DialogItemRadioBox drbi)
+                {
+                    from++;
+                    break;
+                }
+
+                if (drbi.GroupStart)
+                    break;
+
+                from--;
+            }
+        }
+
+        private void UncheckAllInGroup()
+        {
+            FindGroup(out var from);
+
+            if (from < 0)
+                return;
+
+            for (int i = from; i < Dialog.Items.Count; i++)
+            {
+                DialogItem item = Dialog.Items[i];
+                if (item is not DialogItemRadioBox dirb)
+                    break;
+
+                if (i > from && dirb.GroupStart)
+                    break;
+
+                dirb.Checked = false;
             }
         }
 

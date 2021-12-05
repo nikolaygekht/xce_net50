@@ -9,7 +9,7 @@ namespace Gehtsoft.Xce.Conio
     {
         public bool IsTextAvailable(TextClipboardFormat format)
         {
-            if (!Win32.OpenClipboard())
+            if (!Win32.OpenClipboard(Win32.GetConsoleWindow()))
                 return false;
             bool rc = Win32.IsClipboardFormatAvailable((uint)(int)format);
             Win32.CloseClipboard();
@@ -18,7 +18,7 @@ namespace Gehtsoft.Xce.Conio
 
         public string GetText(TextClipboardFormat format)
         {
-            if (!Win32.OpenClipboard())
+            if (!Win32.OpenClipboard(Win32.GetConsoleWindow()))
                 return null;
 
             IntPtr hdata = Win32.GetClipboardData((uint)(int)format);
@@ -50,7 +50,7 @@ namespace Gehtsoft.Xce.Conio
 
         public void SetText(string text, TextClipboardFormat format = TextClipboardFormat.UnicodeText)
         {
-            if (!Win32.OpenClipboard())
+            if (!Win32.OpenClipboard(Win32.GetConsoleWindow()))
                 return;
 
             Win32.EmptyClipboard();

@@ -122,7 +122,7 @@ namespace Gehtsoft.Xce.Conio.Win
             Manager.Close(this);
         }
 
-        public IEnumerable<DialogItem> Items => mItems;
+        public IReadOnlyList<DialogItem> Items => mItems;
 
         virtual public bool PretranslateOnKeyPressed(ScanCode scanCode, char character, bool shift, bool ctrl, bool alt)
         {

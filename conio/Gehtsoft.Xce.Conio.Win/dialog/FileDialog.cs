@@ -171,105 +171,110 @@ namespace Gehtsoft.Xce.Conio.Win
             mFileEdit.Text = "";
         }
 
-        public override void OnItemClick(DialogItem item)
+        private void OnOkClick()
         {
-            if (item == mOk)
+            if (mFileEdit.Text?.Length == 0)
             {
-                if (mFileEdit.Text?.Length == 0)
+                OnItemClick(mDirectoryList);
+            }
+            else if (mFileEdit.Text.Contains("*") || mFileEdit.Text.Contains("?"))
+            {
+                ChangeDirectory(mFileEdit.Text);
+                mFileEdit.Text = "";
+            }
+            else if (mFileEdit.Text == "..")
+            {
+                DirectoryInfo d = new DirectoryInfo(mCurrentDirectory).Parent;
+                if (d != null)
                 {
-                    OnItemClick(mDirectoryList);
-                }
-                else if (mFileEdit.Text.Contains("*") || mFileEdit.Text.Contains("?"))
-                {
-                    ChangeDirectory(mFileEdit.Text);
+                    mCurrentDirectory = new DirectoryInfo(mCurrentDirectory).Parent.FullName;
+                    ChangeDirectory("*.*");
                     mFileEdit.Text = "";
                 }
-                else if (mFileEdit.Text == "..")
+            }
+            else
+            {
+                string f = Path.Combine(mCurrentDirectory, mFileEdit.Text);
+                if (Directory.Exists(f))
                 {
-                    DirectoryInfo d = new DirectoryInfo(mCurrentDirectory).Parent;
-                    if (d != null)
-                    {
-                        mCurrentDirectory = new DirectoryInfo(mCurrentDirectory).Parent.FullName;
-                        ChangeDirectory("*.*");
-                        mFileEdit.Text = "";
-                    }
+                    mCurrentDirectory = Path.GetFullPath(f);
+                    ChangeDirectory("*.*");
+                    mFileEdit.Text = "";
                 }
                 else
                 {
-                    string f = Path.Combine(mCurrentDirectory, mFileEdit.Text);
-                    if (Directory.Exists(f))
-                    {
-                        mCurrentDirectory = Path.GetFullPath(f);
-                        ChangeDirectory("*.*");
-                        mFileEdit.Text = "";
-                    }
-                    else
-                    {
-                        OnFileChosen();
-                    }
+                    OnFileChosen();
                 }
             }
-            else if (item == mCancel)
+        }
+
+        private void OnDirectoryListClick()
+        {
+            int sel = mDirectoryList.CurSel;
+            if (sel < 0 && sel >= mDirectoryList.Count)
+                return;
+
+            DialogItemListBoxString selitem = mDirectoryList[sel];
+            string selName = (string)selitem.UserData;
+
+            if (selName == "..")
             {
+                mCurrentDirectory = new DirectoryInfo(mCurrentDirectory).Parent.FullName;
+                ChangeDirectory("*.*");
+                return;
+            }
+
+            string selPath = Path.GetFullPath(Path.Combine(mCurrentDirectory, selName));
+            if (Directory.Exists(selPath))
+            {
+                mCurrentDirectory = selPath;
+                ChangeDirectory("*.*");
+            }
+            else if (mFileEdit.Text?.Length == 0)
+            {
+                mFileEdit.Text = (string)selitem.UserData;
+                OnFileChosen();
+            }
+            else
+            {
+                mFileEdit.Text = (string)selitem.UserData;
+            }
+        }
+
+        private void OnLocationsButtonClick()
+        {
+            mPathLabel.WindowToScreen(0, 0, out int row, out int column);
+            row++;
+            ModalListBox list = new ModalListBox(row, column, 10, Width - 2, Colors);
+            int max = Width - 2;
+            if (max <= 0)
+                return;
+            foreach (DialogItemListBoxString s in mLocations)
+            {
+                string name = (string)s.UserData;
+                if (name.Length >= max)
+                    name = "..." + name[^(max - 3)..];
+                s.Label = name;
+                list.AddItem(s);
+            }
+
+            if (list.DoModal(Manager))
+            {
+                mCurrentDirectory = (string)mLocations[list.CurSel].UserData;
+                ChangeDirectory("*.*");
+            }
+        }
+
+        public override void OnItemClick(DialogItem item)
+        {
+            if (ReferenceEquals(item, mOk))
+                OnOkClick();
+            if (ReferenceEquals(item, mCancel))
                 EndDialog(DialogResultCancel);
-            }
-            else if (item == mDirectoryList)
-            {
-                int sel = mDirectoryList.CurSel;
-                if (sel >= 0 && sel < mDirectoryList.Count)
-                {
-                    DialogItemListBoxString selitem = mDirectoryList[sel];
-                    string selName = (string)selitem.UserData;
-                    if (selName == "..")
-                    {
-                        mCurrentDirectory = new DirectoryInfo(mCurrentDirectory).Parent.FullName;
-                        ChangeDirectory("*.*");
-                    }
-                    else
-                    {
-                        string selPath = Path.GetFullPath(Path.Combine(mCurrentDirectory, selName));
-                        if (Directory.Exists(selPath))
-                        {
-                            mCurrentDirectory = selPath;
-                            ChangeDirectory("*.*");
-                        }
-                        else
-                        {
-                            if (mFileEdit.Text?.Length == 0)
-                            {
-                                mFileEdit.Text = (string)selitem.UserData;
-                                OnFileChosen();
-                            }
-                            else
-                            {
-                                mFileEdit.Text = (string)selitem.UserData;
-                            }
-                        }
-                    }
-                }
-            }
-            else if (item == mLocationsButton)
-            {
-                mPathLabel.WindowToScreen(0, 0, out int row, out int column);
-                row++;
-                ModalListBox list = new ModalListBox(row, column, 10, Width - 2, Colors);
-                int max = Width - 2;
-                if (max <= 0)
-                    return;
-                foreach (DialogItemListBoxString s in mLocations)
-                {
-                    string name = (string)s.UserData;
-                    if (name.Length >= max)
-                        name = "..." + name[^(max - 3)..];
-                    s.Label = name;
-                    list.AddItem(s);
-                }
-                if (list.DoModal(Manager))
-                {
-                    mCurrentDirectory = (string)mLocations[list.CurSel].UserData;
-                    ChangeDirectory("*.*");
-                }
-            }
+            if (ReferenceEquals(item, mDirectoryList))
+                OnDirectoryListClick();
+            if (ReferenceEquals(item, mLocationsButton))
+                OnLocationsButtonClick();
         }
 
         private string mFile = "";
