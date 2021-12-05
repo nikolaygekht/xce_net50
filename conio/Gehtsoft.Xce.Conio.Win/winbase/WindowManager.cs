@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using CanvasColor = Gehtsoft.Xce.Conio.CanvasColor;
 
@@ -234,6 +236,7 @@ namespace Gehtsoft.Xce.Conio.Win
         public void PumpMessage(int timeout)
         {
             int layout = mConsoleInput.CurrentLayout;
+
             if (layout != mLayoutCode)
             {
                 mLayoutCode = layout;
@@ -243,42 +246,38 @@ namespace Gehtsoft.Xce.Conio.Win
             bool paint = false;
 
             if (mForceRedraw)
-            {
-                mForceRedraw = false;
                 paint = true;
-            }
             else
-            {
-                foreach (Window window in mTopLevelWindows)
-                {
-                    if (!window.Valid && window.Visible)
-                    {
-                        paint = true;
-                        break;
-                    }
-                }
-            }
+                paint = mTopLevelWindows.Any(w => !w.Valid && w.Visible);
 
             if (paint)
             {
-                mConsoleOutput.UpdateSize();
-                if (mScreenCanvas.Rows != mConsoleOutput.VisibleRows || mScreenCanvas.Columns != mConsoleOutput.VisibleColumns)
-                    mScreenCanvas = new Canvas(mConsoleOutput.VisibleRows, mConsoleOutput.VisibleColumns);
-                mScreenCanvas.Fill(0, 0, mScreenCanvas.Rows, mScreenCanvas.Columns, ' ', mDefaultColor);
-                foreach (Window window in mTopLevelWindows)
-                {
-                    if (window.Visible)
-                    {
-                        window.Paint();
-                        Canvas canvas = window.Canvas;
-                        if (canvas != null)
-                            mScreenCanvas.Paint(window.Row, window.Column, canvas);
-                    }
-                }
-                mConsoleOutput.PaintCanvasToScreen(mScreenCanvas);
+                RedrawScreen();
+                mForceRedraw = false;
             }
+
             UpdateCaretPos();
             mConsoleInput.Read(this, timeout);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void RedrawScreen()
+        {
+            mConsoleOutput.UpdateSize();
+            if (mScreenCanvas.Rows != mConsoleOutput.VisibleRows || mScreenCanvas.Columns != mConsoleOutput.VisibleColumns)
+                mScreenCanvas = new Canvas(mConsoleOutput.VisibleRows, mConsoleOutput.VisibleColumns);
+            mScreenCanvas.Fill(0, 0, mScreenCanvas.Rows, mScreenCanvas.Columns, ' ', mDefaultColor);
+            foreach (Window window in mTopLevelWindows)
+            {
+                if (window.Visible)
+                {
+                    window.Paint();
+                    Canvas canvas = window.Canvas;
+                    if (canvas != null)
+                        mScreenCanvas.Paint(window.Row, window.Column, canvas);
+                }
+            }
+            mConsoleOutput.PaintCanvasToScreen(mScreenCanvas);
         }
         #endregion
 
@@ -300,74 +299,8 @@ namespace Gehtsoft.Xce.Conio.Win
             }
 
             if (mFocusWindow != null)
-            {
-                bool handled = false;
-                if (WindowKeyboardShortcutsEnabled && mAltSpace)
-                {
-                    if (scanCode == ScanCode.C && !ctrl && !shift && !alt)
-                    {
-                        Close(mFocusWindow);
-                        handled = true;
-                    }
-                    else if (scanCode == ScanCode.N && !ctrl && !shift && !alt)
-                    {
-                        if (!mModalStack.Contains(mFocusWindow) && mTopLevelWindows.Count > 1)
-                        {
-                            for (var node = mTopLevelWindows.First; node != null; node = node.Next)
-                            {
-                                Window topLevelWindow = node.Value;
-                                if (topLevelWindow == mFocusWindow || topLevelWindow.Contains(mFocusWindow, true))
-                                {
-                                    node = node.Next ?? mTopLevelWindows.First;
-                                    SetFocus(node.Value);
-                                    break;
-                                }
-                            }
-                        }
-                        handled = true;
-                    }
-                    else if (scanCode == ScanCode.UP || scanCode == ScanCode.DOWN || scanCode == ScanCode.LEFT || scanCode == ScanCode.RIGHT && !ctrl && !shift)
-                    {
-                        Window w = mFocusWindow;
-                        while (w != null)
-                        {
-                            if (w is WindowBorderContainer)
-                                break;
-                            w = w.Parent;
-                        }
+                OnKeyPressed_FocusWindowAltSpace(scanCode, character, shift, ctrl, alt);
 
-                        if (w != null)
-                        {
-                            if (!alt)
-                            {
-                                if (scanCode == ScanCode.UP && w.Row > 0)
-                                    w.Move(w.Row - 1, w.Column, w.Height, w.Width);
-                                else if (scanCode == ScanCode.DOWN && w.Row + w.Height < (w.Parent == null ? ScreenHeight : w.Parent.Height))
-                                    w.Move(w.Row + 1, w.Column, w.Height, w.Width);
-                                else if (scanCode == ScanCode.LEFT && w.Column > 0)
-                                    w.Move(w.Row, w.Column - 1, w.Height, w.Width);
-                                else if (scanCode == ScanCode.RIGHT && w.Column + w.Width < (w.Parent == null ? ScreenWidth : w.Parent.Width))
-                                    w.Move(w.Row, w.Column + 1, w.Height, w.Width);
-                            }
-                            else
-                            {
-                                if (scanCode == ScanCode.UP && w.Height > 3)
-                                    w.Move(w.Row, w.Column, w.Height - 1, w.Width);
-                                else if (scanCode == ScanCode.DOWN)
-                                    w.Move(w.Row, w.Column, w.Height + 1, w.Width);
-                                else if (scanCode == ScanCode.LEFT && w.Width > 10)
-                                    w.Move(w.Row, w.Column, w.Height, w.Width - 1);
-                                else if (scanCode == ScanCode.RIGHT)
-                                    w.Move(w.Row, w.Column, w.Height, w.Width + 1);
-                            }
-                        }
-
-                        handled = true;
-                    }
-                }
-                if (!handled)
-                    mFocusWindow.OnKeyPressed(scanCode, character, shift, ctrl, alt);
-            }
             mAltSpace = false;
 
             int layout = mConsoleInput.CurrentLayout;
@@ -376,6 +309,102 @@ namespace Gehtsoft.Xce.Conio.Win
                 mLayoutCode = layout;
                 mFocusWindow?.OnKeyboardLayoutChanged();
             }
+        }
+
+        private void OnKeyPressed_FocusWindowAltSpace(ScanCode scanCode, char character, bool shift, bool ctrl, bool alt)
+        {
+            if (!WindowKeyboardShortcutsEnabled || !mAltSpace)
+            {
+                mFocusWindow?.OnKeyPressed(scanCode, character, shift, ctrl, alt);
+                return;
+            }
+
+            bool handled = false;
+            bool noModifiers = !ctrl && !shift && !alt;
+
+            if (scanCode == ScanCode.C && noModifiers)
+            {
+                Close(mFocusWindow);
+                handled = true;
+            }
+            else if (scanCode == ScanCode.N && noModifiers)
+            {
+                OnKeyPressed_FocusWindowAltSpace_Next();
+                handled = true;
+            }
+            else if (scanCode == ScanCode.UP || scanCode == ScanCode.DOWN || scanCode == ScanCode.LEFT || scanCode == ScanCode.RIGHT && !ctrl && !shift)
+            {
+                OnKeyPressed_FocusWindowAltSpace_MoveOrSize(scanCode, alt);
+                handled = true;
+            }
+
+            if (!handled)
+                mFocusWindow?.OnKeyPressed(scanCode, character, shift, ctrl, alt);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void OnKeyPressed_FocusWindowAltSpace_Next()
+        {
+            if (!mModalStack.Contains(mFocusWindow) && mTopLevelWindows.Count > 1)
+            {
+                for (var node = mTopLevelWindows.First; node != null; node = node.Next)
+                {
+                    Window topLevelWindow = node.Value;
+                    if (topLevelWindow == mFocusWindow || topLevelWindow.Contains(mFocusWindow, true))
+                    {
+                        node = node.Next ?? mTopLevelWindows.First;
+                        SetFocus(node.Value);
+                        break;
+                    }
+                }
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void OnKeyPressed_FocusWindowAltSpace_MoveOrSize(ScanCode scanCode, bool alt)
+        {
+            Window window = mFocusWindow;
+
+            while (window != null)
+            {
+                if (window is WindowBorderContainer)
+                    break;
+                window = window.Parent;
+            }
+
+            if (window == null)
+                return;
+
+            if (alt)
+                OnKeyPressed_FocusWindowAltSpace_Size(scanCode, window);
+            else
+                OnKeyPressed_FocusWindowAltSpace_Move(scanCode, window);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void OnKeyPressed_FocusWindowAltSpace_Move(ScanCode scanCode, Window window)
+        {
+            if (scanCode == ScanCode.UP && window.Row > 0)
+                window.Move(window.Row - 1, window.Column, window.Height, window.Width);
+            else if (scanCode == ScanCode.DOWN && window.Row + window.Height < (window.Parent == null ? ScreenHeight : window.Parent.Height))
+                window.Move(window.Row + 1, window.Column, window.Height, window.Width);
+            else if (scanCode == ScanCode.LEFT && window.Column > 0)
+                window.Move(window.Row, window.Column - 1, window.Height, window.Width);
+            else if (scanCode == ScanCode.RIGHT && window.Column + window.Width < (window.Parent == null ? ScreenWidth : window.Parent.Width))
+                window.Move(window.Row, window.Column + 1, window.Height, window.Width);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void OnKeyPressed_FocusWindowAltSpace_Size(ScanCode scanCode, Window window)
+        {
+            if (scanCode == ScanCode.UP && window.Height > 3)
+                window.Move(window.Row, window.Column, window.Height - 1, window.Width);
+            else if (scanCode == ScanCode.DOWN && window.Row + window.Height < ScreenHeight)
+                window.Move(window.Row, window.Column, window.Height + 1, window.Width);
+            else if (scanCode == ScanCode.LEFT && window.Width > 10)
+                window.Move(window.Row, window.Column, window.Height, window.Width - 1);
+            else if (scanCode == ScanCode.RIGHT && window.Column + window.Width < ScreenWidth)
+                window.Move(window.Row, window.Column, window.Height, window.Width + 1);
         }
 
         public void OnKeyReleased(ScanCode scanCode, char character, bool shift, bool ctrl, bool alt)

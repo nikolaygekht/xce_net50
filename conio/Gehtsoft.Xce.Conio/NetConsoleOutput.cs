@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace Gehtsoft.Xce.Conio
@@ -51,54 +52,90 @@ namespace Gehtsoft.Xce.Conio
 
         public void PaintCanvasToScreen(Canvas canvas, int screenRow = 0, int screenColumn = 0) => PaintCanvasToBuffer(canvas, Console.WindowTop + screenRow, Console.WindowLeft + screenColumn);
 
+        private sealed class BufferWriter
+        {
+            private ushort mCurrentAttribute;
+            private readonly StringBuilder mCurrentString = new StringBuilder();
+            private int mCurrentRow, mCurrentStringStart;
+            private readonly int mScreenBufferRow, mScreenBufferColumn;
+
+            public BufferWriter(int row, int column)
+            {
+                mScreenBufferRow = row;
+                mScreenBufferColumn = column;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public void NewCanvasRow(int row)
+            {
+                mCurrentRow = row;
+                mCurrentStringStart = -1;
+                mCurrentString.Clear();
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public void NewCanvasCell(int column, Win32.CHAR_INFO cell)
+            {
+                if (column == 0 || mCurrentAttribute != cell.Attributes)
+                {
+                    if (mCurrentString.Length > 0 && mCurrentStringStart >= 0)
+                    {
+                        Console.SetCursorPosition(mCurrentStringStart + mScreenBufferColumn, mCurrentRow + mScreenBufferRow);
+                        Console.ForegroundColor = (ConsoleColor)(mCurrentAttribute & 0xf);
+                        Console.BackgroundColor = (ConsoleColor)((mCurrentAttribute >> 4) & 0xf);
+                        Console.Write(mCurrentString.ToString());
+                    }
+                    mCurrentStringStart = column;
+                    mCurrentAttribute = cell.Attributes;
+
+                    if (mCurrentString.Length > 0)
+                        mCurrentString.Clear();
+
+                    mCurrentString.Append((char)cell.UnicodeChar);
+                }
+                else
+                {
+                    mCurrentString.Append((char)cell.UnicodeChar);
+                }
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public void OnRowEnd()
+            {
+                if (mCurrentString.Length > 0)
+                {
+                    Console.SetCursorPosition(mCurrentStringStart + mScreenBufferColumn, mCurrentRow + mScreenBufferRow);
+                    Console.ForegroundColor = (ConsoleColor)(mCurrentAttribute & 0xf);
+                    Console.BackgroundColor = (ConsoleColor)((mCurrentAttribute >> 4) & 0xf);
+                    Console.Write(mCurrentString.ToString());
+                }
+            }
+        }
+
         public void PaintCanvasToBuffer(Canvas canvas, int bufferRow = 0, int bufferColumn = 0)
         {
             var v = Cursor.CursorVisible;
             var top = Console.WindowTop;
             Cursor.CursorVisible = false;
+
+            BufferWriter writer = new BufferWriter(bufferRow, bufferColumn);
+
             for (int r = 0; r < canvas.Rows; r++)
             {
-                int s = -1;
-                ushort attr = 0xffff;
-                StringBuilder b = null;
-
+                writer.NewCanvasRow(r);
                 for (int c = 0; c < canvas.Columns; c++)
                 {
                     var cell = canvas.Data[r, c];
-                    if (c == 0 || attr != cell.Attributes)
-                    {
-                        if (b != null && s >= 0)
-                        {
-                            Console.SetCursorPosition(s + Console.WindowLeft, r + Console.WindowTop);
-                            Console.ForegroundColor = (ConsoleColor)(attr & 0xf);
-                            Console.BackgroundColor = (ConsoleColor)((attr >> 4) & 0xf);
-                            Console.Write(b.ToString());
-                        }
-                        s = c;
-                        attr = cell.Attributes;
-                        b = new StringBuilder();
-                        b.Append((char)cell.UnicodeChar);
-                    }
-                    else
-                    {
-                        if (b == null)
-                            b = new StringBuilder();
-                        b.Append((char)cell.UnicodeChar);
-                    }
+                    writer.NewCanvasCell(c, cell);
                 }
-
-                if (b?.Length > 0)
-                {
-                    Console.SetCursorPosition(s + Console.WindowLeft, r + Console.WindowTop);
-                    Console.ForegroundColor = (ConsoleColor)(attr & 0xf);
-                    Console.BackgroundColor = (ConsoleColor)((attr >> 4) & 0xf);
-                    Console.Write(b.ToString());
-                }
+                writer.OnRowEnd();
             }
+
             if (mWindows)
                 Console.WindowTop = top;
             else
                 Console.SetCursorPosition(0, top);
+
             Cursor.CursorVisible = v;
         }
 

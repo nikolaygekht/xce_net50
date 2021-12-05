@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
 using System.Text;
 using CanvasColor = Gehtsoft.Xce.Conio.CanvasColor;
 
@@ -252,28 +253,24 @@ namespace Gehtsoft.Xce.Conio.Win
         {
             if (mValid)
                 return;
-            if (mWidth != 0 && mHeight != 0)
-            {
-                if (mCanvas == null)
-                    mCanvas = new Canvas(mHeight, mWidth);
-            }
-            else
+
+            if (mWidth == 0 || mHeight == 0)
             {
                 mValid = true;
                 return;
             }
 
+            if (mCanvas == null)
+                mCanvas = new Canvas(mHeight, mWidth);
+
             OnPaint(mCanvas);
 
-            foreach (Window child in mChildren)
+            foreach (Window child in mChildren.Where(child => child.Visible && child.Exists))
             {
-                if (child.Visible && child.Exists)
-                {
-                    if (!child.Valid)
-                        child.Paint();
-                    if (child.Canvas != null)
-                        mCanvas.Paint(child.Row, child.Column, child.Canvas);
-                }
+                if (!child.Valid)
+                    child.Paint();
+                if (child.Canvas != null)
+                    mCanvas.Paint(child.Row, child.Column, child.Canvas);
             }
             mValid = true;
         }

@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace Gehtsoft.Xce.Conio.Win
@@ -62,25 +64,12 @@ namespace Gehtsoft.Xce.Conio.Win
 
         public static MessageBoxButton Show(WindowManager mgr, IColorScheme colors, string message, string title, MessageBoxButtonInfo[] buttons)
         {
-            int i, j;
+            int i;
 
-            if (mgr == null)
-                throw new ArgumentNullException(nameof(mgr));
-            if (colors == null)
-                colors = ColorScheme.White;
-            if (message == null)
-                message = "null";
-            if (title == null)
-                title = "null";
-            if (buttons == null)
-                throw new ArgumentNullException(nameof(buttons));
-            if (buttons.Length < 1 || buttons.Length > 4)
-                throw new ArgumentException("invalid length", nameof(buttons));
-            for (i = 0; i < buttons.Length; i++)
-                if (buttons[i] == null)
-                    throw new ArgumentException("null item", nameof(buttons));
+            ValidateParameters(mgr, ref colors, ref message, ref title, buttons);
 
             string[] messageLines = message.Split(mSeparators, StringSplitOptions.None);
+
             int messageLinesCount = messageLines.Length;
             if (messageLinesCount > 10)
                 messageLinesCount = 10;
@@ -88,38 +77,22 @@ namespace Gehtsoft.Xce.Conio.Win
             int buttonsWidth = 0;
             for (i = 0; i < buttons.Length; i++)
             {
-                if (buttons[i].Title == null)
-                    buttonsWidth += 6;
-                else
-                {
-                    j = buttons[i].Title.Length;
-                    if (j > 16)
-                        j = 16;
-                    buttonsWidth += j;
-                }
+                int l = Math.Max(buttons[i].Title?.Length ?? 6, 16);
+                buttonsWidth += l;
             }
 
             //a space separator
-            buttonsWidth += (buttons.Length - 1);
+            buttonsWidth += buttons.Length - 1;
             int splitWidth = mgr.ScreenWidth - 14;
+            int dialogWidth = messageLines.Max(s => Math.Max(s.Length, splitWidth));
 
-            int textWidth = 0;
-            for (i = 0; i < messageLinesCount; i++)
-            {
-                j = messageLines[i].Length;
-                if (j > splitWidth)
-                    j = splitWidth;
-                if (textWidth < j)
-                    textWidth = j;
-            }
-
-            int dialogWidth = textWidth;
             if (dialogWidth < buttonsWidth)
                 dialogWidth = buttonsWidth;
 
             int dialogHeight = messageLinesCount + 1;
 
             MessageBoxDialog dlg = new MessageBoxDialog(title, colors, dialogHeight + 2, dialogWidth + 2);
+
             for (i = 0; i < messageLinesCount; i++)
             {
                 string s = messageLines[i];
@@ -143,6 +116,28 @@ namespace Gehtsoft.Xce.Conio.Win
             i = dlg.DoModal(mgr);
 
             return (MessageBoxButton)i;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void ValidateParameters(WindowManager mgr, ref IColorScheme colors, ref string message, ref string title, MessageBoxButtonInfo[] buttons)
+        {
+            if (mgr == null)
+                throw new ArgumentNullException(nameof(mgr));
+            if (colors == null)
+                colors = ColorScheme.White;
+            if (message == null)
+                message = "null";
+            if (title == null)
+                title = "null";
+            if (buttons == null)
+                throw new ArgumentNullException(nameof(buttons));
+            if (buttons.Length < 1 || buttons.Length > 4)
+                throw new ArgumentException("invalid length", nameof(buttons));
+            for (int i = 0; i < buttons.Length; i++)
+            {
+                if (buttons[i] == null)
+                    throw new ArgumentException($"null item {i}", nameof(buttons));
+            }
         }
 
         private static readonly MessageBoxButtonInfo[] mOkButtons = new MessageBoxButtonInfo[] { new MessageBoxButtonInfo("< &Ok >", MessageBoxButton.Ok) };

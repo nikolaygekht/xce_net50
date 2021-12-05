@@ -2,9 +2,8 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-
-#pragma warning disable S3011 // Reflection should not be used to increase accessibility of classes, methods, or fields
 
 namespace Gehtsoft.Xce.Conio
 {
@@ -36,36 +35,19 @@ namespace Gehtsoft.Xce.Conio
                     return classInfo;
 
                 var classAttr = type.GetCustomAttribute<BitStructAttribute>();
+
                 if (classAttr == null)
                     throw new ArgumentException($"The type must have {nameof(BitStructAttribute)}", nameof(type));
 
                 classInfo = new MarshalClassInfo();
 
-                FieldInfo[] fields = type.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-                int or = 10000;
-                int size = 0;
-                foreach (FieldInfo field in fields)
-                {
-                    var fieldAttr = field.GetCustomAttribute<BitFieldAttribute>();
-                    if (fieldAttr != null)
-                    {
-                        int order = fieldAttr.Order;
-                        int length = fieldAttr.BitLength;
-                        if (length < 1 || length > 32)
-                            throw new ArgumentException("A bit length of the structure should not exceed 64 bits", nameof(type));
-
-                        size += length;
-                        if (order < 0)
-                            order = or++;
-                        classInfo.Fields.Add(new MarshalFieldInfo() { Order = order, BitLength = length, FieldInfo = field });
-                    }
-                }
-                if (classInfo.Fields.Count == 0)
-                    throw new ArgumentException($"The type has not fields attributed with {nameof(BitFieldAttribute)}", nameof(type));
+                int size = ScanFields(classInfo, type);
 
                 int byteSize = size / 8;
+
                 if (size % 8 != 0)
                     byteSize++;
+
                 if (classAttr.SizeOf > 0)
                 {
                     if (classAttr.SizeOf < byteSize)
@@ -74,10 +56,39 @@ namespace Gehtsoft.Xce.Conio
                 }
                 else
                     classInfo.SizeOf = byteSize;
+
                 classInfo.Fields.Sort((a, b) => a.Order.CompareTo(b.Order));
                 gDictionary[type] = classInfo;
                 return classInfo;
             }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int ScanFields(MarshalClassInfo classInfo, Type type)
+        {
+            int or = 10000;
+            int size = 0;
+            foreach (FieldInfo field in type.GetFields())
+            {
+                var fieldAttr = field.GetCustomAttribute<BitFieldAttribute>();
+                if (fieldAttr != null)
+                {
+                    int order = fieldAttr.Order;
+                    int length = fieldAttr.BitLength;
+                    if (length < 1 || length > 32)
+                        throw new ArgumentException("A bit length of the structure should not exceed 64 bits", nameof(type));
+
+                    size += length;
+                    if (order < 0)
+                        order = or++;
+                    classInfo.Fields.Add(new MarshalFieldInfo() { Order = order, BitLength = length, FieldInfo = field });
+                }
+            }
+
+            if (classInfo.Fields.Count == 0)
+                throw new ArgumentException($"The type has not fields attributed with {nameof(BitFieldAttribute)}", nameof(type));
+
+            return size;
         }
 
         public static int BitFieldStructSizeOf(Type type)

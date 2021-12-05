@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Xml;
@@ -27,6 +28,7 @@ namespace Gehtsoft.Xce.Conio
             Style = new IntArray(rows, columns);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Write(int row, int column, char chr)
         {
             if (row < 0 || column < 0 || row >= Rows || column >= Columns)
@@ -34,6 +36,7 @@ namespace Gehtsoft.Xce.Conio
             Data[row, column].UnicodeChar = chr;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void WriteRgb(int row, int column, CanvasColor color)
         {
             if (row < 0 || column < 0 || row >= Rows || column >= Columns)
@@ -52,6 +55,7 @@ namespace Gehtsoft.Xce.Conio
             Style[idx] = s;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Write(int row, int column, CanvasColor color)
         {
             if (row < 0 || column < 0 || row >= Rows || column >= Columns)
@@ -60,8 +64,11 @@ namespace Gehtsoft.Xce.Conio
             Data[row, column].Attributes = color.PalColor;
             WriteRgb(row, column, color);
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Write(int row, int column, CanvasCell cell) => Write(row, column, cell.Character, cell.Color);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteForeground(int row, int column, CanvasColor color)
         {
             if (row < 0 || column < 0 || row >= Rows || column >= Columns)
@@ -76,6 +83,7 @@ namespace Gehtsoft.Xce.Conio
                 ForegroundColor[row, column] = -1;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteBackground(int row, int column, CanvasColor color)
         {
             if (row < 0 || column < 0 || row >= Rows || column >= Columns)
@@ -90,6 +98,7 @@ namespace Gehtsoft.Xce.Conio
                 BackgroundColor[row, column] = -1;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Write(int row, int column, char chr, CanvasColor color)
         {
             if (row < 0 || column < 0 || row >= Rows || column >= Columns)
@@ -101,54 +110,79 @@ namespace Gehtsoft.Xce.Conio
             WriteRgb(row, column, color);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void Write(int row, int column, int offset, int length, CanvasColor color, Func<int> lengthAction, Func<int, char> charAction)
         {
-            if (row >= 0 && row < Rows)
+            if (row < 0 && row >= Rows)
+                return;
+
+            if (column < 0)
             {
-                if (column < 0)
-                {
-                    length += column;
-                    offset -= column;
-                    column = 0;
-                }
+                length += column;
+                offset -= column;
+                column = 0;
+            }
 
-                if (offset >= lengthAction())
-                    return;
+            if (offset >= lengthAction())
+                return;
 
-                if (length > lengthAction() - offset)
-                    length = lengthAction() - offset;
+            if (length > lengthAction() - offset)
+                length = lengthAction() - offset;
 
-                if (length <= 0)
-                    return;
+            if (length <= 0)
+                return;
 
-                int limit = column + length;
-                if (limit > Columns)
-                    limit = Columns;
+            int limit = column + length;
+            if (limit > Columns)
+                limit = Columns;
 
-                int tbase = offset;
-                for (int i = column; i < limit; i++, tbase++)
-                {
-                    if (color == null)
-                        Write(row, i, charAction(tbase));
-                    else
-                        Write(row, i, charAction(tbase), color);
-                }
+            int tbase = offset;
+            for (int i = column; i < limit; i++, tbase++)
+            {
+                if (color == null)
+                    Write(row, i, charAction(tbase));
+                else
+                    Write(row, i, charAction(tbase), color);
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Write(int row, int column, string text, int offset, int length) => Write(row, column, offset, length, null, () => text.Length, (i) => text[i]);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Write(int row, int column, string text, int offset, int length, CanvasColor c) => Write(row, column, offset, length, c, () => text.Length, (i) => text[i]);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Write(int row, int column, char[] text, int offset, int length) => Write(row, column, offset, length, null, () => text.Length, (i) => text[i]);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Write(int row, int column, char[] text, int offset, int length, CanvasColor c) => Write(row, column, offset, length, c, () => text.Length, (i) => text[i]);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Write(int row, int column, StringBuilder text, int offset, int length) => Write(row, column, offset, length, null, () => text.Length, (i) => text[i]);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Write(int row, int column, StringBuilder text, int offset, int length, CanvasColor c) => Write(row, column, offset, length, c, () => text.Length, (i) => text[i]);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Write(int row, int column, string text) => Write(row, column, 0, text.Length, null, () => text.Length, (i) => text[i]);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Write(int row, int column, string text, CanvasColor c) => Write(row, column, 0, text.Length, c, () => text.Length, (i) => text[i]);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Write(int row, int column, char[] text) => Write(row, column, 0, text.Length, null, () => text.Length, (i) => text[i]);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Write(int row, int column, char[] text, CanvasColor c) => Write(row, column, 0, text.Length, c, () => text.Length, (i) => text[i]);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Write(int row, int column, StringBuilder text) => Write(row, column, 0, text.Length, null, () => text.Length, (i) => text[i]);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Write(int row, int column, StringBuilder text, CanvasColor c) => Write(row, column, 0, text.Length, c, () => text.Length, (i) => text[i]);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void Fill(int row, int column, int rows, int columns, Action<int, int> action)
         {
             if (row < 0)
@@ -183,13 +217,25 @@ namespace Gehtsoft.Xce.Conio
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Fill(int row, int column, int rows, int columns, char chr) => Fill(row, column, rows, columns, (r, c) => Write(r, c, chr));
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Fill(int row, int column, int rows, int columns, CanvasColor color) => Fill(row, column, rows, columns, (r, c) => Write(r, c, color));
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Fill(int row, int column, int rows, int columns, char chr, CanvasColor color) => Fill(row, column, rows, columns, (r, c) => Write(r, c, chr, color));
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Fill(int row, int column, int rows, int columns, CanvasCell cell) => Fill(row, column, rows, columns, (r, c) => Write(r, c, cell));
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void FillFg(int row, int column, int rows, int columns, CanvasColor cell) => Fill(row, column, rows, columns, (r, c) => WriteForeground(r, c, cell));
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void FillBg(int row, int column, int rows, int columns, CanvasColor cell) => Fill(row, column, rows, columns, (r, c) => WriteBackground(r, c, cell));
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Box(int row, int column, int rows, int columns, BoxBorder border, CanvasColor color)
         {
             if (rows >= 2 && columns >= 2)
@@ -207,6 +253,7 @@ namespace Gehtsoft.Xce.Conio
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Box(int row, int column, int rows, int columns, BoxBorder border, CanvasColor color, char fillchar)
         {
             Box(row, column, rows, columns, border, color);
@@ -214,6 +261,7 @@ namespace Gehtsoft.Xce.Conio
                 Fill(row + 1, column + 1, rows - 2, columns - 2, fillchar, color);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Paint(int dstRow, int dstColumn, Canvas srcCanvas)
         {
             int srcRows = srcCanvas.Rows;
@@ -262,6 +310,7 @@ namespace Gehtsoft.Xce.Conio
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public CanvasCell Get(int row, int column)
         {
             ref Win32.CHAR_INFO ci = ref Data[row, column];
