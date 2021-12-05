@@ -1,5 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace Gehtsoft.Xce.Conio.Win
@@ -29,6 +32,8 @@ namespace Gehtsoft.Xce.Conio.Win
                 offset = _offset;
                 length = _length;
             }
+
+            public bool IsInsideItem(int position) => position >= offset && position < offset + length;
         };
 
         public const int PopupCommandNone = 0;
@@ -111,61 +116,61 @@ namespace Gehtsoft.Xce.Conio.Win
         internal void DoLayout(out int height, out int width)
         {
             if (mVertical)
-            {
-                mLayout = new List<VerticalPopupMenuLayoutItem>();
-                width = 1;
-                foreach (MenuItem item in mMenu)
-                {
-                    if (item is CommandMenuItem)
-                    {
-                        CommandMenuItem cmd = item as CommandMenuItem;
-                        mLayout.Add(new VerticalPopupMenuLayoutItem(width, cmd.Title.Length));
-                        width += cmd.Title.Length + 1;
-                    }
-                    else if (item is PopupMenuItem)
-                    {
-                        PopupMenuItem cmd = item as PopupMenuItem;
-                        mLayout.Add(new VerticalPopupMenuLayoutItem(width, cmd.Title.Length));
-                        width += cmd.Title.Length + 1;
-                    }
-                    else if (item is SeparatorMenuItem)
-                    {
-                        mLayout.Add(new VerticalPopupMenuLayoutItem(width, 2));
-                        width += 2;
-                    }
-                }
-                height = 3;
-            }
+                DoVerticalLayout(out height, out width);
             else
-            {
-                int leftWidth, rightWidth;
-                leftWidth = 0;
-                rightWidth = 0;
+                DoHorizontalLayout(out height, out width);
+        }
 
-                foreach (MenuItem item in mMenu)
+        private void DoVerticalLayout(out int height, out int width)
+        {
+            mLayout = new List<VerticalPopupMenuLayoutItem>();
+            width = 1;
+            foreach (MenuItem item in mMenu)
+            {
+                if (item is CommandMenuItem cmd)
                 {
-                    if (item is CommandMenuItem)
-                    {
-                        CommandMenuItem cmd = item as CommandMenuItem;
-                        if (cmd.Title.Length > leftWidth)
-                            leftWidth = cmd.Title.Length;
-                        if (cmd.RightSide != null && cmd.RightSide.Length > rightWidth)
-                            rightWidth = cmd.RightSide.Length;
-                    }
-                    else if (item is PopupMenuItem)
-                    {
-                        PopupMenuItem cmd = item as PopupMenuItem;
-                        if (cmd.Title.Length > leftWidth)
-                            leftWidth = cmd.Title.Length;
-                        if (rightWidth < 1)
-                            rightWidth = 1;
-                    }
+                    mLayout.Add(new VerticalPopupMenuLayoutItem(width, cmd.Title.Length));
+                    width += cmd.Title.Length + 1;
                 }
-                width = 3 + leftWidth;
-                if (rightWidth > 0)
-                    width = width + rightWidth + 1;
-                height = mMenu.Count + 2;
+                else if (item is PopupMenuItem popup)
+                {
+                    mLayout.Add(new VerticalPopupMenuLayoutItem(width, popup.Title.Length));
+                    width += popup.Title.Length + 1;
+                }
+                else if (item is SeparatorMenuItem)
+                {
+                    mLayout.Add(new VerticalPopupMenuLayoutItem(width, 2));
+                    width += 2;
+                }
             }
+            height = 3;
+        }
+
+        private void DoHorizontalLayout(out int height, out int width)
+        {
+            int leftWidth = mMenu.Max(item =>
+            {
+                if (item is CommandMenuItem cmd)
+                    return cmd.Title.Length;
+                else if (item is PopupMenuItem popup)
+                    return popup.Title.Length;
+                return 0;
+            });
+
+            int rightWidth = mMenu.Max(item =>
+            {
+                if (item is CommandMenuItem cmd)
+                    return cmd.RightSide.Length;
+                else if (item is PopupMenuItem popup)
+                    return 1;
+                return 0;
+            });
+
+            width = 3 + leftWidth;
+            
+            if (rightWidth > 0)
+                width = width + rightWidth + 1;
+            height = mMenu.Count + 2;
         }
         #endregion
 
@@ -218,146 +223,72 @@ namespace Gehtsoft.Xce.Conio.Win
         /// <returns></returns>
         private bool Select(bool onlypopup)
         {
-            if (mCurSel >= 0 && mCurSel < mMenu.Count)
-            {
-                MenuItem item = mMenu[mCurSel];
-                if (item is CommandMenuItem menuItem && !onlypopup)
-                {
-                    if (menuItem.Enabled)
-                    {
-                        mCommand = menuItem.Command;
-                        Manager.Close(this);
-                    }
-                    return true;
-                }
-                else if (item is PopupMenuItem)
-                {
-                    PopupMenuItem subMenu = item as PopupMenuItem;
-                    PopupMenu menu = new PopupMenu(this, subMenu, mColors, false);
-                    int row, column;
-                    if (mVertical)
-                    {
-                        column = mLayout[mCurSel].offset;
-                        row = Row + Height;
-                    }
-                    else
-                    {
-                        column = Column + Width;
-                        row = Row + mCurSel + 1;
-                    }
-                    Manager.ReleaseMouse(this);
-                    Manager.ShowPopupMenu(menu, row, column);
-                    Manager.CaptureMouse(this);
+            if (mCurSel < 0 && mCurSel >= mMenu.Count)
+                return false;
 
-                    if (menu.CommandChosen == PopupCommandEscape)
-                    {
-                        //just do nothing
-                    }
-                    else if (menu.CommandChosen == PretranslatedButtonEscape)
-                    {
+            MenuItem item = mMenu[mCurSel];
+
+            if (item is CommandMenuItem menuItem && !onlypopup)
+            {
+                if (menuItem.Enabled)
+                {
+                    mCommand = menuItem.Command;
+                    Manager.Close(this);
+                }
+                return true;
+            }
+            else if (item is PopupMenuItem subMenu)
+            {
+                PopupMenu menu = new PopupMenu(this, subMenu, mColors, false);
+                int row, column;
+                if (mVertical)
+                {
+                    column = mLayout[mCurSel].offset;
+                    row = Row + Height;
+                }
+                else
+                {
+                    column = Column + Width;
+                    row = Row + mCurSel + 1;
+                }
+                Manager.ReleaseMouse(this);
+                Manager.ShowPopupMenu(menu, row, column);
+                Manager.CaptureMouse(this);
+
+                switch (menu.CommandChosen)
+                {
+                    case PretranslatedButtonEscape:
                         OnMouseLButtonDown(mPretranslatedRow, mPretranslatedColumn, false, false, false);
-                    }
-                    else if (menu.CommandChosen == PopupCommandLeft)
-                    {
-                        if (mVertical)
-                        {
-                            Left();
-                            Select(true);
-                        }
-                    }
-                    else if (menu.CommandChosen == PopupCommandRight)
-                    {
-                        if (mVertical)
-                        {
-                            Right();
-                            Select(true);
-                        }
-                    }
-                    else if (menu.CommandChosen != PopupCommandNone)
-                    {
+                        break;
+                    case PopupCommandLeft when mVertical:
+                        Left();
+                        Select(true);
+                        break;
+                    case PopupCommandRight when mVertical:
+                        Right();
+                        Select(true);
+                        break;
+                    case PopupCommandEscape:
+                    case PopupCommandLeft when !mVertical:
+                    case PopupCommandRight when !mVertical:
+                    case PopupCommandNone:
+                        //do nothing
+                        break;
+                    default:
                         mCommand = menu.CommandChosen;
                         Manager.Close(this);
-                    }
-                    return true;
+                        break;
                 }
+                return true;
             }
             return false;
         }
 
         public override void OnKeyPressed(ScanCode scanCode, char character, bool shift, bool ctrl, bool alt)
         {
-            if (!shift && !ctrl && !alt)
-            {
-                if (scanCode == ScanCode.RIGHT)
-                {
-                    if (mVertical)
-                        Right();
-                    else
-                    {
-                        if (!Select(true) && mParent != null)
-                        {
-                            mCommand = PopupCommandRight;
-                            Manager.Close(this);
-                        }
-                    }
-                    return;
-                }
-                else if (scanCode == ScanCode.LEFT)
-                {
-                    if (mVertical)
-                        Left();
-                    else
-                    {
-                        if (mParent != null)
-                        {
-                            mCommand = PopupCommandLeft;
-                            Manager.Close(this);
-                        }
-                    }
-                    return;
-                }
-                else if (scanCode == ScanCode.DOWN)
-                {
-                    if (mVertical)
-                        Select(true);
-                    else
-                        Right();
-                    return;
-                }
-                else if (scanCode == ScanCode.UP)
-                {
-                    if (!mVertical)
-                        Left();
-                    return;
-                }
-                else if (scanCode == ScanCode.HOME)
-                {
-                    mCurSel = 0;
-                    while (mCurSel < mMenu.Count && mMenu[mCurSel] is SeparatorMenuItem)
-                        mCurSel++;
-                    Invalidate();
-                    return;
-                }
-                else if (scanCode == ScanCode.END)
-                {
-                    mCurSel = mMenu.Count - 1;
-                    while (mCurSel >= 0 && mMenu[mCurSel] is SeparatorMenuItem)
-                        mCurSel--;
-                    Invalidate();
-                    return;
-                }
-                else if (scanCode == ScanCode.ESCAPE)
-                {
-                    mCommand = PopupCommandEscape;
-                    Manager.Close(this);
-                    return;
-                }
-                else if (scanCode == ScanCode.RETURN)
-                {
-                    Select(false);
-                    return;
-                }
-            }
+            if (!shift && !ctrl && !alt && ProcessControlKey(scanCode))
+                return;
+
             if (!ctrl && character > 0)
             {
                 for (int i = 0; i < mMenu.Count; i++)
@@ -377,50 +308,100 @@ namespace Gehtsoft.Xce.Conio.Win
             }
         }
 
+        private bool ProcessControlKey(ScanCode scanCode)
+        {
+            switch (scanCode)
+            {
+                case ScanCode.RIGHT when mVertical:
+                    Right();
+                    return true;
+                case ScanCode.RIGHT when !mVertical:
+                    if (!Select(true) && mParent != null)
+                    {
+                        mCommand = PopupCommandRight;
+                        Manager.Close(this);
+                    }
+                    return true;
+                case ScanCode.LEFT when mVertical:
+                    Left();
+                    return true;
+                case ScanCode.LEFT when !mVertical:
+                    if (mParent != null)
+                    {
+                        mCommand = PopupCommandLeft;
+                        Manager.Close(this);
+                    }
+                    return true;
+                case ScanCode.DOWN when mVertical:
+                    Select(true);
+                    return true;
+                case ScanCode.DOWN when !mVertical:
+                    Right();
+                    return true;
+                case ScanCode.UP when !mVertical:
+                    Left();
+                    return true;
+                case ScanCode.HOME:
+                    mCurSel = 0;
+                    while (mCurSel < mMenu.Count && mMenu[mCurSel] is SeparatorMenuItem)
+                        mCurSel++;
+                    Invalidate();
+                    return true;
+                case ScanCode.END:
+                    mCurSel = mMenu.Count - 1;
+                    while (mCurSel >= 0 && mMenu[mCurSel] is SeparatorMenuItem)
+                        mCurSel--;
+                    Invalidate();
+                    return true;
+                case ScanCode.ESCAPE:
+                    mCommand = PopupCommandEscape;
+                    Manager.Close(this);
+                    return true;
+                case ScanCode.RETURN:
+                    Select(false);
+                    return true;
+            }
+            return false;
+        }
+
         public override void OnMouseLButtonDown(int row, int column, bool shift, bool ctrl, bool alt)
         {
             if (ScreenToWindow(row, column, out int winRow, out int winColumn))
-            {
-                int newSel = -1;
-                if (mVertical)
-                {
-                    for (int i = 0; i < mLayout.Count; i++)
-                    {
-                        VerticalPopupMenuLayoutItem item = mLayout[i];
-                        if (winColumn >= item.offset && winColumn < item.offset + item.length)
-                        {
-                            newSel = i;
-                            break;
-                        }
-                    }
-                }
-                else
-                {
-                    winRow--;
-                    if (winRow >= 0 && winRow < mMenu.Count)
-                    {
-                        MenuItem item = mMenu[winRow];
-                        if (!(item is SeparatorMenuItem))
-                            newSel = winRow;
-                    }
-                }
-
-                if (newSel >= 0)
-                {
-                    if (newSel == mCurSel)
-                        Select(false);
-                    else
-                    {
-                        mCurSel = newSel;
-                        Invalidate();
-                    }
-                }
-            }
+                OnMouseLButton_FindItemByClick(winRow, winColumn);
 
             if (mParent?.PreTranslateLButtonDown(row, column) == true)
             {
                 mCommand = PretranslatedButtonEscape;
                 Manager.Close(this);
+            }
+        }
+
+        private void OnMouseLButton_FindItemByClick(int winRow, int winColumn)
+        {
+            int newSel = -1;
+            
+            if (mVertical)
+                newSel = mLayout.FindIndex(item => item.IsInsideItem(winColumn));
+            else
+            {
+                winRow--;
+                if (winRow >= 0 && winRow < mMenu.Count)
+                {
+                    MenuItem item = mMenu[winRow];
+                    if (!(item is SeparatorMenuItem))
+                        newSel = winRow;
+                }
+            }
+
+            if (newSel >= 0)
+            {
+                if (newSel == mCurSel)
+                    Select(false);
+                else
+                {
+                    mCurSel = newSel;
+                    Invalidate();
+                }
             }
         }
 
@@ -457,142 +438,136 @@ namespace Gehtsoft.Xce.Conio.Win
         {
             canvas.Box(0, 0, Height, Width, BoxBorder.Single, mColors.MenuItem, ' ');
             if (mVertical)
+                PaintVertical(canvas);
+            else
+                PaintHorizontal(canvas);
+        }
+
+        private void PaintVertical(Canvas canvas)
+        {
+            for (int i = 0; i < mMenu.Count; i++)
+                PaintVertical_Item(canvas, i);
+        }
+
+        private void PaintVertical_Item(Canvas canvas, int index)
+        {
+            VerticalPopupMenuLayoutItem layout = mLayout[index];
+            MenuItem item = mMenu[index];
+            CanvasColor color;
+            string title;
+            int highlight = -1;
+
+            if (item is CommandMenuItem cmd)
             {
-                for (int i = 0; i < mMenu.Count; i++)
-                {
-                    VerticalPopupMenuLayoutItem layout = mLayout[i];
-                    MenuItem item = mMenu[i];
-                    CanvasColor color;
-                    string title;
-                    int highlight = -1;
+                title = cmd.Title;
+                color = GetItemColor(index, cmd.Enabled);
 
-                    if (item is CommandMenuItem)
-                    {
-                        CommandMenuItem cmd = item as CommandMenuItem;
-                        title = cmd.Title;
-                        if (mCurSel == i)
-                        {
-                            if (cmd.Enabled)
-                                color = mColors.MenuItemSelected;
-                            else
-                                color = mColors.MenuDisabledItemSelected;
-                        }
-                        else
-                        {
-                            if (cmd.Enabled)
-                                color = mColors.MenuItem;
-                            else
-                                color = mColors.MenuDisabledItem;
-                        }
-
-                        if (cmd.HasHotkey)
-                            highlight = cmd.HotKeyPosition;
-                    }
-                    else if (item is PopupMenuItem)
-                    {
-                        PopupMenuItem cmd = item as PopupMenuItem;
-                        title = cmd.Title;
-                        if (mCurSel == i)
-                            color = mColors.MenuItemSelected;
-                        else
-                            color = mColors.MenuItem;
-
-                        if (cmd.HasHotkey)
-                            highlight = cmd.HotKeyPosition;
-                    }
-                    else if (item is SeparatorMenuItem)
-                    {
-                        color = mColors.MenuItem;
-                        title = "\u2502";
-                    }
-                    else
-                    {
-                        color = mColors.MenuItem;
-                        title = "";
-                    }
-                    canvas.Write(1, layout.offset, title, color);
-                    if (highlight >= 0)
-                    {
-                        if (mCurSel == i)
-                            canvas.Write(1, layout.offset + highlight, mColors.MenuHotKeySelected);
-                        else
-                            canvas.Write(1, layout.offset + highlight, mColors.MenuHotKey);
-                    }
-                }
+                if (cmd.HasHotkey)
+                    highlight = cmd.HotKeyPosition;
+            }
+            else if (item is PopupMenuItem popup)
+            {
+                title = popup.Title;
+                color = GetItemColor(index, true);
+                if (popup.HasHotkey)
+                    highlight = popup.HotKeyPosition;
+            }
+            else if (item is SeparatorMenuItem)
+            {
+                color = mColors.MenuItem;
+                title = "\u2502";
             }
             else
             {
-                for (int i = 0; i < mMenu.Count; i++)
-                {
-                    MenuItem item = mMenu[i];
+                color = mColors.MenuItem;
+                title = "";
+            }
+            canvas.Write(1, layout.offset, title, color);
 
-                    CanvasColor color;
 
-                    if (item is CommandMenuItem)
-                    {
-                        CommandMenuItem cmd = item as CommandMenuItem;
-                        if (mCurSel == i)
-                        {
-                            if (cmd.Enabled)
-                                color = mColors.MenuItemSelected;
-                            else
-                                color = mColors.MenuDisabledItemSelected;
-                        }
-                        else
-                        {
-                            if (cmd.Enabled)
-                                color = mColors.MenuItem;
-                            else
-                                color = mColors.MenuDisabledItem;
-                        }
-                        canvas.Fill(i + 1, 1, 1, Width - 2, color);
-                        canvas.Write(i + 1, 2, cmd.Title);
-                        if (cmd.HasHotkey)
-                        {
-                            if (mCurSel == i)
-                                canvas.Write(i + 1, 2 + cmd.HotKeyPosition, mColors.MenuHotKeySelected);
-                            else
-                                canvas.Write(i + 1, 2 + cmd.HotKeyPosition, mColors.MenuHotKey);
-                        }
+            if (highlight < 0) //if nothing to highlight
+                return;
 
-                        if (cmd.RightSide != null)
-                            canvas.Write(i + 1, Width - (cmd.RightSide.Length + 1), cmd.RightSide);
-                        if (cmd.Checked)
-                            canvas.Write(i + 1, 1, '\u221a');
+            var hotKeyColor = mCurSel == index ? mColors.MenuHotKeySelected : mColors.MenuHotKey;
+            canvas.Write(1, layout.offset + highlight, hotKeyColor);
+        }
 
-                        if (mCurSel == i)
-                            WindowManager.SetCaretPos(this, i + 1, 2);
-                    }
-                    else if (item is PopupMenuItem)
-                    {
-                        PopupMenuItem cmd = item as PopupMenuItem;
-                        if (mCurSel == i)
-                            color = mColors.MenuItemSelected;
-                        else
-                            color = mColors.MenuItem;
-                        canvas.Fill(i + 1, 1, 1, Width - 2, color);
-                        canvas.Write(i + 1, 2, cmd.Title);
-                        canvas.Write(i + 1, Width - 2, '\u25ba');
-                        if (cmd.HasHotkey)
-                        {
-                            if (mCurSel == i)
-                                canvas.Write(i + 1, 2 + cmd.HotKeyPosition, mColors.MenuHotKeySelected);
-                            else
-                                canvas.Write(i + 1, 2 + cmd.HotKeyPosition, mColors.MenuHotKey);
-                        }
+        private void PaintHorizontal(Canvas canvas)
+        {
+            for (int i = 0; i < mMenu.Count; i++)
+                PaintHorizontal_Item(canvas, i);
+        }
 
-                        if (mCurSel == i)
-                            WindowManager.SetCaretPos(this, i + 1, 2);
-                    }
-                    else if (item is SeparatorMenuItem)
-                    {
-                        canvas.Fill(i + 1, 1, 1, Width - 2, '\u2500');
-                        canvas.Write(i + 1, 0, '\u251c');
-                        canvas.Write(i + 1, Width - 1, '\u2524');
-                    }
-                }
+        private void PaintHorizontal_Item(Canvas canvas, int index)
+        {
+            MenuItem item = mMenu[index];
+
+            CanvasColor color;
+
+            if (item is CommandMenuItem)
+            {
+                CommandMenuItem cmd = item as CommandMenuItem;
+                color = GetItemColor(index, cmd.Enabled);
+                canvas.Fill(index + 1, 1, 1, Width - 2, color);
+                canvas.Write(index + 1, 2, cmd.Title);
+
+                if (cmd.HasHotkey)
+                    PaintHorizontal_HighlightHotKey(canvas, index, cmd.HotKeyPosition);
+
+                if (cmd.RightSide != null)
+                    canvas.Write(index + 1, Width - (cmd.RightSide.Length + 1), cmd.RightSide);
+                if (cmd.Checked)
+                    canvas.Write(index + 1, 1, '\u221a');
+
+                if (mCurSel == index)
+                    WindowManager.SetCaretPos(this, index + 1, 2);
+            }
+            else if (item is PopupMenuItem popup)
+            {
+                color = GetItemColor(index, true);
+                canvas.Fill(index + 1, 1, 1, Width - 2, color);
+                canvas.Write(index + 1, 2, popup.Title);
+                canvas.Write(index + 1, Width - 2, '\u25ba');
+
+                if (popup.HasHotkey)
+                    PaintHorizontal_HighlightHotKey(canvas, index, popup.HotKeyPosition);
+
+                if (mCurSel == index)
+                    WindowManager.SetCaretPos(this, index + 1, 2);
+            }
+            else if (item is SeparatorMenuItem)
+            {
+                canvas.Fill(index + 1, 1, 1, Width - 2, '\u2500');
+                canvas.Write(index + 1, 0, '\u251c');
+                canvas.Write(index + 1, Width - 1, '\u2524');
             }
         }
+
+        private void PaintHorizontal_HighlightHotKey(Canvas canvas, int commandIndex, int hotkeyPosition)
+        {
+            if (mCurSel == commandIndex)
+                canvas.Write(commandIndex + 1, 2 + hotkeyPosition, mColors.MenuHotKeySelected);
+            else
+                canvas.Write(commandIndex + 1, 2 + hotkeyPosition, mColors.MenuHotKey);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private CanvasColor GetItemColor(int index, bool enabled)
+        {
+            if (mCurSel == index)
+            {
+                if (enabled)
+                    return mColors.MenuItemSelected;
+                else
+                    return mColors.MenuDisabledItemSelected;
+            }
+            if (enabled)
+                return mColors.MenuItem;
+            else
+                return mColors.MenuDisabledItem;
+        }
+
+
         #endregion
     }
 }
