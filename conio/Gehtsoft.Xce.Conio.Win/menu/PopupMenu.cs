@@ -159,7 +159,7 @@ namespace Gehtsoft.Xce.Conio.Win
 
             int rightWidth = mMenu.Max(item =>
             {
-                if (item is CommandMenuItem cmd)
+                if (item is CommandMenuItem cmd && cmd.RightSide != null)
                     return cmd.RightSide.Length;
                 else if (item is PopupMenuItem popup)
                     return 1;
