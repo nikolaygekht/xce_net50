@@ -169,5 +169,184 @@ namespace Gehtsoft.Xce.TextBuffer.Test
             buffer.RemoveSubstring(4, 2, 2);
             buffer.SavedPositions[0].EqualsTo(4, 6).Should().Be(true);
         }
+
+        [Theory]
+        [InlineData("name", 1, 2, "name", 1, 2, true)]
+        [InlineData("name", 1, 2, "name1", 1, 2, false)]
+        [InlineData("name", 1, 2, "name", 2, 2, false)]
+        [InlineData("name", 1, 2, "name", 1, 3, false)]
+        public void Equality(string n1, int line1, int position1, string n2, int line2, int position2, bool expected)
+        {
+            var m1 = new PositionMarker(n1, line1, position1);
+            var m2 = new PositionMarker(n2, line2, position2);
+
+            m1.Equals(m2).Should().Be(expected);
+        }
+
+#pragma warning disable RCS1098 // Constant values should be placed on right side of comparisons.
+        [Fact]
+        public void Equality_WidthNull()
+        {
+            var m1 = new PositionMarker("1", 1, 2);
+            PositionMarker m2 = null;
+            PositionMarker m3 = null;
+
+            m1.Equals(null).Should().BeFalse();
+            m1.Equals(m2).Should().BeFalse();
+
+            (m1 == null).Should().BeFalse();
+            (null == m1).Should().BeFalse();
+
+            (m1 == m2).Should().BeFalse();
+            (m2 == m1).Should().BeFalse();
+            (m2 == m3).Should().BeTrue();
+
+            (m1 != null).Should().BeTrue();
+            (null != m1).Should().BeTrue();
+            (m1 != m2).Should().BeTrue();
+            (m2 != m1).Should().BeTrue();
+            (m2 != m3).Should().BeFalse();
+        }
+#pragma warning restore RCS1098 // Constant values should be placed on right side of comparisons.
+
+        [Theory]
+        [InlineData(2, 3, 2, 3, 0)]
+        [InlineData(1, 4, 2, 3, -1)]
+        [InlineData(2, 1, 2, 3, -1)]
+        [InlineData(2, 4, 2, 3, 1)]
+        [InlineData(3, 1, 2, 3, 1)]
+        public void Compare(int line1, int position1, int line2, int position2, int expected)
+        {
+            var m1 = new PositionMarker("1", line1, position1);
+            var m2 = new PositionMarker("2", line2, position2);
+
+            m1.CompareTo(m2).Should().Be(expected);
+        }
+
+        [Theory]
+        [InlineData(2, 3, 2, 3, true)]
+        [InlineData(1, 4, 2, 3, false)]
+        [InlineData(2, 1, 2, 3, false)]
+        [InlineData(2, 4, 2, 3, false)]
+        [InlineData(3, 1, 2, 3, false)]
+        public void OpEq(int line1, int position1, int line2, int position2, bool expected)
+        {
+            var m1 = new PositionMarker("n1", line1, position1);
+            var m2 = new PositionMarker("n2", line2, position2);
+
+            (m1 == m2).Should().Be(expected);
+        }
+
+        [Theory]
+        [InlineData(2, 3, 2, 3, false)]
+        [InlineData(1, 4, 2, 3, true)]
+        [InlineData(2, 1, 2, 3, true)]
+        [InlineData(2, 4, 2, 3, true)]
+        [InlineData(3, 1, 2, 3, true)]
+        public void OpNeq( int line1, int position1,  int line2, int position2, bool expected)
+        {
+            var m1 = new PositionMarker("n1", line1, position1);
+            var m2 = new PositionMarker("n2", line2, position2);
+
+            (m1 != m2).Should().Be(expected);
+        }
+
+        [Theory]
+        [InlineData(2, 3, 2, 3, false)]
+        [InlineData(1, 4, 2, 3, false)]
+        [InlineData(2, 1, 2, 3, false)]
+        [InlineData(2, 4, 2, 3, true)]
+        [InlineData(3, 1, 2, 3, true)]
+        public void OpGt(int line1, int position1, int line2, int position2, bool expected)
+        {
+            var m1 = new PositionMarker("n1", line1, position1);
+            var m2 = new PositionMarker("n2", line2, position2);
+
+            (m1 > m2).Should().Be(expected);
+        }
+
+        [Theory]
+        [InlineData(2, 3, 2, 3, true)]
+        [InlineData(1, 4, 2, 3, false)]
+        [InlineData(2, 1, 2, 3, false)]
+        [InlineData(2, 4, 2, 3, true)]
+        [InlineData(3, 1, 2, 3, true)]
+        public void OpGe(int line1, int position1, int line2, int position2, bool expected)
+        {
+            var m1 = new PositionMarker("n1", line1, position1);
+            var m2 = new PositionMarker("n2", line2, position2);
+
+            (m1 >= m2).Should().Be(expected);
+        }
+
+        [Theory]
+        [InlineData(2, 3, 2, 3, false)]
+        [InlineData(1, 4, 2, 3, true)]
+        [InlineData(2, 1, 2, 3, true)]
+        [InlineData(2, 4, 2, 3, false)]
+        [InlineData(3, 1, 2, 3, false)]
+        public void OpLt(int line1, int position1, int line2, int position2, bool expected)
+        {
+            var m1 = new PositionMarker("n1", line1, position1);
+            var m2 = new PositionMarker("n2", line2, position2);
+
+            (m1 < m2).Should().Be(expected);
+        }
+
+        [Theory]
+        [InlineData(2, 3, 2, 3, true)]
+        [InlineData(1, 4, 2, 3, true)]
+        [InlineData(2, 1, 2, 3, true)]
+        [InlineData(2, 4, 2, 3, false)]
+        [InlineData(3, 1, 2, 3, false)]
+        public void OpLe(int line1, int position1,  int line2, int position2, bool expected)
+        {
+            var m1 = new PositionMarker("n1", line1, position1);
+            var m2 = new PositionMarker("n2", line2, position2);
+
+            (m1 <= m2).Should().Be(expected);
+        }
+
+        [Theory]
+        [InlineData(1, 2, 3, 4, 5, 6, BlockMode.Line,
+                    1, 2, 3, 4, 5, 6, BlockMode.Line, true)]
+        [InlineData(1, 2, 3, 4, 5, 6, BlockMode.Line,
+                    11, 2, 3, 4, 5, 6, BlockMode.Line, false)]
+        [InlineData(1, 2, 3, 4, 5, 6, BlockMode.Line,
+                    1, 12, 3, 4, 5, 6, BlockMode.Line, false)]
+        [InlineData(1, 2, 3, 4, 5, 6, BlockMode.Line,
+                    1, 2, 13, 4, 5, 6, BlockMode.Line, false)]
+        [InlineData(1, 2, 3, 4, 5, 6, BlockMode.Line,
+                    1, 2, 3, 14, 5, 6, BlockMode.Line, false)]
+        [InlineData(1, 2, 3, 4, 5, 6, BlockMode.Line,
+                    1, 2, 3, 4, 15, 6, BlockMode.Line, false)]
+        [InlineData(1, 2, 3, 4, 5, 6, BlockMode.Line,
+                    1, 2, 3, 4, 5, 16, BlockMode.Line, false)]
+        [InlineData(1, 2, 3, 4, 5, 6, BlockMode.Line,
+                    1, 2, 3, 4, 5, 6, BlockMode.Stream, false)]
+        public void BufferStatusEquals(int cl1, int cc1, int bsl1, int bsc1, int bel1, int bec1, BlockMode bm1,
+                                       int cl2, int cc2, int bsl2, int bsc2, int bel2, int bec2, BlockMode bm2, 
+                                       bool expected)
+        {
+            var s1 = new TextBufferStatus();
+            s1.CursorPosition.Line = cl1;
+            s1.CursorPosition.Column = cc1;
+            s1.BlockStart.Line = bsl1;
+            s1.BlockStart.Column = bsc1;
+            s1.BlockEnd.Line = bel1;
+            s1.BlockEnd.Column = bec1;
+            s1.BlockMode = bm1;
+
+            var s2 = new TextBufferStatus();
+            s2.CursorPosition.Line = cl2;
+            s2.CursorPosition.Column = cc2;
+            s2.BlockStart.Line = bsl2;
+            s2.BlockStart.Column = bsc2;
+            s2.BlockEnd.Line = bel2;
+            s2.BlockEnd.Column = bec2;
+            s2.BlockMode = bm2;
+
+            s1.Equals(s2).Should().Be(expected);
+        }
     }
 }

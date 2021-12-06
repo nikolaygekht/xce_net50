@@ -65,7 +65,7 @@ namespace Gehtsoft.Xce.TextBuffer
         /// <returns></returns>
         public bool Equals(TextBufferStatus other)
         {
-            if (other == null)
+            if (other is null)
                 return false;
             return CursorPosition.Equals(other.CursorPosition) &&
                 BlockStart.Equals(other.BlockStart) &&

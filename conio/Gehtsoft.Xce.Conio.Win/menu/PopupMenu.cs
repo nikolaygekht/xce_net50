@@ -167,7 +167,7 @@ namespace Gehtsoft.Xce.Conio.Win
             });
 
             width = 3 + leftWidth;
-            
+
             if (rightWidth > 0)
                 width = width + rightWidth + 1;
             height = mMenu.Count + 2;
@@ -379,7 +379,7 @@ namespace Gehtsoft.Xce.Conio.Win
         private void OnMouseLButton_FindItemByClick(int winRow, int winColumn)
         {
             int newSel = -1;
-            
+
             if (mVertical)
                 newSel = mLayout.FindIndex(item => item.IsInsideItem(winColumn));
             else
@@ -484,7 +484,6 @@ namespace Gehtsoft.Xce.Conio.Win
             }
             canvas.Write(1, layout.offset, title, color);
 
-
             if (highlight < 0) //if nothing to highlight
                 return;
 
@@ -566,8 +565,6 @@ namespace Gehtsoft.Xce.Conio.Win
             else
                 return mColors.MenuDisabledItem;
         }
-
-
         #endregion
     }
 }

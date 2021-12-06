@@ -65,7 +65,7 @@ namespace Gehtsoft.Xce.TextBuffer
         /// <returns></returns>
         public int CompareTo(PositionMarker other)
         {
-            if (other == null)
+            if (other is null)
                 return 1;
             return CompareTo(other.Line, other.Column);
         }
@@ -98,8 +98,10 @@ namespace Gehtsoft.Xce.TextBuffer
         /// <returns></returns>
         public override int GetHashCode() => HashCode.Combine(Name, Line, Column);
 
-        public static bool operator ==(PositionMarker a, PositionMarker b) => a.CompareTo(b) == 0;
-        public static bool operator !=(PositionMarker a, PositionMarker b) => a.CompareTo(b) != 0;
+        public static bool operator ==(PositionMarker a, PositionMarker b) =>
+            (a is null && b is null) || (a is not null && b is not null && a.CompareTo(b) == 0);
+        public static bool operator !=(PositionMarker a, PositionMarker b) =>
+            (a is null && b is not null) || (a is not null && b is null) || (a is not null && b is not null && a.CompareTo(b) != 0);
         public static bool operator >(PositionMarker a, PositionMarker b) => a.CompareTo(b) > 0;
         public static bool operator >=(PositionMarker a, PositionMarker b) => a.CompareTo(b) >= 0;
         public static bool operator <(PositionMarker a, PositionMarker b) => a.CompareTo(b) < 0;

@@ -47,6 +47,8 @@ namespace Gehtsoft.Xce.TextBuffer.Undo
                 mActions.AddLast(action);
         }
 
+        public bool IsInTransaction => Peek() is UndoTransaction transaction && !transaction.IsClosed;
+
         /// <summary>
         /// Peeks the action at the bottom of the collection
         /// </summary>

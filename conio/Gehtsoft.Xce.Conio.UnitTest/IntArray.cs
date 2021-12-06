@@ -8,6 +8,8 @@ using Gehtsoft.Xce.Conio;
 using Xunit;
 using Xunit.Abstractions;
 
+#pragma warning disable IDE0052, S4487 // Remove unread private members
+
 namespace Gehtsoft.Xce.Conio.UnitTest
 {
     public class IntArrayTest

@@ -28,6 +28,10 @@ namespace Gehtsoft.Xce.TextBuffer.Undo
             mActions.Push(action);
         }
 
+        internal int Count => mActions.Count;
+
+        internal IUndoAction Peek() => mActions.Peek();
+
         public IDisposable GetCloser() => new UndoTransactionCloser(this);
 
         public UndoTransaction(TextBuffer buffer) : base(buffer)
