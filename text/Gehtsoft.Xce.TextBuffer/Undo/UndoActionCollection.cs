@@ -11,10 +11,12 @@ namespace Gehtsoft.Xce.TextBuffer.Undo
     {
         private readonly LinkedList<IUndoAction> mActions = new LinkedList<IUndoAction>();
         private readonly TextBuffer mBuffer;
+        private readonly UndoActionCollection mRedoCollection;
 
-        public UndoActionCollection(TextBuffer buffer)
+        public UndoActionCollection(TextBuffer buffer, UndoActionCollection redoCollection = null)
         {
             mBuffer = buffer;
+            mRedoCollection = redoCollection;
         }
 
         /// <summary>
@@ -45,6 +47,8 @@ namespace Gehtsoft.Xce.TextBuffer.Undo
                 transaction.Push(action);
             else
                 mActions.AddLast(action);
+
+            mRedoCollection?.Clear();
         }
 
         public bool IsInTransaction => Peek() is UndoTransaction transaction && !transaction.IsClosed;
@@ -100,6 +104,8 @@ namespace Gehtsoft.Xce.TextBuffer.Undo
                 n = n.Previous;
             }
         }
+
+        public void Clear() => mActions.Clear();
     }
 }
 

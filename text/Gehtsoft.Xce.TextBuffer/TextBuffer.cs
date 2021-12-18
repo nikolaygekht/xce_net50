@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
+using Gehtsoft.Xce.TextBuffer.Undo;
 using Scintilla.CellBuffer;
 
 namespace Gehtsoft.Xce.TextBuffer
@@ -13,9 +14,12 @@ namespace Gehtsoft.Xce.TextBuffer
     /// </summary>
     public class TextBuffer : IDisposable
     {
-        private readonly MutexSlim mSyncRoot = new MutexSlim();
-
         private readonly SplitList<SplitList<char>> mContent = new SplitList<SplitList<char>>();
+
+        public UndoActionCollection UndoCollection { get; init; }
+        public UndoActionCollection RedoCollection { get; init; }
+
+        public object SyncRoot { get; } = new object();
 
         /// <summary>
         /// The number of the lines if the buffer
@@ -49,9 +53,13 @@ namespace Gehtsoft.Xce.TextBuffer
             mMarkers.Add(null);
             mMarkers.Add(null);
             mMarkers.Add(null);
+
             Status = new TextBufferStatus();
             for (int i = 0; i < SavedPositions.Count; i++)
                 mMarkers.Add(SavedPositions[i]);
+
+            RedoCollection = new UndoActionCollection(this);
+            UndoCollection = new UndoActionCollection(this, RedoCollection);
         }
 
         /// <summary>
@@ -61,21 +69,23 @@ namespace Gehtsoft.Xce.TextBuffer
         /// <param name="target"></param>
         public void GetLine(int line, out char[] target)
         {
-            using var @lock = mSyncRoot.Lock();
-
-            if (line < 0)
-                throw new ArgumentOutOfRangeException(nameof(line));
-            if (line >= mContent.Count)
-                target = Array.Empty<char>();
-            else
+            lock (SyncRoot)
             {
-                var lineContent = mContent[line];
-                if (lineContent.Count == 0)
+
+                if (line < 0)
+                    throw new ArgumentOutOfRangeException(nameof(line));
+                if (line >= mContent.Count)
                     target = Array.Empty<char>();
                 else
                 {
-                    target = new char[lineContent.Count];
-                    lineContent.ToArray(0, target.Length, target, 0);
+                    var lineContent = mContent[line];
+                    if (lineContent.Count == 0)
+                        target = Array.Empty<char>();
+                    else
+                    {
+                        target = new char[lineContent.Count];
+                        lineContent.ToArray(0, target.Length, target, 0);
+                    }
                 }
             }
         }
@@ -87,24 +97,25 @@ namespace Gehtsoft.Xce.TextBuffer
         /// <param name="target"></param>
         public void GetLine(int line, char[] target, out int length)
         {
-            using var @lock = mSyncRoot.Lock();
-
-            if (line < 0)
-                throw new ArgumentOutOfRangeException(nameof(line));
-            if (line >= mContent.Count)
+            lock (SyncRoot)
             {
-                length = 0;
-                return;
+                if (line < 0)
+                    throw new ArgumentOutOfRangeException(nameof(line));
+                if (line >= mContent.Count)
+                {
+                    length = 0;
+                    return;
+                }
+
+                if (target == null)
+                    throw new ArgumentNullException(nameof(target));
+
+                var lineContent = mContent[line];
+                length = lineContent.Count;
+                if (length > target.Length)
+                    length = target.Length;
+                lineContent.ToArray(0, length, target, 0);
             }
-
-            if (target == null)
-                throw new ArgumentNullException(nameof(target));
-
-            var lineContent = mContent[line];
-            length = lineContent.Count;
-            if (length > target.Length)
-                length = target.Length;
-            lineContent.ToArray(0, length, target, 0);
         }
 
         /// <summary>
@@ -125,28 +136,29 @@ namespace Gehtsoft.Xce.TextBuffer
         /// <param name="target"></param>
         public void GetSubstring(int line, int column, int length, out char[] target)
         {
-            using var @lock = mSyncRoot.Lock();
-
-            if (line < 0)
-                throw new ArgumentOutOfRangeException(nameof(line));
-            if (column < 0)
-                throw new ArgumentOutOfRangeException(nameof(column));
-            if (line >= mContent.Count)
-                target = Array.Empty<char>();
-            else
+            lock (SyncRoot)
             {
-                var lineContent = mContent[line];
-                if (lineContent.Count - column < length)
-                    length = lineContent.Count - column;
-                if (length < 0)
-                    length = 0;
-
-                if (length == 0)
+                if (line < 0)
+                    throw new ArgumentOutOfRangeException(nameof(line));
+                if (column < 0)
+                    throw new ArgumentOutOfRangeException(nameof(column));
+                if (line >= mContent.Count)
                     target = Array.Empty<char>();
                 else
                 {
-                    target = new char[length];
-                    lineContent.ToArray(column, length, target, 0);
+                    var lineContent = mContent[line];
+                    if (lineContent.Count - column < length)
+                        length = lineContent.Count - column;
+                    if (length < 0)
+                        length = 0;
+
+                    if (length == 0)
+                        target = Array.Empty<char>();
+                    else
+                    {
+                        target = new char[length];
+                        lineContent.ToArray(column, length, target, 0);
+                    }
                 }
             }
         }
@@ -158,32 +170,33 @@ namespace Gehtsoft.Xce.TextBuffer
         /// <param name="target"></param>
         public void GetSubstring(int line, int column, int length, char[] target, out int actualLength)
         {
-            using var @lock = mSyncRoot.Lock();
-
-            if (line < 0)
-                throw new ArgumentOutOfRangeException(nameof(line));
-            if (column < 0)
-                throw new ArgumentOutOfRangeException(nameof(column));
-            if (target == null)
-                throw new ArgumentNullException(nameof(target));
-            if (line >= mContent.Count)
-                actualLength = 0;
-            else
+            lock (SyncRoot)
             {
-                var lineContent = mContent[line];
-                if (lineContent.Count - column < length)
-                    length = lineContent.Count - column;
+                if (line < 0)
+                    throw new ArgumentOutOfRangeException(nameof(line));
+                if (column < 0)
+                    throw new ArgumentOutOfRangeException(nameof(column));
+                if (target == null)
+                    throw new ArgumentNullException(nameof(target));
+                if (line >= mContent.Count)
+                    actualLength = 0;
+                else
+                {
+                    var lineContent = mContent[line];
+                    if (lineContent.Count - column < length)
+                        length = lineContent.Count - column;
 
-                if (length < 0)
-                    length = 0;
+                    if (length < 0)
+                        length = 0;
 
-                if (length > target.Length)
-                    length = target.Length;
+                    if (length > target.Length)
+                        length = target.Length;
 
-                if (length > 0)
-                    lineContent.ToArray(column, length, target, 0);
+                    if (length > 0)
+                        lineContent.ToArray(column, length, target, 0);
 
-                actualLength = length;
+                    actualLength = length;
+                }
             }
         }
 
@@ -208,13 +221,17 @@ namespace Gehtsoft.Xce.TextBuffer
 
         internal void AppendLine(char[] text, bool suppressUndo = false)
         {
-            using var @lock = mSyncRoot.Lock();
+            lock (SyncRoot)
+            {
+                if (text == null)
+                    throw new ArgumentNullException(nameof(text));
 
-            if (text == null)
-                throw new ArgumentNullException(nameof(text));
+                if (!suppressUndo)
+                    UndoCollection.Push(new UndoActionInsertLine(mContent.Count, text, this));
 
-            mContent.Add(new SplitList<char>(text));
-            UpdateMarkersLineInserted(mContent.Count, 1);
+                mContent.Add(new SplitList<char>(text));
+                UpdateMarkersLineInserted(mContent.Count, 1);
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -241,22 +258,26 @@ namespace Gehtsoft.Xce.TextBuffer
 
         internal void InsertLine(int line, char[] text, bool suppressUndo = false)
         {
-            using var @lock = mSyncRoot.Lock();
+            lock (SyncRoot)
+            {
+                if (line < 0)
+                    throw new ArgumentOutOfRangeException(nameof(line));
 
-            if (line < 0)
-                throw new ArgumentOutOfRangeException(nameof(line));
+                AdjustLines(line);
 
-            AdjustLines(line);
+                if (text == null)
+                    throw new ArgumentNullException(nameof(text));
 
-            if (text == null)
-                throw new ArgumentNullException(nameof(text));
+                if (!suppressUndo)
+                    UndoCollection.Push(new UndoActionInsertLine(line, text, this));
 
-            if (line == mContent.Count)
-                mContent.Add(new SplitList<char>(text));
-            else
-                mContent.InsertAt(line, new SplitList<char>(text));
+                if (line == mContent.Count)
+                    mContent.Add(new SplitList<char>(text));
+                else
+                    mContent.InsertAt(line, new SplitList<char>(text));
 
-            UpdateMarkersLineInserted(line, 1);
+                UpdateMarkersLineInserted(line, 1);
+            }
         }
 
         internal void InsertCharacter(int line, int position, char character, bool suppressUndo = false)
@@ -276,71 +297,77 @@ namespace Gehtsoft.Xce.TextBuffer
 
         private void InsertSubstring(int line, int position, Span<char> text, bool suppressUndo)
         {
-            using var @lock = mSyncRoot.Lock();
-
-            if (line < 0)
-                throw new ArgumentOutOfRangeException(nameof(line));
-
-            AdjustLines(line + 1);
-
-            var lineContent = mContent[line];
-
-            if (position < 0)
-                throw new ArgumentOutOfRangeException(nameof(position));
-
-            AdjustLineContent(lineContent, position);
-
-            if (text.Length > 0)
+            lock (SyncRoot)
             {
-                lineContent.InsertAt(position, text);
-                UpdateMarkersCharactersInserted(line, position, text.Length);
+                if (line < 0)
+                    throw new ArgumentOutOfRangeException(nameof(line));
+
+                AdjustLines(line + 1);
+
+                var lineContent = mContent[line];
+
+                if (position < 0)
+                    throw new ArgumentOutOfRangeException(nameof(position));
+
+                AdjustLineContent(lineContent, position);
+
+                if (text.Length > 0)
+                {
+                    lineContent.InsertAt(position, text);
+                    UpdateMarkersCharactersInserted(line, position, text.Length);
+                }
             }
         }
 
         internal void RemoveSubstring(int line, int position, int length, bool suppressUndo = false)
         {
-            using var @lock = mSyncRoot.Lock();
-
-            if (line < 0)
-                throw new ArgumentOutOfRangeException(nameof(line));
-
-            if (line >= mContent.Count)
-                return;
-
-            var lineContent = mContent[line];
-
-            if (position < 0)
-                throw new ArgumentOutOfRangeException(nameof(position));
-
-            if (position + length > lineContent.Count)
+            lock (SyncRoot)
             {
-                length = lineContent.Count - position;
-                if (length <= 0)
-                    return;
-            }
+                if (line < 0)
+                    throw new ArgumentOutOfRangeException(nameof(line));
 
-            lineContent.RemoveAt(position, length);
-            UpdateMarkersCharactersRemoved(line, position, length);
+                if (line >= mContent.Count)
+                    return;
+
+                var lineContent = mContent[line];
+
+                if (position < 0)
+                    throw new ArgumentOutOfRangeException(nameof(position));
+
+                if (position + length > lineContent.Count)
+                {
+                    length = lineContent.Count - position;
+                    if (length <= 0)
+                        return;
+                }
+
+                lineContent.RemoveAt(position, length);
+                UpdateMarkersCharactersRemoved(line, position, length);
+            }
         }
 
         internal void RemoveLine(int line, bool suppressUndo = false) => RemoveLines(line, 1, suppressUndo);
 
         internal void RemoveLines(int line, int count, bool suppressUndo = false)
         {
-            using var @lock = mSyncRoot.Lock();
-
-            if (line < 0)
-                throw new ArgumentOutOfRangeException(nameof(line));
-
-            if (line + count > mContent.Count)
+            lock (SyncRoot)
             {
-                count = mContent.Count - line;
-                if (count <= 0)
-                    return;
-            }
+                if (line < 0)
+                    throw new ArgumentOutOfRangeException(nameof(line));
 
-            mContent.RemoveAt(line, count);
-            UpdateMarkersLineRemoved(line, count);
+                if (line + count > mContent.Count)
+                {
+                    count = mContent.Count - line;
+                    if (count <= 0)
+                        return;
+                }
+
+                if (!suppressUndo)
+                    UndoCollection.Push(new UndoActionRemoveLines(line, count, this));
+
+                mContent.RemoveAt(line, count);
+                UpdateMarkersLineRemoved(line, count);
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -425,7 +452,13 @@ namespace Gehtsoft.Xce.TextBuffer
 
         protected virtual void Dispose(bool disposing)
         {
-            mSyncRoot.Dispose();
+            //nothing to dispose yet
+        }
+
+        public IEnumerable<string> GetContent()
+        {
+            for (int i = 0; i < LinesCount; i++)
+                yield return this.GetLine(i);
         }
     }
 }
