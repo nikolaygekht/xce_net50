@@ -5,14 +5,4 @@ TestResults/
 bin/
 obj/
 sonarqube.bat
-conio/Gehtsoft.Xce.Conio.UnitTest/Gehtsoft.Xce.Conio.UnitTest.csproj
-conio/Gehtsoft.Xce.Conio.UnitTest/IntArray.cs
-conio/Gehtsoft.Xce.Conio.Win/menu/PopupMenu.cs
-text/Gehtsoft.Xce.TextBuffer/PositionMarker.cs
-text/Gehtsoft.Xce.TextBuffer/TextBufferStatus.cs
-text/Gehtsoft.Xce.TextBuffer/Undo/UndoActionCollection.cs
-text/Gehtsoft.Xce.TextBuffer/Undo/UndoTransaction.cs
-text/Gehtsoft.Xce.TextBuffer.Test/Gehtsoft.Xce.TextBuffer.Test.csproj
-text/Gehtsoft.Xce.TextBuffer.Test/TextBufferMarkers.cs
-text/Gehtsoft.Xce.TextBuffer.Test/UndoCollection.cs
-text/Scintilla.CellBuffer.Test/Scintilla.CellBuffer.Test.csproj
+sonarqube.sh
