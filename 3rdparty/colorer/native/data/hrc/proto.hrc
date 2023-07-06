@@ -35,11 +35,6 @@
     <filename>/\.(ds)$/i</filename>
   </prototype>
 
-  <prototype name="powershell" group="xce" description="Documentation Source">
-    <location link="xce/powershell.hrc"/>
-    <filename>/\.(ps)$/i</filename>
-  </prototype>
-
   <prototype name="errfile" group="xce" description="Error file">
     <location link="xce/errfile.hrc"/>
     <filename>/\.(err)$/i</filename>
@@ -75,14 +70,14 @@
     <filename>/\.el$/i</filename>
   </prototype>
 
-  <prototype name="R" group="xce" description="R Grammar">
-    <location link="xce/r.hrc"/>
-    <filename>/\.r$/i</filename>
-  </prototype>
-
   <prototype name="xmlg" group="xce" description="XML grammar for intellisense">
     <location link="xce/xmlg.hrc"/>
     <filename>/\.xmlg$/i</filename>
+  </prototype>
+
+  <prototype name="json" group="xce" description="Json file">
+    <location link="xce/json.hrc"/>
+    <filename>/\.json$/i</filename>
   </prototype>
 
   <prototype name="c" group="main" description="C">
@@ -348,7 +343,7 @@
   </prototype>
   <prototype name="jScript" group="inet" description="JavaScript">
     <location link="jar:common.jar!inet/jscript.hrc"/>
-    <filename>/\.(js|mocha|json)$/i</filename>
+    <filename>/\.(js|mocha)$/i</filename>
   </prototype>
   <prototype name="actionscript" group="inet" description="ActionScript">
     <location link="jar:common.jar!inet/actionscript.hrc"/>

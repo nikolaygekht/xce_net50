@@ -14,8 +14,8 @@
 #include <unicode/EString.h>
 
 #include "export.h"
-#ifdef __GNUC__
-void wcscpy_s(wchar *dst, int maxsize, wchar *src) {
+
+void wcscpy1_s(wchar *dst, int maxsize, const wchar *src) {
     for (int i = 0; i < maxsize; i++) {
         dst[i] = src[i];
         if (src[i] == 0)
@@ -23,7 +23,8 @@ void wcscpy_s(wchar *dst, int maxsize, wchar *src) {
     }
 
 }
-void wcscpy_s(wchar *dst, int maxsize, wchar_t *src) {
+#ifndef _MSC_VER
+void wcscpy1_s(wchar *dst, int maxsize, const wchar_t *src) {
     for (int i = 0; i < maxsize; i++) {
         dst[i] = (wchar)src[i];
         if (src[i] == 0)
@@ -32,6 +33,7 @@ void wcscpy_s(wchar *dst, int maxsize, wchar_t *src) {
 
 }
 #endif
+
 extern "C" {
 
 COLORER_EXPORT(int) CreateRegex(wchar *regex, void **ptr)

@@ -1,3 +1,4 @@
 build32/
 build64/
+build64gcc/
 linux64wsl/

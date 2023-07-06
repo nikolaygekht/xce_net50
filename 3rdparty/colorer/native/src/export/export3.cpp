@@ -121,7 +121,7 @@ COLORER_EXPORT(void) RegionName(void * region, wchar * buffer, int bufferSize)
 {
     Region *r1 = (Region *)region;
     const String *name = r1->getName();
-    wcscpy_s(buffer, bufferSize, name->getWChars());
+    wcscpy1_s(buffer, bufferSize, name->getWChars());
 
 }
 
@@ -188,7 +188,7 @@ COLORER_EXPORT(bool) CreateColorerFactory(wchar *cat, wchar *hrdClass, wchar *hr
             delete __class;
             delete __name;
             delete parserFactory;
-            wcscpy_s(error, maxerrorsize, L"Invalid class and name for HRD styles");
+            wcscpy1_s(error, maxerrorsize, L"Invalid class and name for HRD styles");
             return false;
         }
         delete __path;
@@ -206,7 +206,7 @@ COLORER_EXPORT(bool) CreateColorerFactory(wchar *cat, wchar *hrdClass, wchar *hr
     }
     catch (Exception &e)
     {
-        wcscpy_s(error, maxerrorsize, const_cast<wchar *>(e.getMessage()->getWChars()));
+        wcscpy1_s(error, maxerrorsize, const_cast<wchar *>(e.getMessage()->getWChars()));
         delete __path;
         delete __class;
         delete __name;
@@ -311,7 +311,7 @@ COLORER_EXPORT(bool) BaseEditorGetFileType(void *peditor, wchar *buffer, int buf
     const String *n = t->getName();
     if (t == 0)
         return false;
-    wcscpy_s(buffer, buffSize, const_cast<wchar *>(n->getWChars()));
+    wcscpy1_s(buffer, buffSize, const_cast<wchar *>(n->getWChars()));
     return true;
 }
 

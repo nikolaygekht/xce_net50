@@ -30,7 +30,7 @@ void TextLinesStore::loadFile(const String *fileName, const String *inputEncodin
 
   if (fileName == null){
     char line[256];
-#ifdef WIN32
+#ifdef _MSC_VER
     while(gets_s(line, 256) != null){
 #else
     while(gets(line) != null){

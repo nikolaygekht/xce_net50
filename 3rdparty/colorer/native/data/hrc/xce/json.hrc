@@ -1,0 +1,29 @@
+<!-- XML grammar for XML intellisense. Associated with XMLG extension -->
+<?xml version="1.0" encoding="windows-1251"?>
+<!DOCTYPE hrc PUBLIC "-//Cail Lomecb//DTD Colorer HRC take5//EN" "../hrc.dtd">
+<hrc version="take5" xmlns="http://colorer.sf.net/2003/hrc">
+    <type name="json" access="public">
+
+        <region name="string" parent="def:String" />
+        <region name="number" parent="def:Number" />
+        <region name="symbol" parent="def:Symbol" />
+        <region name="keyword" parent="def:Keyword" />
+        <region name="namespace" parent="def:Keyword" />
+        <region name="error" parent="def:Error"/>
+
+        <scheme name="json">
+            <!-- comment -->
+            <block start="/((\{))/" end="/((\}))/"
+                   scheme="json"
+                   region01="symbol"
+                   region02="def:PairStart"
+                   region11="symbol"
+                   region12="def:PairEnd" />
+
+            <regexp match="/&quot;[^\&quot;]+\&quot;/" region="string" />
+            <regexp match="/[:,]/" region="symbol" />
+            <regexp match="/(true|false)/" region="keyword" />
+            <regexp match="/[+-](\d+)(.\d+)?/" region="number" />
+        </scheme>
+    </type>
+</hrc>

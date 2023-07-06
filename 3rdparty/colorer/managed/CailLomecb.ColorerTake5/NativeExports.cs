@@ -15,9 +15,7 @@ namespace CailLomecb.ColorerTake5
                 new LibraryItem(Platform.Linux, Bitness.x64,
                     new LibraryFile("libcolorertake5.so", accessor.Binary("runtimes.linux_x64.native.colorertake5.so"))),
                 new LibraryItem(Platform.Windows, Bitness.x64,
-                    new LibraryFile("colorertake5.dll", accessor.Binary("runtimes.win_x64.native.colorertake5.dll"))),
-                new LibraryItem(Platform.Windows, Bitness.x32,
-                    new LibraryFile("colorertake5.dll", accessor.Binary("runtimes.win_x86.native.colorertake5.dll"))));
+                    new LibraryFile("colorertake5.dll", accessor.Binary("runtimes.win_x64.native.colorertake5.dll"))));
             libManager.LoadNativeLibrary();
         }
 
@@ -30,6 +28,7 @@ namespace CailLomecb.ColorerTake5
 
         [DllImport("colorertake5", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
         internal static extern bool RegexParse(IntPtr regexPointer, string textToParse, int start, int end, out IntPtr matchesPtr);
+
         [DllImport("colorertake5", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
         internal static extern bool RegexFind(IntPtr regexPointer, string textToParse, int start, int end, out IntPtr matchesPtr);
 
@@ -48,7 +47,7 @@ namespace CailLomecb.ColorerTake5
         internal static extern void RegexFindAll(IntPtr regexPointer, string textToParse, int start, int end, RegexFindCallback callback);
         #endregion
 
-        #region SyntaxRegion 
+        #region SyntaxRegion
         [DllImport("colorertake5", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
         internal static extern bool RegionIsDerivedFrom(IntPtr region, IntPtr parentRegion);
 

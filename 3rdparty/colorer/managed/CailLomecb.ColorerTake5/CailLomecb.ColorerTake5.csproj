@@ -5,12 +5,10 @@
   <ItemGroup>
     <None Remove="runtimes\linux-x64\native\colorertake5.so" />
     <None Remove="runtimes\win-x64\native\colorertake5.dll" />
-    <None Remove="runtimes\win-x86\native\colorertake5.dll" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="runtimes\win-x64\native\colorertake5.dll" />
     <EmbeddedResource Include="runtimes\linux-x64\native\colorertake5.so" />
-    <EmbeddedResource Include="runtimes\win-x86\native\colorertake5.dll" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\.editorconfig" Link=".editorconfig" />

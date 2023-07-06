@@ -6,7 +6,7 @@
 #pragma warning Unknown dynamic link import/export semantics.
 #endif
 
-#ifdef __GNUC__
-void wcscpy_s(wchar *dst, int maxsize, wchar *src);
-void wcscpy_s(wchar *dst, int maxsize, wchar_t *src);
+void wcscpy1_s(wchar *dst, int maxsize, const wchar *src);
+#ifndef _MSC_VER
+void wcscpy1_s(wchar *dst, int maxsize, const wchar_t *src);
 #endif
