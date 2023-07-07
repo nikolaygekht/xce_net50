@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Gehtsoft.Xce.Conio
+namespace Gehtsoft.Xce.Conio.Output
 {
     internal class NetConsoleCursor : IConsoleCursor
     {

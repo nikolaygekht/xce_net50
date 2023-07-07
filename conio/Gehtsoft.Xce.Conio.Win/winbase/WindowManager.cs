@@ -1,9 +1,9 @@
-﻿using System;
+﻿using Gehtsoft.Xce.Conio.Drawing;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
-using CanvasColor = Gehtsoft.Xce.Conio.CanvasColor;
 
 namespace Gehtsoft.Xce.Conio.Win
 {

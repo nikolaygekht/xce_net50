@@ -1,8 +1,9 @@
-﻿using System;
+﻿using Gehtsoft.Xce.Conio.Drawing;
+using System;
 using System.Runtime.CompilerServices;
 using System.Text;
 
-namespace Gehtsoft.Xce.Conio
+namespace Gehtsoft.Xce.Conio.Output
 {
     internal sealed class NetConsoleOutput : IConsoleOutput
     {
@@ -24,7 +25,7 @@ namespace Gehtsoft.Xce.Conio
 
         public bool SupportsReading => false;
 
-        public ConioMode Mode => ConioMode.CompatibleConsole;
+        public ConioOutputMode Mode => ConioOutputMode.NetConsole;
 
         public IConsoleCursor Cursor { get; }
 
@@ -82,7 +83,7 @@ namespace Gehtsoft.Xce.Conio
                     {
                         Console.SetCursorPosition(mCurrentStringStart + mScreenBufferColumn, mCurrentRow + mScreenBufferRow);
                         Console.ForegroundColor = (ConsoleColor)(mCurrentAttribute & 0xf);
-                        Console.BackgroundColor = (ConsoleColor)((mCurrentAttribute >> 4) & 0xf);
+                        Console.BackgroundColor = (ConsoleColor)(mCurrentAttribute >> 4 & 0xf);
                         Console.Write(mCurrentString.ToString());
                     }
                     mCurrentStringStart = column;
@@ -106,7 +107,7 @@ namespace Gehtsoft.Xce.Conio
                 {
                     Console.SetCursorPosition(mCurrentStringStart + mScreenBufferColumn, mCurrentRow + mScreenBufferRow);
                     Console.ForegroundColor = (ConsoleColor)(mCurrentAttribute & 0xf);
-                    Console.BackgroundColor = (ConsoleColor)((mCurrentAttribute >> 4) & 0xf);
+                    Console.BackgroundColor = (ConsoleColor)(mCurrentAttribute >> 4 & 0xf);
                     Console.Write(mCurrentString.ToString());
                 }
             }

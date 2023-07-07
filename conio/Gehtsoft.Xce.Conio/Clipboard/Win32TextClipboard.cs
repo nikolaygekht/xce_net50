@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace Gehtsoft.Xce.Conio
+namespace Gehtsoft.Xce.Conio.Clipboard
 {
     internal class Win32TextClipboard : ITextClipboard
     {

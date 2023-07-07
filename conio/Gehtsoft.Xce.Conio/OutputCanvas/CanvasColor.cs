@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Gehtsoft.Xce.Conio
+namespace Gehtsoft.Xce.Conio.Drawing
 {
     public sealed class CanvasColor : IEquatable<CanvasColor>
     {
@@ -29,9 +29,11 @@ namespace Gehtsoft.Xce.Conio
         public CanvasColor(ushort palColor) : this(palColor, -1, -1, ConsoleStyles.None)
         {
         }
+
         public CanvasColor(ushort palColor, int rgbFg, int rgbBg) : this(palColor, rgbFg, rgbBg, ConsoleStyles.None)
         {
         }
+
         public CanvasColor(ushort palColor, int rgbFg, int rgbBg, ConsoleStyles style)
         {
             PalColor = palColor;
@@ -48,7 +50,7 @@ namespace Gehtsoft.Xce.Conio
                 throw new ArgumentOutOfRangeException(nameof(g));
             if (b < 0 || b > 255)
                 throw new ArgumentOutOfRangeException(nameof(b));
-            return r | (g << 8) | (b << 16);
+            return r | g << 8 | b << 16;
         }
 
         public static bool IsValid(int rgbcolor)
@@ -80,5 +82,7 @@ namespace Gehtsoft.Xce.Conio
             else
                 return $"[pal:{PalColor:x2}]";
         }
+
+        public CanvasColor Clone() => new CanvasColor(PalColor, RgbFg, RgbBg, Style);
     }
 }

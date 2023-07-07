@@ -9,10 +9,9 @@ namespace Gehtsoft.Xce.Conio.Win.Test
         public static bool Quit { get; set; } = false;
         public static IColorScheme CurrentSheme { get; set; }
 
-        private static bool ProcessCommandLineArgs(string[] args, out ConioMode input, out ConioMode output)
+        private static bool ProcessCommandLineArgs(string[] args, out ConioInputMode input, out ConioOutputMode output)
         {
-            input = output = ConioFactory.DefaultMode;
-            ConioFactory.EnableTrueColor = false;
+            ConioFactory.GetDefaultMode(out input, out output);
 
             if (args.Length == 0)
                 return false;
@@ -22,34 +21,51 @@ namespace Gehtsoft.Xce.Conio.Win.Test
                 switch (arg)
                 {
                     case "win32":
-                        input = output = ConioMode.Win32;
+                        input = ConioInputMode.Win32;
+                        output = ConioOutputMode.Win32;
                         break;
                     case "console":
-                        input = output = ConioMode.CompatibleConsole;
+                        input = ConioInputMode.NetConsole;
+                        output = ConioOutputMode.NetConsole;
                         break;
                     case "conemu":
-                        input = output = ConioMode.Win32;
-                        ConioFactory.EnableTrueColor = true;
+                        input = ConioInputMode.Win32;
+                        output = ConioOutputMode.ConEmu;
+                        break;
+                    case "vt":
+                        input = ConioInputMode.Terminal;
+                        output = ConioOutputMode.Terminal;
+                        break;
+                    case "vt-color":
+                        input = ConioInputMode.Terminal;
+                        output = ConioOutputMode.TrueColorTerminal;
                         break;
                     case "win32-input":
-                        input = ConioMode.Win32;
-                        break;
-                    case "win32-output":
-                        output = ConioMode.Win32;
+                        input = ConioInputMode.Win32;
                         break;
                     case "console-input":
-                        input = ConioMode.CompatibleConsole;
+                        input = ConioInputMode.NetConsole;
+                        break;
+                    case "vt-input":
+                        input = ConioInputMode.Terminal;
+                        break;
+                    case "win32-output":
+                        output = ConioOutputMode.Win32;
                         break;
                     case "console-output":
-                        output = ConioMode.CompatibleConsole;
+                        output = ConioOutputMode.NetConsole;
                         break;
                     case "conemu-output":
-                        output = ConioMode.Win32;
-                        ConioFactory.EnableTrueColor = true;
+                        output = ConioOutputMode.ConEmu;
+                        break;
+                    case "vt-output":
+                        output = ConioOutputMode.Terminal;
+                        break;
+                    case "vt-color-output":
+                        output = ConioOutputMode.TrueColorTerminal;
                         break;
                     case "default":
-                        input = output = ConioFactory.DefaultMode;
-                        ConioFactory.EnableTrueColor = false;
+                        ConioFactory.GetDefaultMode(out input, out output);
                         break;
                     default:
                         return false;
@@ -64,7 +80,12 @@ namespace Gehtsoft.Xce.Conio.Win.Test
             {
                 Console.WriteLine("Usage: app.exe mode(s)");
                 Console.WriteLine(" Where mode could be:");
-                Console.WriteLine("    win32 win32-input win32-output conemu conemu-output console-input console-output default");
+                Console.WriteLine("    * default");
+                Console.WriteLine("    * win32 win32-input win32-output ");
+                Console.WriteLine("    * console console-input console-output");
+                Console.WriteLine("    * conemu conemu-output");
+                Console.WriteLine("    * vt vt-input vt-output");
+                Console.WriteLine("    * vt-color vt-color-output");
                 return;
             }
 

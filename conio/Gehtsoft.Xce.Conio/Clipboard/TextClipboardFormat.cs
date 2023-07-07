@@ -1,4 +1,4 @@
-﻿namespace Gehtsoft.Xce.Conio
+﻿namespace Gehtsoft.Xce.Conio.Clipboard
 {
     public enum TextClipboardFormat
     {

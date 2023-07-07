@@ -3,6 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Reflection.PortableExecutable;
 using System.Text;
+using Gehtsoft.Xce.Conio.Clipboard;
+using Gehtsoft.Xce.Conio.Drawing;
 
 namespace Gehtsoft.Xce.Conio.Win
 {

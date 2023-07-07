@@ -1,4 +1,5 @@
-﻿using Gehtsoft.Xce.Conio.Win.Test.Test1;
+﻿using Gehtsoft.Xce.Conio.Drawing;
+using Gehtsoft.Xce.Conio.Win.Test.Test1;
 using System;
 using System.Collections.Generic;
 using System.Text;

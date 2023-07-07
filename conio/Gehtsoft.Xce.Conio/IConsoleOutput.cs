@@ -1,10 +1,11 @@
-﻿using System;
+﻿using Gehtsoft.Xce.Conio.Drawing;
+using System;
 
 namespace Gehtsoft.Xce.Conio
 {
     public interface IConsoleOutput : IDisposable
     {
-        ConioMode Mode { get; }
+        ConioOutputMode Mode { get; }
         int BufferRows { get; }
         int BufferColumns { get; }
         int VisibleRows { get; }

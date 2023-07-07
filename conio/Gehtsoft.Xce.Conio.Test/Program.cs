@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Gehtsoft.Xce.Conio.Drawing;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -32,7 +33,7 @@ namespace Gehtsoft.Xce.Conio.Test
             ConsoleInputEventListener listener = new ConsoleInputEventListener();
             listener.KeyPressed += InputTest_Listener_KeyPressed;
             listener.MouseMoved += Listener_MouseMoved;
-            IConsoleInput input = ConioFactory.CreateInput(ConioMode.Win32);
+            IConsoleInput input = ConioFactory.CreateInput(ConioInputMode.Win32);
             while (!mRequestStop)
                 input.Read(listener, -1);
         }
@@ -41,7 +42,7 @@ namespace Gehtsoft.Xce.Conio.Test
             ConsoleInputEventListener listener = new ConsoleInputEventListener();
             listener.KeyPressed += InputTest_Listener_KeyPressed;
             listener.MouseMoved += Listener_MouseMoved;
-            IConsoleInput input = ConioFactory.CreateInput(ConioMode.CompatibleConsole);
+            IConsoleInput input = ConioFactory.CreateInput(ConioInputMode.NetConsole);
             while (!mRequestStop)
                 input.Read(listener, -1);
         }
@@ -69,8 +70,8 @@ namespace Gehtsoft.Xce.Conio.Test
 
         public static void Debug1()
         {
-            IConsoleInput input = ConioFactory.CreateInput(ConioMode.Win32);
-            IConsoleOutput output = ConioFactory.CreateOutput(ConioMode.Win32);
+            IConsoleInput input = ConioFactory.CreateInput(ConioInputMode.Win32);
+            IConsoleOutput output = ConioFactory.CreateOutput(ConioOutputMode.Win32);
             Canvas save = output.BufferToCanvas();
             Console.WriteLine("Buffer Size {0}x{1}", output.BufferRows, output.BufferColumns);
             Console.WriteLine("Visible Size {0}x{1}", output.VisibleRows, output.VisibleColumns);
@@ -93,8 +94,8 @@ namespace Gehtsoft.Xce.Conio.Test
 
         public static void Debug2(bool win)
         {
-            IConsoleInput input = ConioFactory.CreateInput(win ? ConioMode.Win32 : ConioMode.CompatibleConsole);
-            IConsoleOutput output = ConioFactory.CreateOutput(win ? ConioMode.Win32 : ConioMode.CompatibleConsole);
+            IConsoleInput input = ConioFactory.CreateInput(win ? ConioInputMode.Win32 : ConioInputMode.NetConsole);
+            IConsoleOutput output = ConioFactory.CreateOutput(win ? ConioOutputMode.Win32 : ConioOutputMode.NetConsole);
 
             Canvas c = new Canvas(output.VisibleRows, output.VisibleColumns);
             c.Fill(0, 0, c.Rows, c.Columns, ' ', new CanvasColor(0x03));

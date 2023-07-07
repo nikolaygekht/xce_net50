@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading;
 
-namespace Gehtsoft.Xce.Conio
+namespace Gehtsoft.Xce.Conio.Input
 {
     internal class NetConsoleInput : IConsoleInput
     {
@@ -9,7 +9,7 @@ namespace Gehtsoft.Xce.Conio
 
         public int CurrentLayout => 0;
 
-        public ConioMode Mode => ConioMode.CompatibleConsole;
+        public ConioInputMode Mode => ConioInputMode.NetConsole;
 
         public bool Read(IConsoleInputListener listener, int timeout)
         {

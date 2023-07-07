@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 
-namespace Gehtsoft.Xce.Conio
+namespace Gehtsoft.Xce.Conio.Input
 {
     internal class Win32ConsoleInput : IConsoleInput
     {
@@ -27,14 +27,14 @@ namespace Gehtsoft.Xce.Conio
             }
         }
 
-        public ConioMode Mode => ConioMode.Win32;
+        public ConioInputMode Mode => ConioInputMode.Win32;
 
         private readonly IntPtr mInputHandle;
 
         public Win32ConsoleInput()
         {
             mInputHandle = Win32.GetStdHandle(Win32.STD_INPUT_HANDLE);
-            Win32.SetConsoleMode(mInputHandle, Win32.ENABLE_MOUSE_INPUT);
+            Win32.SetConsoleMode(mInputHandle, Win32.ENABLE_MOUSE_INPUT | Win32.ENABLE_EXTENDED_FLAGS);
             mLeftButtonPressed = mRightButtonPressed = false;
             mMouseColumn = mMouseRow = -1;
         }

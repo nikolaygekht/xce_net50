@@ -1,4 +1,6 @@
-﻿namespace Gehtsoft.Xce.Conio.Win.Test.Test1
+﻿using Gehtsoft.Xce.Conio.Drawing;
+
+namespace Gehtsoft.Xce.Conio.Win.Test.Test1
 {
     internal class MyClientArea : Window
     {

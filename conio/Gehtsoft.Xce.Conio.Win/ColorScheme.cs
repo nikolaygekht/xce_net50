@@ -1,23 +1,23 @@
 
-//------------------------------------------------------------------------
-//This is auto-generated code. Do NOT modify it.
-//Modify ./auto/colorscheme.xml and ./auto/colorscheme.xslt instead!!!
-//------------------------------------------------------------------------
-#pragma warning disable RCS1036 // Remove redundant empty-line.
-#pragma warning disable RCS1037 // Remove trailing white-space.
-#pragma warning disable RCS1171 // Simplify lazy initialization.
-#pragma warning disable RCS1085 // Use auto-implemented property.
+      //------------------------------------------------------------------------
+      //This is auto-generated code. Do NOT modify it.
+      //Modify ./auto/colorscheme.xml and ./auto/colorscheme.xslt instead!!!
+      //------------------------------------------------------------------------
+      #pragma warning disable RCS1036 // Remove redundant empty-line.
+      #pragma warning disable RCS1037 // Remove trailing white-space.
+      #pragma warning disable RCS1171 // Simplify lazy initialization.
+      #pragma warning disable RCS1085 // Use auto-implemented property.
 
-using System;
-using System.Collections.Generic;
-using System.Text;
-using CanvasColor = Gehtsoft.Xce.Conio.CanvasColor;
+      using System;
+      using System.Collections.Generic;
+      using System.Text;
+      using CanvasColor = Gehtsoft.Xce.Conio.Drawing.CanvasColor;
 
-namespace Gehtsoft.Xce.Conio.Win
-{
-    public interface IColorScheme
-    {
-        
+      namespace Gehtsoft.Xce.Conio.Win
+      {
+      public interface IColorScheme
+      {
+      
         #region Window colors
         CanvasColor WindowBackground
         {

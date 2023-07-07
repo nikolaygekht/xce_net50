@@ -6,9 +6,9 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Xml;
 
-namespace Gehtsoft.Xce.Conio
+namespace Gehtsoft.Xce.Conio.Drawing
 {
-    public class Canvas
+    public sealed class Canvas
     {
         internal CharInfoArray Data { get; }
         internal IntArray ForegroundColor { get; }
@@ -75,7 +75,7 @@ namespace Gehtsoft.Xce.Conio
                 return;
 
             ref Win32.CHAR_INFO c = ref Data[row, column];
-            c.Attributes = (ushort)((c.Attributes & 0xf0) | (color.PalColor & 0x0f));
+            c.Attributes = (ushort)(c.Attributes & 0xf0 | color.PalColor & 0x0f);
 
             if (CanvasColor.IsValid(color.RgbFg))
                 ForegroundColor[row, column] = color.RgbFg;
@@ -90,7 +90,7 @@ namespace Gehtsoft.Xce.Conio
                 return;
 
             ref Win32.CHAR_INFO c = ref Data[row, column];
-            c.Attributes = (ushort)((c.Attributes & 0x0f) | (color.PalColor & 0xf0));
+            c.Attributes = (ushort)(c.Attributes & 0x0f | color.PalColor & 0xf0);
 
             if (CanvasColor.IsValid(color.RgbBg))
                 BackgroundColor[row, column] = color.RgbBg;
@@ -318,6 +318,13 @@ namespace Gehtsoft.Xce.Conio
             int bg = BackgroundColor[row, column];
             int s = Style[row, column];
             return new CanvasCell((char)ci.UnicodeChar, new CanvasColor(ci.Attributes, fg, bg, (CanvasColor.ConsoleStyles)s));
+        }
+
+        public Canvas Clone()
+        {
+            var canvas = new Canvas(Rows, Columns);
+            canvas.Paint(0, 0, this);
+            return canvas;
         }
     }
 }

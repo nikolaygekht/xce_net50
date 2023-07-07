@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Gehtsoft.Xce.Conio
+namespace Gehtsoft.Xce.Conio.Clipboard
 {
     public static class TextClipboardFactory
     {

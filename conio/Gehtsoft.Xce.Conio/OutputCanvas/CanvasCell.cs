@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Gehtsoft.Xce.Conio
+namespace Gehtsoft.Xce.Conio.Drawing
 {
     public sealed class CanvasCell : IEquatable<CanvasCell>
     {
@@ -37,5 +37,7 @@ namespace Gehtsoft.Xce.Conio
             else
                 return $"[char:'{Character}',color:{Color}]";
         }
+
+        public CanvasCell Clone() => new CanvasCell(Character, Color);
     }
 }

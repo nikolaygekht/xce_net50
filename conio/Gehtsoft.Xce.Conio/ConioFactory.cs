@@ -1,46 +1,50 @@
-﻿using System;
+﻿using Gehtsoft.Xce.Conio.Input;
+using Gehtsoft.Xce.Conio.Output;
+using System;
 using System.Collections.Generic;
 using System.Dynamic;
 using System.Text;
 
 namespace Gehtsoft.Xce.Conio
 {
-    public enum ConioMode
-    {
-        Win32,
-        CompatibleConsole
-    }
 
     public static class ConioFactory
-    {
-        public static bool EnableTrueColor { get; set; } = true;
-        public static ConioMode DefaultMode
+    {       
+        public static void GetDefaultMode(out ConioInputMode intputMode, out ConioOutputMode outputMode)
         {
-            get
-            {
                 var os = Environment.OSVersion;
                 if (os.Platform == PlatformID.Unix || os.Platform == PlatformID.MacOSX || os.Platform == PlatformID.Xbox)
-                    return ConioMode.CompatibleConsole;
+                {
+                    intputMode = ConioInputMode.NetConsole;
+                    outputMode = ConioOutputMode.NetConsole;
+                    return;
+                }
                 else if (os.Platform == PlatformID.Win32NT)
-                    return ConioMode.Win32;
+                {
+                    intputMode = ConioInputMode.Win32;
+                    outputMode = ConioOutputMode.Win32;
+                    return;
+                }
                 throw new InvalidOperationException($"Unknown platform mode {os.Platform}");
-            }
         }
 
-        public static IConsoleInput CreateInput(ConioMode mode)
+        public static IConsoleInput CreateInput(ConioInputMode mode)
         {
-            if (mode == ConioMode.Win32)
+            if (mode == ConioInputMode.Win32)
                 return new Win32ConsoleInput();
-            else if (mode == ConioMode.CompatibleConsole)
+            else if (mode == ConioInputMode.NetConsole)
                 return new NetConsoleInput();
             else
                 throw new ArgumentOutOfRangeException(nameof(mode));
         }
-        public static IConsoleOutput CreateOutput(ConioMode mode)
+
+        public static IConsoleOutput CreateOutput(ConioOutputMode mode)
         {
-            if (mode == ConioMode.Win32)
-                return new Win32ConsoleOutput(EnableTrueColor);
-            else if (mode == ConioMode.CompatibleConsole)
+            if (mode == ConioOutputMode.Win32)
+                return new Win32ConsoleOutput();
+            else if (mode == ConioOutputMode.ConEmu)
+                return new ConEmuConsoleOutput();
+            else if (mode == ConioOutputMode.NetConsole)
                 return new NetConsoleOutput();
             else
                 throw new ArgumentOutOfRangeException(nameof(mode));
