@@ -1,11 +1,7 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.15)
 project(colorertake5)
 
 set(CMAKE_CXX_STANDARD 11)
-
-include(../../cmake/ucm.cmake)
-
-ucm_set_runtime(STATIC)
 
 add_definitions(-DCOLORER_FEATURE_USE_DL_MALLOC=FALSE -DCOLORER_FEATURE_USE_CHUNK_ALLOC=FALSE -DUSE_DL_PREFIX -DCOLORER_FEATURE_HTTPINPUTSOURCE=FALSE)
 include_directories(src/shared)
@@ -15,11 +11,12 @@ string(TIMESTAMP BUILDTIME "%Y%m%d%H%M")
 add_definitions(-DBUILDTIME="${BUILDTIME}")
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-    ucm_add_flags(CXX -fvisibility=default -fpermissive)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=default -fpermissive -static-libgcc -static-libstdc++")
 endif()
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
-    ucm_add_flags(CXX /W3)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W3")
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded")
 endif()
 
 
