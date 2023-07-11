@@ -5,53 +5,11 @@ using System.Text;
 
 namespace Gehtsoft.Xce.Conio.Output
 {
-    internal sealed class NetConsoleOutput : IConsoleOutput
+    internal sealed class NetConsoleOutput : ConsoleBasedOutput
     {
-        private readonly bool mWindows;
-
-        public int BufferRows => Console.BufferHeight;
-
-        public int BufferColumns => Console.BufferWidth;
-
-        public int VisibleRows => Console.WindowHeight;
-
-        public int VisibleColumns => Console.WindowWidth;
-
-        internal int WindowLeft => Console.WindowLeft;
-
-        internal int WindowTop => Console.WindowTop;
-
-        public bool SupportsTrueColor => false;
-
-        public bool SupportsReading => false;
-
-        public ConioOutputMode Mode => ConioOutputMode.NetConsole;
-
-        public IConsoleCursor Cursor { get; }
-
-        public NetConsoleOutput()
+        public NetConsoleOutput() : base()
         {
-            Cursor = new NetConsoleCursor(this);
-            var os = Environment.OSVersion;
-            mWindows = os.Platform == PlatformID.Win32NT;
         }
-
-        public void Dispose()
-        {
-            //nothing to dispose for ordinary console
-        }
-
-        public Canvas BufferToCanvas(int row = 0, int column = 0, int rows = -1, int columns = -1)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Canvas ScreenToCanvas()
-        {
-            throw new NotImplementedException();
-        }
-
-        public void PaintCanvasToScreen(Canvas canvas, int screenRow = 0, int screenColumn = 0) => PaintCanvasToBuffer(canvas, Console.WindowTop + screenRow, Console.WindowLeft + screenColumn);
 
         private sealed class BufferWriter
         {
@@ -113,7 +71,7 @@ namespace Gehtsoft.Xce.Conio.Output
             }
         }
 
-        public void PaintCanvasToBuffer(Canvas canvas, int bufferRow = 0, int bufferColumn = 0)
+        public override void PaintCanvasToBuffer(Canvas canvas, int bufferRow = 0, int bufferColumn = 0)
         {
             var v = Cursor.CursorVisible;
             var top = Console.WindowTop;
@@ -138,28 +96,6 @@ namespace Gehtsoft.Xce.Conio.Output
                 Console.SetCursorPosition(0, top);
 
             Cursor.CursorVisible = v;
-        }
-
-        public void UpdateSize()
-        {
-            //nothing to do for oridnary console
-        }
-
-        public void Clear() => Console.Clear();
-
-        private ConsoleColor mDefaultFg = ConsoleColor.Gray, mDefaultBg = ConsoleColor.Black;
-
-        public void CaptureOnStart()
-        {
-            mDefaultFg = Console.ForegroundColor;
-            mDefaultBg = Console.BackgroundColor;
-        }
-
-        public void ReleaseOnFinish()
-        {
-            Console.ForegroundColor = mDefaultFg;
-            Console.BackgroundColor = mDefaultBg;
-            Console.Clear();
         }
     }
 }

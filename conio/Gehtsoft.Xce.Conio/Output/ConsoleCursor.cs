@@ -2,10 +2,10 @@
 
 namespace Gehtsoft.Xce.Conio.Output
 {
-    internal class NetConsoleCursor : IConsoleCursor
+    internal class ConsoleCursor : IConsoleCursor
     {
         private readonly bool mWindows;
-        private readonly NetConsoleOutput mOutput;
+        private readonly ConsoleBasedOutput mOutput;
 
         public bool CursorVisible
         {
@@ -28,7 +28,7 @@ namespace Gehtsoft.Xce.Conio.Output
         public int CursorRow { get => Console.CursorTop - mOutput.WindowTop; set => Console.CursorTop = value + mOutput.WindowTop; }
         public int CursorColumn { get => Console.CursorLeft - mOutput.WindowLeft; set => Console.CursorLeft = value + mOutput.WindowLeft; }
 
-        public NetConsoleCursor(NetConsoleOutput output)
+        public ConsoleCursor(ConsoleBasedOutput output)
         {
             mOutput = output;
             var os = Environment.OSVersion;

@@ -34,6 +34,8 @@ namespace Gehtsoft.Xce.Conio
                 return new Win32ConsoleInput();
             else if (mode == ConioInputMode.NetConsole)
                 return new NetConsoleInput();
+            else if (mode == ConioInputMode.Terminal)
+                return new NetConsoleInput();
             else
                 throw new ArgumentOutOfRangeException(nameof(mode));
         }
@@ -46,6 +48,10 @@ namespace Gehtsoft.Xce.Conio
                 return new ConEmuConsoleOutput();
             else if (mode == ConioOutputMode.NetConsole)
                 return new NetConsoleOutput();
+            else if (mode == ConioOutputMode.Terminal)
+                return new VtConsoleOutput();
+            else if (mode == ConioOutputMode.TrueColorTerminal)
+                return new VtTrueColorConsoleOutput();
             else
                 throw new ArgumentOutOfRangeException(nameof(mode));
         }
