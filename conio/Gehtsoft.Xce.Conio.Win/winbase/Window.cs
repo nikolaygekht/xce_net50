@@ -370,6 +370,50 @@ namespace Gehtsoft.Xce.Conio.Win
         {
         }
 
+        public void KeyPressed(ScanCode scanCode, char character, bool shift, bool ctrl, bool alt)
+        {
+            if (!PretranslateKey(scanCode, character, shift, ctrl, alt))
+                OnKeyPressed(scanCode, character, shift, ctrl, alt);
+        }
+
+        private bool mCtrlSpaceMode = false;
+
+        internal bool CtrlSpaceMode 
+        {
+            get => mCtrlSpaceMode;
+            set
+            {
+                mCtrlSpaceMode = value;
+                var border = WindowBorderContainer;
+                if (border != null && !object.ReferenceEquals(border, this))
+                    border.CtrlSpaceMode = value;
+                Invalidate();
+            }
+        }
+
+        internal WindowBorderContainer WindowBorderContainer
+        {
+            get
+            {
+                Window window = this;
+
+                while (window != null)
+                {
+                    if (window is WindowBorderContainer)
+                        break;
+                    window = window.Parent;
+                }
+
+                return window as WindowBorderContainer;
+            }
+        }
+
+
+        public virtual bool PretranslateKey(ScanCode scanCode, char character, bool shift, bool ctrl, bool alt)
+        {
+            return ControlSpaceModeProcessor.ProcessCtrlSpaceMode(this, scanCode, shift, ctrl, alt);
+        }
+
         public virtual void OnKeyPressed(ScanCode scanCode, char character, bool shift, bool ctrl, bool alt)
         {
         }

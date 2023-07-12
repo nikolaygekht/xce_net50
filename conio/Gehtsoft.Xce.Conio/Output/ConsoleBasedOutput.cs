@@ -32,6 +32,7 @@ namespace Gehtsoft.Xce.Conio.Output
             Cursor = new ConsoleCursor(this);
             var os = Environment.OSVersion;
             mWindows = os.Platform == PlatformID.Win32NT;
+            Console.OutputEncoding = System.Text.Encoding.UTF8;
         }
 
         public void Dispose()

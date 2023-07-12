@@ -89,11 +89,12 @@ namespace Gehtsoft.Xce.Conio.Win.Test
             if (WindowManager.GetFocus() == this)
                 canvas.Write(3, 0, "Focus!");
             canvas.Write(4, 0, $"True color {mOutputMode}");
+            canvas.Write(5, 0, $"Use Ctrl-Space + (N, C, Arrows, Ctrl-Arrows) to manipulate windows without using mouse");
 
             for (int i = 0; i < 16; i++)
             {
                 int c = i * 16;
-                canvas.Write(5, i, 'x', new CanvasColor((ushort)i, c, c << 8));
+                canvas.Write(6, i, 'x', new CanvasColor((ushort)i, c, c << 8));
             }
         }
 

@@ -70,6 +70,8 @@ namespace Gehtsoft.Xce.Conio.Win
             canvas.Box(0, 0, Height, Width, mBorder, mBorderColor, ' ');
             if (mSizeable)
                 canvas.Write(Height - 1, Width - 1, "\u2194");
+            if (CtrlSpaceMode)
+                canvas.Write(0, 0, '\u2055');
             canvas.Write(0, 2, '[');
             canvas.Write(0, 3, mTitle);
             canvas.Write(0, 3 + mTitle.Length, ']');
@@ -168,6 +170,12 @@ namespace Gehtsoft.Xce.Conio.Win
                 mDragMode = DragMode.None;
             }
         }
+
+        protected virtual bool ProcessWindowKeyCommand(ScanCode scanCode, char character, bool shift, bool ctrl, bool alt)
+        {
+            return false;
+        }
+
 
         public virtual void GetClientArea(out int row, out int col, out int height, out int width)
         {

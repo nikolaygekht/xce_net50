@@ -31,13 +31,14 @@ namespace Gehtsoft.Xce.Conio.Output
             {
                 mCurrentRow = row;
                 mCurrentStringStart = -1;
+                mCurrentColumn = -1;
                 mCurrentString.Clear();
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void NewCanvasCell(int column, string content)
             {
-                if (column == 0 || column != mCurrentColumn)
+                if (column != mCurrentColumn)
                 {
                     if (mCurrentString.Length > 0 && mCurrentStringStart >= 0)
                     {

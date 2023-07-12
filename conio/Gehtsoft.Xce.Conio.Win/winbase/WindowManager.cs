@@ -283,25 +283,15 @@ namespace Gehtsoft.Xce.Conio.Win
 
         #region input events
         /// <summary>
-        /// Enable shortcuts Alt-Space-C (close)
-        ///                  Alt-Space-N (next)
+        /// Enable shortcuts Ctrl-Space-C (close)
+        ///                  Ctrl-Space-N (next)
+        ///                  Ctrl-Space, Cursor/Ctrl Cursor (move/size), Esc (exit)
         /// </summary>
         public bool WindowKeyboardShortcutsEnabled { get; set; } = false;
 
-        private bool mAltSpace = false;
-
         public void OnKeyPressed(ScanCode scanCode, char character, bool shift, bool ctrl, bool alt)
         {
-            if (WindowKeyboardShortcutsEnabled && scanCode == ScanCode.SPACE && !shift && !ctrl && alt)
-            {
-                mAltSpace = true;
-                return;
-            }
-
-            if (mFocusWindow != null)
-                OnKeyPressed_FocusWindowAltSpace(scanCode, character, shift, ctrl, alt);
-
-            mAltSpace = false;
+            mFocusWindow?.KeyPressed(scanCode, character, shift, ctrl, alt);
 
             int layout = mConsoleInput.CurrentLayout;
             if (layout != mLayoutCode)
@@ -311,39 +301,7 @@ namespace Gehtsoft.Xce.Conio.Win
             }
         }
 
-        private void OnKeyPressed_FocusWindowAltSpace(ScanCode scanCode, char character, bool shift, bool ctrl, bool alt)
-        {
-            if (!WindowKeyboardShortcutsEnabled || !mAltSpace)
-            {
-                mFocusWindow?.OnKeyPressed(scanCode, character, shift, ctrl, alt);
-                return;
-            }
-
-            bool handled = false;
-            bool noModifiers = !ctrl && !shift && !alt;
-
-            if (scanCode == ScanCode.C && noModifiers)
-            {
-                Close(mFocusWindow);
-                handled = true;
-            }
-            else if (scanCode == ScanCode.N && noModifiers)
-            {
-                OnKeyPressed_FocusWindowAltSpace_Next();
-                handled = true;
-            }
-            else if (scanCode == ScanCode.UP || scanCode == ScanCode.DOWN || scanCode == ScanCode.LEFT || scanCode == ScanCode.RIGHT && !ctrl && !shift)
-            {
-                OnKeyPressed_FocusWindowAltSpace_MoveOrSize(scanCode, alt);
-                handled = true;
-            }
-
-            if (!handled)
-                mFocusWindow?.OnKeyPressed(scanCode, character, shift, ctrl, alt);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void OnKeyPressed_FocusWindowAltSpace_Next()
+        public void FocusNextWindow()
         {
             if (!mModalStack.Contains(mFocusWindow) && mTopLevelWindows.Count > 1)
             {
@@ -360,52 +318,6 @@ namespace Gehtsoft.Xce.Conio.Win
             }
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void OnKeyPressed_FocusWindowAltSpace_MoveOrSize(ScanCode scanCode, bool alt)
-        {
-            Window window = mFocusWindow;
-
-            while (window != null)
-            {
-                if (window is WindowBorderContainer)
-                    break;
-                window = window.Parent;
-            }
-
-            if (window == null)
-                return;
-
-            if (alt)
-                OnKeyPressed_FocusWindowAltSpace_Size(scanCode, window);
-            else
-                OnKeyPressed_FocusWindowAltSpace_Move(scanCode, window);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void OnKeyPressed_FocusWindowAltSpace_Move(ScanCode scanCode, Window window)
-        {
-            if (scanCode == ScanCode.UP && window.Row > 0)
-                window.Move(window.Row - 1, window.Column, window.Height, window.Width);
-            else if (scanCode == ScanCode.DOWN && window.Row + window.Height < (window.Parent == null ? ScreenHeight : window.Parent.Height))
-                window.Move(window.Row + 1, window.Column, window.Height, window.Width);
-            else if (scanCode == ScanCode.LEFT && window.Column > 0)
-                window.Move(window.Row, window.Column - 1, window.Height, window.Width);
-            else if (scanCode == ScanCode.RIGHT && window.Column + window.Width < (window.Parent == null ? ScreenWidth : window.Parent.Width))
-                window.Move(window.Row, window.Column + 1, window.Height, window.Width);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void OnKeyPressed_FocusWindowAltSpace_Size(ScanCode scanCode, Window window)
-        {
-            if (scanCode == ScanCode.UP && window.Height > 3)
-                window.Move(window.Row, window.Column, window.Height - 1, window.Width);
-            else if (scanCode == ScanCode.DOWN && window.Row + window.Height < ScreenHeight)
-                window.Move(window.Row, window.Column, window.Height + 1, window.Width);
-            else if (scanCode == ScanCode.LEFT && window.Width > 10)
-                window.Move(window.Row, window.Column, window.Height, window.Width - 1);
-            else if (scanCode == ScanCode.RIGHT && window.Column + window.Width < ScreenWidth)
-                window.Move(window.Row, window.Column, window.Height, window.Width + 1);
-        }
 
         public void OnKeyReleased(ScanCode scanCode, char character, bool shift, bool ctrl, bool alt)
         {
