@@ -27,7 +27,7 @@ namespace Gehtsoft.Xce.Conio.Output
 
         public IConsoleCursor Cursor { get; }
 
-        public ConsoleBasedOutput()
+        protected ConsoleBasedOutput()
         {
             Cursor = new ConsoleCursor(this);
             var os = Environment.OSVersion;

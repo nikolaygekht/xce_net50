@@ -97,7 +97,7 @@ namespace Gehtsoft.Xce.Conio.Win
             {
                 string s = messageLines[i];
                 if (s.Length > splitWidth)
-                    s = s.Substring(0, splitWidth - 3) + "...";
+                    s = string.Concat(s.AsSpan(0, splitWidth - 3), "...");
                 dlg.AddItem(new DialogItemLabel(s, 1000 + i, i, 0));
             }
 
@@ -108,7 +108,7 @@ namespace Gehtsoft.Xce.Conio.Win
             {
                 string s = buttons[i].Title ?? "< null >";
                 if (s.Length > 16)
-                    s = s.Substring(0, 16);
+                    s = s[..16];
                 dlg.AddItem(new DialogItemButton(s, (int)buttons[i].ID, buttonRow, buttonPos));
                 buttonPos += s.Length + 1;
             }
@@ -123,12 +123,9 @@ namespace Gehtsoft.Xce.Conio.Win
         {
             if (mgr == null)
                 throw new ArgumentNullException(nameof(mgr));
-            if (colors == null)
-                colors = ColorScheme.White;
-            if (message == null)
-                message = "null";
-            if (title == null)
-                title = "null";
+            colors ??= ColorScheme.White;
+            message ??= "null";
+            title ??= "null";
             if (buttons == null)
                 throw new ArgumentNullException(nameof(buttons));
             if (buttons.Length < 1 || buttons.Length > 4)

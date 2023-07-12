@@ -1,7 +1,4 @@
-﻿#pragma warning disable RCS1234 // Duplicate enum value.
-#pragma warning disable RCS1154 // Sort enum members.
-
-namespace Gehtsoft.Xce.Conio
+﻿namespace Gehtsoft.Xce.Conio
 {
     public enum ScanCode
     {

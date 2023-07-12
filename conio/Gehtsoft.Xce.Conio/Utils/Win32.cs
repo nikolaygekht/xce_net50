@@ -5,7 +5,6 @@ using System.Security;
 using System.Text;
 
 #pragma warning disable S101 // Types should be named in PascalCase
-#pragma warning disable RCS1191 // Declare enum value as combination of names.
 
 namespace Gehtsoft.Xce.Conio
 {

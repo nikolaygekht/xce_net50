@@ -162,7 +162,7 @@ namespace Gehtsoft.Xce.Conio.Win
             {
                 if (item is CommandMenuItem cmd && cmd.RightSide != null)
                     return cmd.RightSide.Length;
-                else if (item is PopupMenuItem popup)
+                else if (item is PopupMenuItem)
                     return 1;
                 return 0;
             });
@@ -389,7 +389,7 @@ namespace Gehtsoft.Xce.Conio.Win
                 if (winRow >= 0 && winRow < mMenu.Count)
                 {
                     MenuItem item = mMenu[winRow];
-                    if (!(item is SeparatorMenuItem))
+                    if (item is not SeparatorMenuItem)
                         newSel = winRow;
                 }
             }

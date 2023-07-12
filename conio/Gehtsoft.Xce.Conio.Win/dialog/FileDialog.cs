@@ -177,7 +177,7 @@ namespace Gehtsoft.Xce.Conio.Win
             {
                 OnItemClick(mDirectoryList);
             }
-            else if (mFileEdit.Text.Contains("*") || mFileEdit.Text.Contains("?"))
+            else if (mFileEdit.Text.Contains('*') || mFileEdit.Text.Contains('?'))
             {
                 ChangeDirectory(mFileEdit.Text);
                 mFileEdit.Text = "";

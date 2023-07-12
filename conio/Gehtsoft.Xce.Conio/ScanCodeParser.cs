@@ -17,7 +17,7 @@ namespace Gehtsoft.Xce.Conio
                     return (ScanCode)Enum.Parse(typeof(ScanCode), name);
                 else
                 {
-                    string modifier = name.Substring(0, idx);
+                    string modifier = name[..idx];
                     name = name[(idx + 1)..];
                     if (modifier == "shift")
                         shift = true;

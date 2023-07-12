@@ -8,10 +8,7 @@
       //This is auto-generated code. Do NOT modify it.
       //Modify ./auto/colorscheme.xml and ./auto/colorscheme.xslt instead!!!
       //------------------------------------------------------------------------
-      #pragma warning disable RCS1036 // Remove redundant empty-line.
-      #pragma warning disable RCS1037 // Remove trailing white-space.
-      #pragma warning disable RCS1171 // Simplify lazy initialization.
-      #pragma warning disable RCS1085 // Use auto-implemented property.
+      #pragma warning disable IDE0074 // Use compound assignment
 
       using System;
       using System.Collections.Generic;
