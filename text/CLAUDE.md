@@ -1,219 +1,263 @@
-# Text Buffer Library - Project Overview
+# TextBuffer Library - Project Overview
 
 ## Project Description
 
-A high-performance text buffer library for .NET text editors, implemented in C#. This library provides efficient text manipulation capabilities using a gap buffer data structure, complete with undo/redo support and position marker tracking.
+This is a high-performance text buffer library for text editor applications, built in C# with .NET 8. The library provides efficient text manipulation with gap buffer data structures, full undo/redo support, and automatic position tracking for markers and selections.
 
 ## Architecture
 
 ### Core Components
 
-#### 1. **Gehtsoft.Xce.TextBuffer** (Main Library)
-The primary text buffer implementation with:
-- `TextBuffer` - Main text buffer class with line-based text storage
-- `PositionMarker` - Tracks positions that auto-update during edits
-- `TextBufferStatus` - Stores cursor position, block selection state
-- `BlockMode` - Enum for selection modes (None, Line, Box, Stream)
-- `EolMode` - Enum for line ending types (CR, LF, CRLF)
+1. **Scintilla.CellBuffer** - Low-level gap buffer implementation
+   - `SimpleList<T>` - Dynamic array with efficient operations
+   - `SplitList<T>` - Gap buffer for efficient sequential insertions/deletions
+   - Supports both indexed access and span-based operations
 
-#### 2. **Scintilla.CellBuffer** (Data Structures)
-Efficient data structures for text storage:
-- `SplitList<T>` - Gap buffer implementation for O(1) insertions
-- `SimpleList<T>` - Underlying dynamic array with move operations
+2. **Gehtsoft.Xce.TextBuffer** - High-level text buffer with editing features
+   - `TextBuffer` - Main text buffer class managing lines
+   - Undo/Redo system with transaction support
+   - Callback system for change notifications
+   - Block selections (Line, Box, Stream)
+   - Position markers with automatic adjustment
+   - File I/O with encoding and EOL detection
 
-#### 3. **Undo System**
-Comprehensive undo/redo framework:
-- `UndoActionCollection` - Stack-based undo/redo management
-- `UndoAction` - Base class for undoable operations
-- `UndoTransaction` - Groups multiple operations into single undo unit
-- `UndoActionInsertLine` - Undo for line insertions
-- `UndoActionRemoveLines` - Undo for line deletions
+## Key Design Principles
 
-### Key Design Patterns
+### 1. Performance
+- Gap buffers for O(1) insertions at cursor position
+- Span<T> and ReadOnlySpan<T> for zero-allocation operations
+- Aggressive inlining for frequently-called methods
+- Stack allocation (stackalloc) for temporary buffers
 
-1. **Gap Buffer Pattern**: `SplitList<T>` uses a gap buffer for efficient text editing
-2. **Command Pattern**: Undo/redo system uses command objects
-3. **Observer Pattern**: Position markers automatically adjust during edits
-4. **Transaction Pattern**: Multiple operations can be grouped into transactions
+### 2. Auto-Extension
+- Inserting beyond buffer end automatically adds empty lines
+- Inserting beyond line end automatically adds spaces
+- All auto-extended content is tracked in undo/redo
+
+### 3. DRY Principle
+- String methods delegate to Span methods
+- Single implementation point for each operation
+- Internal methods with suppressUndo parameter
+
+### 4. Callback System
+All buffer modifications trigger callbacks through `ITextBufferCallback`:
+- `OnLinesInserted(lineIndex, count)`
+- `OnLinesDeleted(lineIndex, count)`
+- `OnSubstringInserted(lineIndex, columnIndex, length)`
+- `OnSubstringDeleted(lineIndex, columnIndex, length)`
+
+### 5. Undo/Redo System
+
+#### Command Pattern
+- `IUndoAction` interface with `Undo()` and `Redo()` methods
+- Four action types:
+  - `InsertLineUndoAction` - tracks line insertion + auto-added lines
+  - `DeleteLineUndoAction` - stores deleted line content
+  - `InsertSubstringUndoAction` - tracks substring insertion + auto-added lines/spaces
+  - `DeleteSubstringUndoAction` - stores deleted substring content
+
+#### Transaction Support
+- `UndoTransaction` groups multiple actions
+- Nested transactions supported
+- `BeginUndoTransaction()` returns `IDisposable`
+- Pattern: `using (buffer.BeginUndoTransaction()) { ... }`
+
+#### Auto-Extension Tracking
+- Auto-added empty lines are tracked and removed on undo
+- Auto-added spaces are tracked and removed on undo
+- Redo automatically re-extends as needed
 
 ## Data Structures
 
-### TextBuffer Storage
-```
-TextBuffer
-  └─ SplitList<SplitList<char>>
-       └─ Each line is a SplitList<char>
-            └─ Gap buffer for efficient character insertion/deletion
-```
-
-### Gap Buffer (SplitList)
-```
-[Part1][Gap][Part2]
-```
-- Gap positioned at edit location
-- Insertions/deletions at gap position are O(1)
-- Gap moves when editing at different position
-
-## API Overview
-
-### Text Manipulation
+### TextBuffer
 ```csharp
-// Line operations
-void AppendLine(string text)
-void InsertLine(int line, string text)
-void RemoveLine(int line)
-void RemoveLines(int line, int count)
-
-// Character operations
-void InsertSubstring(int line, int position, string text)
-void InsertCharacter(int line, int position, char character)
-void RemoveSubstring(int line, int position, int length)
-
-// Access
-string GetLine(int line)
-void GetLine(int line, out char[] target)
-string GetSubstring(int line, int column, int length)
-int LinesCount { get; }
+SplitList<SplitList<char>> mLines;  // Each line is a gap buffer
+Stack<IUndoAction> mUndoActions;
+Stack<IUndoAction> mRedoActions;
+Stack<UndoTransaction> mTransactionStack;
 ```
 
-### Undo/Redo
-```csharp
-UndoActionCollection UndoCollection { get; }
-UndoActionCollection RedoCollection { get; }
+### Block Selection Types
 
-// Transactions
-using (var transaction = buffer.UndoCollection.BeginTransaction())
+1. **Line Block** - Full lines from first to last
+   - Only line coordinates matter
+   - Adjusts on line insertions/deletions
+
+2. **Box Block** - Rectangular selection
+   - Fixed column coordinates (don't adjust for substring operations)
+   - Adjusts on line insertions/deletions
+   - Use case: columnar editing
+
+3. **Stream Block** - Standard text selection
+   - From first position to last position
+   - Adjusts for both line and substring operations
+   - Use case: normal copy/paste
+
+### Markers
+- Simple position holders with id, line, and column
+- Automatically adjust on line insertions/deletions
+- Do NOT adjust for substring operations
+- Collection implements `ITextBufferCallback`
+
+## File I/O
+
+### TextBufferMetadata
+- `FileName` - file path
+- `Encoding` - text encoding (UTF-8, UTF-16, UTF-32, etc.)
+- `SkipBom` - whether to skip BOM when writing
+- `EolMode` - end-of-line mode (CrLf, Cr, Lf)
+
+### TextBufferReader
+- Automatic BOM detection
+- Automatic encoding detection (from BOM)
+- Automatic EOL mode detection (counts occurrences)
+- Returns tuple of `(TextBuffer, TextBufferMetadata)`
+
+### TextBufferWriter
+- Respects all metadata settings
+- Can write with or without BOM
+- Uses correct EOL sequence for the mode
+- Supports UTF-8, UTF-16 LE/BE, UTF-32 LE/BE
+
+## Method Naming Conventions
+
+### Public API
+- `InsertLine(lineIndex, text)` - public, creates undo action
+- `DeleteLine(lineIndex)` - public, creates undo action
+- `InsertSubstring(lineIndex, columnIndex, text)` - public, creates undo action
+- `DeleteSubstring(lineIndex, columnIndex, length)` - public, creates undo action
+
+### Internal Implementation
+- `InsertLineInternal(lineIndex, text, suppressUndo)` - all logic
+- `DeleteLineInternal(lineIndex, suppressUndo)` - all logic
+- `InsertSubstringInternal(lineIndex, columnIndex, text, suppressUndo)` - all logic
+- `DeleteSubstringInternal(lineIndex, columnIndex, length, suppressUndo)` - all logic
+
+### Helper Methods
+- `EnsureLineExists(lineIndex)` - adds empty lines, fires callbacks
+- `EnsureColumnExists(lineIndex, columnIndex)` - adds spaces, fires callbacks
+
+## Testing Strategy
+
+### Test Organization
+- **Scintilla.CellBuffer.Test** - Gap buffer tests
+  - SimpleList tests
+  - SplitList tests
+
+- **Gehtsoft.Xce.TextBuffer.Test** - TextBuffer tests
+  - Basic operations (29 tests)
+  - Undo/Redo (24 tests)
+  - Transactions (15 tests)
+  - Block selections (53 tests)
+  - Markers (27 tests)
+  - File I/O (23 tests)
+  - Auto-extend undo (7 tests)
+
+### Test Coverage
+- All operations tested
+- Boundary conditions tested
+- Integration tests with callbacks
+- Round-trip I/O tests
+- Undo/redo with auto-extension
+
+## Common Usage Patterns
+
+### Basic Editing
+```csharp
+var buffer = new TextBuffer(new[] { "line1", "line2" });
+buffer.InsertLine(1, "new line");
+buffer.InsertSubstring(0, 5, " inserted");
+buffer.DeleteSubstring(0, 0, 5);
+buffer.Undo();
+buffer.Redo();
+```
+
+### Transactions
+```csharp
+using (buffer.BeginUndoTransaction())
 {
-    // Multiple operations undone as single unit
+    buffer.InsertLine(0, "header");
+    buffer.InsertLine(buffer.LinesCount, "footer");
+    // Both operations undo/redo as one
 }
 ```
 
-### Position Tracking
+### Block Selection
 ```csharp
-TextBufferStatus Status { get; set; }
-  - CursorPosition
-  - BlockStart/BlockEnd
-  - BlockMode
-
-IReadOnlyList<PositionMarker> SavedPositions // 10 saved positions
+var block = new TextBufferBlock(TextBufferBlockType.Stream, 0, 5, 10, 20);
+buffer.Callbacks.Add(block);
+// Block automatically adjusts as buffer changes
 ```
 
-## Project Structure
-
-```
-text/
-├── Gehtsoft.Xce.TextBuffer/          # Main library
-│   ├── TextBuffer.cs                  # Core text buffer
-│   ├── PositionMarker.cs              # Position tracking
-│   ├── TextBufferStatus.cs            # Editor state
-│   ├── BlockMode.cs / EolMode.cs      # Enums
-│   └── Undo/                          # Undo system
-│       ├── UndoAction.cs
-│       ├── UndoActionCollection.cs
-│       ├── UndoTransaction.cs
-│       └── UndoAction*.cs             # Specific undo actions
-│
-├── Scintilla.CellBuffer/              # Data structures
-│   ├── SplitList.cs                   # Gap buffer
-│   └── SimpleList.cs                  # Dynamic array
-│
-├── Gehtsoft.Xce.TextBuffer.Test/      # Unit tests
-│   ├── TextBufferCore.cs              # Core functionality tests
-│   ├── Undo.cs                        # Undo/redo tests
-│   ├── TextBufferMarkers.cs           # Marker tracking tests
-│   └── TextBufferStatus.cs            # Status tests
-│
-└── Scintilla.CellBuffer.Test/         # Data structure tests
-    ├── SplitListTest.cs
-    └── SimpleListTest.cs
-```
-
-## Technology Stack
-
-- **Language**: C# 9+
-- **Target Framework**: .NET 8.0
-- **Testing**: xUnit, FluentAssertions, Moq
-- **Build**: .NET SDK
-
-## Building
-
-```bash
-dotnet build Gehtsoft.Xce.Text.sln
-dotnet test Gehtsoft.Xce.Text.sln
-```
-
-## Thread Safety
-
-The TextBuffer includes thread-safety mechanisms:
-- `SyncRoot` object for locking
-- All modification methods use `lock (SyncRoot)`
-- Safe for concurrent read/write operations
-
-## Performance Characteristics
-
-### Time Complexity
-- Insert at cursor: O(1) amortized
-- Delete at cursor: O(1) amortized
-- Insert/delete at arbitrary position: O(n) for gap movement
-- Get line: O(n) where n = line length
-- Line count: O(1)
-
-### Space Complexity
-- O(n) where n = total characters
-- Each line has 16-character gap buffer overhead initially
-- Gaps grow dynamically when needed
-
-## Known Limitations
-
-See [PLAN.md](PLAN.md) for detailed analysis, but key limitations:
-
-1. **No undo for character-level edits** - Only line operations are undoable
-2. **No file I/O** - No methods to load/save files
-3. **No encoding support** - No UTF-8/UTF-16 handling
-4. **No EOL handling** - EolMode defined but unused
-5. **No range operations** - Cannot get/set multi-line text ranges
-6. **No search/replace** - No built-in text search functionality
-
-## Usage Example
-
+### Markers
 ```csharp
-using var buffer = new TextBuffer();
-
-// Add content
-buffer.AppendLine("Hello, World!");
-buffer.AppendLine("Line 2");
-buffer.InsertLine(1, "Inserted line");
-
-// Edit text
-buffer.InsertSubstring(0, 5, " there");  // "Hello there, World!"
-buffer.RemoveSubstring(0, 0, 6);         // "there, World!"
-
-// Undo/redo
-buffer.UndoCollection.Pop().Undo();      // Restore removed text
-
-// Transactions
-using (var tx = buffer.UndoCollection.BeginTransaction())
-{
-    buffer.AppendLine("Line A");
-    buffer.AppendLine("Line B");
-    // Both lines undone together
-}
-
-// Position markers
-buffer.SavedPositions[0].Set(2, 5);      // Save position
-buffer.InsertLine(1, "New line");
-// Marker automatically adjusted to (3, 5)
-
-// Block selection
-buffer.Status.BlockMode = BlockMode.Stream;
-buffer.Status.BlockStart.Set(0, 0);
-buffer.Status.BlockEnd.Set(2, 10);
+var markers = new TextMarkerCollection();
+markers.Add(new TextMarker("bookmark1", 5, 10));
+buffer.Callbacks.Add(markers);
+// Markers automatically adjust as buffer changes
 ```
 
-## Future Enhancements
+### File I/O
+```csharp
+// Reading
+var (buffer, metadata) = TextBufferReader.Read("file.txt");
 
-See [PLAN.md](PLAN.md) for prioritized list of improvements.
+// Writing
+TextBufferWriter.Write(buffer, metadata);
 
-## License
+// Custom settings
+var metadata = new TextBufferMetadata(
+    "output.txt",
+    Encoding.UTF8,
+    skipBom: true,
+    EolMode.Lf
+);
+TextBufferWriter.Write(buffer, metadata);
+```
 
-Part of the XCE text editor project.
+## Performance Considerations
+
+### When to Use Transactions
+- Multiple related operations
+- Complex editing that should undo as one unit
+- Better than individual undo actions
+
+### Memory Efficiency
+- Use Span methods when possible
+- Avoid string allocations in hot paths
+- Gap buffers reuse memory efficiently
+
+### Callback Performance
+- Callbacks are invoked synchronously
+- Keep callback implementations fast
+- Consider batching updates in UI
+
+## Extension Points
+
+### Custom Callbacks
+Implement `ITextBufferCallback` for:
+- Syntax highlighting updates
+- Line number updates
+- Custom position tracking
+- External data structure synchronization
+
+### Custom Undo Actions
+Implement `IUndoAction` for:
+- Complex multi-step operations
+- Operations involving external resources
+- Custom state management
+
+## Future Considerations
+
+### Potential Enhancements
+- Async file I/O
+- Partial file loading for large files
+- Text search/replace infrastructure
+- Multi-cursor support
+- Collaborative editing (operational transform)
+
+### Not Currently Supported
+- Multi-byte character handling in columns (uses char offsets)
+- Regex operations
+- Syntax highlighting (delegate to callbacks)
+- Line wrapping (display layer concern)

@@ -1,14 +1,23 @@
-﻿namespace Gehtsoft.Xce.TextBuffer
+namespace Gehtsoft.Xce.TextBuffer
 {
     /// <summary>
-    /// The end-of-line mode
+    /// End-of-line mode
     /// </summary>
     public enum EolMode
     {
-        Cr,
-        Lf,
+        /// <summary>
+        /// Carriage Return + Line Feed (Windows style, \r\n)
+        /// </summary>
         CrLf,
-        Windows = CrLf,
-        Linux = Lf,
+
+        /// <summary>
+        /// Carriage Return only (Mac classic style, \r)
+        /// </summary>
+        Cr,
+
+        /// <summary>
+        /// Line Feed only (Unix/Linux style, \n)
+        /// </summary>
+        Lf
     }
 }

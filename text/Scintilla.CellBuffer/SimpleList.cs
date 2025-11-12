@@ -116,13 +116,24 @@ namespace Scintilla.CellBuffer
         }
 
         /// <summary>
-        /// Constructor
+        /// Constructor with initial content from array
         /// </summary>
         public SimpleList(T[] initialContent)
         {
             EnsureCapacity(initialContent.Length);
             if (initialContent.Length > 0)
                 Array.Copy(initialContent, mContent, initialContent.Length);
+            mLength = initialContent.Length;
+        }
+
+        /// <summary>
+        /// Constructor with initial content from span
+        /// </summary>
+        public SimpleList(ReadOnlySpan<T> initialContent)
+        {
+            EnsureCapacity(initialContent.Length);
+            if (initialContent.Length > 0)
+                initialContent.CopyTo(mContent.AsSpan());
             mLength = initialContent.Length;
         }
 
@@ -224,6 +235,15 @@ namespace Scintilla.CellBuffer
         /// <param name="targetIndex"></param>
         public void ToArray(int sourceIndex, int length, T[] target, int targetIndex)
             => Array.Copy(mContent, sourceIndex, target, targetIndex, length);
+
+        /// <summary>
+        /// Copies elements to a span
+        /// </summary>
+        /// <param name="sourceIndex">Starting index in the list</param>
+        /// <param name="length">Number of elements to copy</param>
+        /// <param name="target">Target span</param>
+        public void ToArray(int sourceIndex, int length, Span<T> target)
+            => mContent.AsSpan(sourceIndex, length).CopyTo(target);
 
         public T[] ToArray()
         {

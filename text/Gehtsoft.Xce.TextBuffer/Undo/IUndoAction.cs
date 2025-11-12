@@ -1,35 +1,18 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-
 namespace Gehtsoft.Xce.TextBuffer.Undo
 {
     /// <summary>
-    /// An interface to an undo action
+    /// Interface for undo/redo actions
     /// </summary>
     public interface IUndoAction
     {
         /// <summary>
-        /// The associated buffer
+        /// Undoes the action
         /// </summary>
-        public TextBuffer Buffer { get; }
-
-        /// <summary>
-        /// Status of the buffer
-        /// </summary>
-        public TextBufferStatus Status { get; }
-
-        /// <summary>
-        /// Undo action in the text buffer
-        /// </summary>
-        /// <param name="buffer"></param>
         void Undo();
 
         /// <summary>
-        /// Redo the action in the text buffer
+        /// Redoes the action
         /// </summary>
-        /// <param name="buffer"></param>
         void Redo();
     }
 }
-
-

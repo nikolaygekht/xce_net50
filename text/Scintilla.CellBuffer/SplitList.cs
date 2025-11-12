@@ -94,7 +94,7 @@ namespace Scintilla.CellBuffer
         }
 
         /// <summary>
-        /// The constructor
+        /// Default constructor - creates an empty split list
         /// </summary>
         public SplitList()
         {
@@ -104,7 +104,21 @@ namespace Scintilla.CellBuffer
             GapLength = DefaultGapSize;
         }
 
+        /// <summary>
+        /// Constructor with initial content from array
+        /// </summary>
         public SplitList(T[] initialContent)
+        {
+            mContent = new SimpleList<T>(initialContent);
+            mContent.AddEmptyElements(DefaultGapSize);
+            Part1Length = initialContent.Length;
+            GapLength = DefaultGapSize;
+        }
+
+        /// <summary>
+        /// Constructor with initial content from span
+        /// </summary>
+        public SplitList(ReadOnlySpan<T> initialContent)
         {
             mContent = new SimpleList<T>(initialContent);
             mContent.AddEmptyElements(DefaultGapSize);
@@ -218,6 +232,15 @@ namespace Scintilla.CellBuffer
             GapLength -= values.Length;
         }
 
+        public void InsertAt(int index, ReadOnlySpan<T> values)
+        {
+            GapTo(index);
+            RoomFor(values.Length);
+            foreach (var value in values)
+                mContent[Part1Length++] = value;
+            GapLength -= values.Length;
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void RemoveAt(int index, int count = 1)
         {
@@ -238,6 +261,20 @@ namespace Scintilla.CellBuffer
                 var inPart1 = Part1Length - sourceIndex;
                 ToArray(sourceIndex, inPart1, target, targetIndex);
                 ToArray(Part1Length, length - inPart1, target, targetIndex + inPart1);
+            }
+        }
+
+        public void ToArray(int sourceIndex, int length, Span<T> target)
+        {
+            if (sourceIndex + length <= Part1Length)
+                mContent.ToArray(sourceIndex, length, target);
+            else if (sourceIndex >= Part1Length)
+                mContent.ToArray(sourceIndex + GapLength, length, target);
+            else
+            {
+                var inPart1 = Part1Length - sourceIndex;
+                ToArray(sourceIndex, inPart1, target.Slice(0, inPart1));
+                ToArray(Part1Length, length - inPart1, target.Slice(inPart1));
             }
         }
 

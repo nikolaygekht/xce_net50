@@ -1,54 +1,52 @@
-﻿using System;
+using System;
+using System.Collections.Generic;
 
 namespace Gehtsoft.Xce.TextBuffer.Undo
 {
-    public class UndoTransaction : UndoAction
+    /// <summary>
+    /// Undo transaction that groups multiple undo actions together
+    /// </summary>
+    internal class UndoTransaction : IUndoAction
     {
-        private readonly UndoActionCollection mActions;
-        private bool mIsClosed;
-        public bool IsClosed => mIsClosed;
+        private readonly List<IUndoAction> mActions = new List<IUndoAction>();
 
-        private sealed class UndoTransactionCloser : IDisposable
+        /// <summary>
+        /// Adds an action to this transaction
+        /// </summary>
+        public void AddAction(IUndoAction action)
         {
-            private readonly UndoTransaction mTransaction;
+            if (action == null)
+                throw new ArgumentNullException(nameof(action));
+            mActions.Add(action);
+        }
 
-            public UndoTransactionCloser(UndoTransaction transaction)
+        /// <summary>
+        /// Gets the number of actions in this transaction
+        /// </summary>
+        public int Count => mActions.Count;
+
+        /// <summary>
+        /// Undoes all actions in reverse order
+        /// </summary>
+        public void Undo()
+        {
+            // Undo in reverse order (last action first)
+            for (int i = mActions.Count - 1; i >= 0; i--)
             {
-                mTransaction = transaction;
+                mActions[i].Undo();
             }
+        }
 
-            public void Dispose()
+        /// <summary>
+        /// Redoes all actions in original order
+        /// </summary>
+        public void Redo()
+        {
+            // Redo in original order (first action first)
+            for (int i = 0; i < mActions.Count; i++)
             {
-                mTransaction.mIsClosed = true;
+                mActions[i].Redo();
             }
-        }
-
-        public void Push(IUndoAction action)
-        {
-            mActions.Push(action);
-        }
-
-        internal int Count => mActions.Count;
-
-        internal IUndoAction Peek() => mActions.Peek();
-
-        public IDisposable GetCloser() => new UndoTransactionCloser(this);
-
-        public UndoTransaction(TextBuffer buffer) : base(buffer)
-        {
-            mActions = new UndoActionCollection(buffer);
-        }
-
-        public override void Redo()
-        {
-            mActions.ForEachForward(a => a.Redo());
-        }
-
-        public override void Undo()
-        {
-            mActions.ForEachBackward(a => a.Undo());
         }
     }
 }
-
-
