@@ -34,11 +34,21 @@ namespace Gehtsoft.Xce.TextBuffer
             {
                 // Create encoding without BOM
                 if (encoding is UTF8Encoding)
+                {
                     encodingToUse = new UTF8Encoding(false);
+                }
                 else if (encoding is UnicodeEncoding)
-                    encodingToUse = new UnicodeEncoding(false, false);
+                {
+                    // Preserve bigEndian flag: CodePage 1201 is UTF-16BE, 1200 is UTF-16LE
+                    bool isBigEndian = (encoding.CodePage == 1201);
+                    encodingToUse = new UnicodeEncoding(isBigEndian, false);
+                }
                 else if (encoding is UTF32Encoding)
-                    encodingToUse = new UTF32Encoding(false, false);
+                {
+                    // Preserve bigEndian flag: CodePage 12001 is UTF-32BE, 12000 is UTF-32LE
+                    bool isBigEndian = (encoding.CodePage == 12001);
+                    encodingToUse = new UTF32Encoding(isBigEndian, false);
+                }
                 else
                     encodingToUse = encoding;
             }
@@ -46,11 +56,21 @@ namespace Gehtsoft.Xce.TextBuffer
             {
                 // Create encoding with BOM
                 if (encoding is UTF8Encoding)
+                {
                     encodingToUse = new UTF8Encoding(true);
+                }
                 else if (encoding is UnicodeEncoding)
-                    encodingToUse = new UnicodeEncoding(false, true);
+                {
+                    // Preserve bigEndian flag: CodePage 1201 is UTF-16BE, 1200 is UTF-16LE
+                    bool isBigEndian = (encoding.CodePage == 1201);
+                    encodingToUse = new UnicodeEncoding(isBigEndian, true);
+                }
                 else if (encoding is UTF32Encoding)
-                    encodingToUse = new UTF32Encoding(false, true);
+                {
+                    // Preserve bigEndian flag: CodePage 12001 is UTF-32BE, 12000 is UTF-32LE
+                    bool isBigEndian = (encoding.CodePage == 12001);
+                    encodingToUse = new UTF32Encoding(isBigEndian, true);
+                }
                 else
                     encodingToUse = encoding;
             }

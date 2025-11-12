@@ -4,5 +4,9 @@
 TestResults/
 bin/
 obj/
+colorer/native/data/base/*
+colorer/native/data/tests/*
+*.jar
+*.zip
 sonarqube.bat
 sonarqube.sh

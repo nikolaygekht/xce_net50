@@ -78,9 +78,9 @@ namespace Scintilla.CellBuffer
             }
         }
 
-        int IReadOnlyCollection<T>.Count => throw new NotImplementedException();
+        int IReadOnlyCollection<T>.Count => Count;
 
-        T IReadOnlyList<T>.this[int index] => throw new NotImplementedException();
+        T IReadOnlyList<T>.this[int index] => this[index];
 
         /// <summary>
         /// Gets or sets an item

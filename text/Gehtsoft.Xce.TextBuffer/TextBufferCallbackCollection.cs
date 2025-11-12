@@ -10,10 +10,12 @@ namespace Gehtsoft.Xce.TextBuffer
     public class TextBufferCallbackCollection
     {
         private readonly List<ITextBufferCallback> mCallbacks;
+        private readonly object mLock;
 
-        public TextBufferCallbackCollection()
+        public TextBufferCallbackCollection(object lockObject)
         {
             mCallbacks = new List<ITextBufferCallback>();
+            mLock = lockObject ?? throw new ArgumentNullException(nameof(lockObject));
         }
 
         /// <summary>
@@ -25,8 +27,11 @@ namespace Gehtsoft.Xce.TextBuffer
             if (callback == null)
                 throw new ArgumentNullException(nameof(callback));
 
-            if (!mCallbacks.Contains(callback))
-                mCallbacks.Add(callback);
+            lock (mLock)
+            {
+                if (!mCallbacks.Contains(callback))
+                    mCallbacks.Add(callback);
+            }
         }
 
         /// <summary>
@@ -36,7 +41,10 @@ namespace Gehtsoft.Xce.TextBuffer
         /// <returns>True if the callback was removed, false if it wasn't in the collection</returns>
         public bool Remove(ITextBufferCallback callback)
         {
-            return mCallbacks.Remove(callback);
+            lock (mLock)
+            {
+                return mCallbacks.Remove(callback);
+            }
         }
 
         /// <summary>
@@ -44,13 +52,25 @@ namespace Gehtsoft.Xce.TextBuffer
         /// </summary>
         public void Clear()
         {
-            mCallbacks.Clear();
+            lock (mLock)
+            {
+                mCallbacks.Clear();
+            }
         }
 
         /// <summary>
         /// Gets the number of callbacks in the collection
         /// </summary>
-        public int Count => mCallbacks.Count;
+        public int Count
+        {
+            get
+            {
+                lock (mLock)
+                {
+                    return mCallbacks.Count;
+                }
+            }
+        }
 
         /// <summary>
         /// Invokes OnLinesInserted on all registered callbacks
@@ -58,7 +78,17 @@ namespace Gehtsoft.Xce.TextBuffer
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void InvokeOnLinesInserted(int lineIndex, int count)
         {
-            foreach (var callback in mCallbacks)
+            // Create a snapshot to allow callbacks to modify the collection during iteration
+            ITextBufferCallback[] snapshot;
+            lock (mLock)
+            {
+                if (mCallbacks.Count == 0)
+                    return;
+                snapshot = mCallbacks.ToArray();
+            }
+
+            // Invoke callbacks outside the lock to avoid deadlock if callback modifies collection
+            foreach (var callback in snapshot)
                 callback.OnLinesInserted(lineIndex, count);
         }
 
@@ -68,7 +98,17 @@ namespace Gehtsoft.Xce.TextBuffer
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void InvokeOnLinesDeleted(int lineIndex, int count)
         {
-            foreach (var callback in mCallbacks)
+            // Create a snapshot to allow callbacks to modify the collection during iteration
+            ITextBufferCallback[] snapshot;
+            lock (mLock)
+            {
+                if (mCallbacks.Count == 0)
+                    return;
+                snapshot = mCallbacks.ToArray();
+            }
+
+            // Invoke callbacks outside the lock to avoid deadlock if callback modifies collection
+            foreach (var callback in snapshot)
                 callback.OnLinesDeleted(lineIndex, count);
         }
 
@@ -78,7 +118,17 @@ namespace Gehtsoft.Xce.TextBuffer
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void InvokeOnSubstringInserted(int lineIndex, int columnIndex, int length)
         {
-            foreach (var callback in mCallbacks)
+            // Create a snapshot to allow callbacks to modify the collection during iteration
+            ITextBufferCallback[] snapshot;
+            lock (mLock)
+            {
+                if (mCallbacks.Count == 0)
+                    return;
+                snapshot = mCallbacks.ToArray();
+            }
+
+            // Invoke callbacks outside the lock to avoid deadlock if callback modifies collection
+            foreach (var callback in snapshot)
                 callback.OnSubstringInserted(lineIndex, columnIndex, length);
         }
 
@@ -88,7 +138,17 @@ namespace Gehtsoft.Xce.TextBuffer
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void InvokeOnSubstringDeleted(int lineIndex, int columnIndex, int length)
         {
-            foreach (var callback in mCallbacks)
+            // Create a snapshot to allow callbacks to modify the collection during iteration
+            ITextBufferCallback[] snapshot;
+            lock (mLock)
+            {
+                if (mCallbacks.Count == 0)
+                    return;
+                snapshot = mCallbacks.ToArray();
+            }
+
+            // Invoke callbacks outside the lock to avoid deadlock if callback modifies collection
+            foreach (var callback in snapshot)
                 callback.OnSubstringDeleted(lineIndex, columnIndex, length);
         }
     }

@@ -211,5 +211,90 @@ namespace Scintilla.CellBuffer.Test
             mOutput.WriteLine("vs string {0} {1}", stringTiming, slistTiming);
         }
 #endif
+
+        [Fact]
+        public void IReadOnlyList_Count_ShouldWork()
+        {
+            // Arrange
+            var list = new SimpleList<int>();
+            for (int i = 0; i < 10; i++)
+                list.Add(i);
+
+            // Act - cast to IReadOnlyList and access Count
+            System.Collections.Generic.IReadOnlyList<int> readOnlyList = list;
+
+            // Assert
+            readOnlyList.Count.Should().Be(10);
+        }
+
+        [Fact]
+        public void IReadOnlyList_Indexer_ShouldWork()
+        {
+            // Arrange
+            var list = new SimpleList<int>();
+            for (int i = 0; i < 10; i++)
+                list.Add(i * 2);
+
+            // Act - cast to IReadOnlyList and access via indexer
+            System.Collections.Generic.IReadOnlyList<int> readOnlyList = list;
+
+            // Assert
+            for (int i = 0; i < 10; i++)
+                readOnlyList[i].Should().Be(i * 2);
+        }
+
+        [Fact]
+        public void IReadOnlyList_PassToMethod_ShouldWork()
+        {
+            // Arrange
+            var list = new SimpleList<int>();
+            for (int i = 0; i < 5; i++)
+                list.Add(i + 1);
+
+            // Act - pass to method that accepts IReadOnlyList
+            int sum = SumReadOnlyList(list);
+
+            // Assert
+            sum.Should().Be(15); // 1 + 2 + 3 + 4 + 5
+        }
+
+        [Fact]
+        public void IReadOnlyList_UseInLinq_ShouldWork()
+        {
+            // Arrange
+            var list = new SimpleList<int>();
+            for (int i = 0; i < 10; i++)
+                list.Add(i);
+
+            // Act - cast to IReadOnlyList and use LINQ
+            System.Collections.Generic.IReadOnlyList<int> readOnlyList = list;
+            var evenNumbers = readOnlyList.Where(x => x % 2 == 0).ToList();
+
+            // Assert
+            evenNumbers.Should().BeEquivalentTo(new[] { 0, 2, 4, 6, 8 });
+        }
+
+        [Fact]
+        public void IReadOnlyCollection_Count_ShouldWork()
+        {
+            // Arrange
+            var list = new SimpleList<int>();
+            for (int i = 0; i < 7; i++)
+                list.Add(i);
+
+            // Act - cast to IReadOnlyCollection and access Count
+            System.Collections.Generic.IReadOnlyCollection<int> readOnlyCollection = list;
+
+            // Assert
+            readOnlyCollection.Count.Should().Be(7);
+        }
+
+        private int SumReadOnlyList(System.Collections.Generic.IReadOnlyList<int> list)
+        {
+            int sum = 0;
+            for (int i = 0; i < list.Count; i++)
+                sum += list[i];
+            return sum;
+        }
     }
 }

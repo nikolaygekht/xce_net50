@@ -416,6 +416,124 @@ namespace Gehtsoft.Xce.TextBuffer.Test
             buffer.GetLine(0).Should().Be("test");
         }
 
+        [Fact]
+        public void RoundTrip_Utf16BE_WithBom_PreservesEndianness()
+        {
+            // Arrange
+            var fileName = GetTempFileName();
+            var originalBuffer = new TextBuffer(new[] { "Hello 世界", "Test данные" });
+            var bigEndianEncoding = new UnicodeEncoding(true, true); // Big-endian with BOM
+            var metadata = new TextBufferMetadata(fileName, bigEndianEncoding, false, EolMode.CrLf);
+
+            // Act - write and read back
+            TextBufferWriter.Write(originalBuffer, metadata);
+            var (readBuffer, readMetadata) = TextBufferReader.Read(fileName);
+
+            // Assert
+            readBuffer.LinesCount.Should().Be(2);
+            readBuffer.GetLine(0).Should().Be("Hello 世界");
+            readBuffer.GetLine(1).Should().Be("Test данные");
+            readMetadata.Encoding.CodePage.Should().Be(1201); // UTF-16BE code page
+        }
+
+        [Fact]
+        public void RoundTrip_Utf16LE_WithBom_PreservesEndianness()
+        {
+            // Arrange
+            var fileName = GetTempFileName();
+            var originalBuffer = new TextBuffer(new[] { "Hello 世界", "Test данные" });
+            var littleEndianEncoding = new UnicodeEncoding(false, true); // Little-endian with BOM
+            var metadata = new TextBufferMetadata(fileName, littleEndianEncoding, false, EolMode.CrLf);
+
+            // Act - write and read back
+            TextBufferWriter.Write(originalBuffer, metadata);
+            var (readBuffer, readMetadata) = TextBufferReader.Read(fileName);
+
+            // Assert
+            readBuffer.LinesCount.Should().Be(2);
+            readBuffer.GetLine(0).Should().Be("Hello 世界");
+            readBuffer.GetLine(1).Should().Be("Test данные");
+            readMetadata.Encoding.CodePage.Should().Be(1200); // UTF-16LE code page
+        }
+
+        [Fact]
+        public void RoundTrip_Utf32BE_WithBom_PreservesEndianness()
+        {
+            // Arrange
+            var fileName = GetTempFileName();
+            var originalBuffer = new TextBuffer(new[] { "Hello 世界 🌍", "Test данные 😀" });
+            var bigEndianEncoding = new UTF32Encoding(true, true); // Big-endian with BOM
+            var metadata = new TextBufferMetadata(fileName, bigEndianEncoding, false, EolMode.Lf);
+
+            // Act - write and read back
+            TextBufferWriter.Write(originalBuffer, metadata);
+            var (readBuffer, readMetadata) = TextBufferReader.Read(fileName);
+
+            // Assert
+            readBuffer.LinesCount.Should().Be(2);
+            readBuffer.GetLine(0).Should().Be("Hello 世界 🌍");
+            readBuffer.GetLine(1).Should().Be("Test данные 😀");
+            readMetadata.Encoding.CodePage.Should().Be(12001); // UTF-32BE code page
+        }
+
+        [Fact]
+        public void RoundTrip_Utf32LE_WithBom_PreservesEndianness()
+        {
+            // Arrange
+            var fileName = GetTempFileName();
+            var originalBuffer = new TextBuffer(new[] { "Hello 世界 🌍", "Test данные 😀" });
+            var littleEndianEncoding = new UTF32Encoding(false, true); // Little-endian with BOM
+            var metadata = new TextBufferMetadata(fileName, littleEndianEncoding, false, EolMode.Lf);
+
+            // Act - write and read back
+            TextBufferWriter.Write(originalBuffer, metadata);
+            var (readBuffer, readMetadata) = TextBufferReader.Read(fileName);
+
+            // Assert
+            readBuffer.LinesCount.Should().Be(2);
+            readBuffer.GetLine(0).Should().Be("Hello 世界 🌍");
+            readBuffer.GetLine(1).Should().Be("Test данные 😀");
+            readMetadata.Encoding.CodePage.Should().Be(12000); // UTF-32LE code page
+        }
+
+        [Fact]
+        public void RoundTrip_Utf16BE_NoBom_PreservesEndianness()
+        {
+            // Arrange
+            var fileName = GetTempFileName();
+            var originalBuffer = new TextBuffer(new[] { "Hello 世界" });
+            var bigEndianEncoding = new UnicodeEncoding(true, true); // Big-endian with BOM
+            var metadata = new TextBufferMetadata(fileName, bigEndianEncoding, true, EolMode.Lf); // Skip BOM
+
+            // Act - write without BOM
+            TextBufferWriter.Write(originalBuffer, metadata);
+
+            // Manually read back with BigEndianUnicode
+            var readBackText = File.ReadAllText(fileName, Encoding.BigEndianUnicode);
+
+            // Assert
+            readBackText.Should().Be("Hello 世界");
+        }
+
+        [Fact]
+        public void RoundTrip_Utf32BE_NoBom_PreservesEndianness()
+        {
+            // Arrange
+            var fileName = GetTempFileName();
+            var originalBuffer = new TextBuffer(new[] { "Hello 🌍" });
+            var bigEndianEncoding = new UTF32Encoding(true, true); // Big-endian with BOM
+            var metadata = new TextBufferMetadata(fileName, bigEndianEncoding, true, EolMode.Lf); // Skip BOM
+
+            // Act - write without BOM
+            TextBufferWriter.Write(originalBuffer, metadata);
+
+            // Manually read back with UTF-32 BE
+            var readBackText = File.ReadAllText(fileName, new UTF32Encoding(true, false));
+
+            // Assert
+            readBackText.Should().Be("Hello 🌍");
+        }
+
         #endregion
     }
 }

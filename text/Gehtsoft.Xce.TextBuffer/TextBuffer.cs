@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Scintilla.CellBuffer;
@@ -13,7 +14,7 @@ namespace Gehtsoft.Xce.TextBuffer
     {
         private readonly object mLock = new object();
         private readonly SplitList<SplitList<char>> mLines;
-        private readonly TextBufferCallbackCollection mCallbacks = new TextBufferCallbackCollection();
+        private readonly TextBufferCallbackCollection mCallbacks;
         private readonly Stack<IUndoAction> mUndoActions = new Stack<IUndoAction>();
         private readonly Stack<IUndoAction> mRedoActions = new Stack<IUndoAction>();
         private readonly Stack<UndoTransaction> mTransactionStack = new Stack<UndoTransaction>();
@@ -43,6 +44,7 @@ namespace Gehtsoft.Xce.TextBuffer
         public TextBuffer()
         {
             mLines = new SplitList<SplitList<char>>();
+            mCallbacks = new TextBufferCallbackCollection(mLock);
         }
 
         /// <summary>
@@ -64,6 +66,7 @@ namespace Gehtsoft.Xce.TextBuffer
                 }
                 mLines = new SplitList<SplitList<char>>(lineBuffers);
             }
+            mCallbacks = new TextBufferCallbackCollection(mLock);
         }
 
         /// <summary>
@@ -308,9 +311,30 @@ namespace Gehtsoft.Xce.TextBuffer
             if (!suppressUndo)
             {
                 var line = mLines[lineIndex];
-                Span<char> buffer = stackalloc char[line.Count];
-                line.ToArray(0, line.Count, buffer);
-                RegisterUndoAction(new DeleteLineUndoAction(this, lineIndex, buffer));
+                const int stackAllocThreshold = 1024; // Use stack for small buffers (< 1KB)
+
+                if (line.Count <= stackAllocThreshold)
+                {
+                    // Small buffer - use stackalloc
+                    Span<char> buffer = stackalloc char[line.Count];
+                    line.ToArray(0, line.Count, buffer);
+                    RegisterUndoAction(new DeleteLineUndoAction(this, lineIndex, buffer));
+                }
+                else
+                {
+                    // Large buffer - use ArrayPool to avoid stack overflow
+                    char[] rentedArray = ArrayPool<char>.Shared.Rent(line.Count);
+                    try
+                    {
+                        Span<char> buffer = rentedArray.AsSpan(0, line.Count);
+                        line.ToArray(0, line.Count, buffer);
+                        RegisterUndoAction(new DeleteLineUndoAction(this, lineIndex, buffer));
+                    }
+                    finally
+                    {
+                        ArrayPool<char>.Shared.Return(rentedArray);
+                    }
+                }
             }
 
             mLines.RemoveAt(lineIndex);
@@ -433,9 +457,30 @@ namespace Gehtsoft.Xce.TextBuffer
                 // Register undo action BEFORE deletion
                 if (!suppressUndo)
                 {
-                    Span<char> buffer = stackalloc char[length];
-                    line.ToArray(columnIndex, length, buffer);
-                    RegisterUndoAction(new DeleteSubstringUndoAction(this, lineIndex, columnIndex, buffer));
+                    const int stackAllocThreshold = 1024; // Use stack for small buffers (< 1KB)
+
+                    if (length <= stackAllocThreshold)
+                    {
+                        // Small buffer - use stackalloc
+                        Span<char> buffer = stackalloc char[length];
+                        line.ToArray(columnIndex, length, buffer);
+                        RegisterUndoAction(new DeleteSubstringUndoAction(this, lineIndex, columnIndex, buffer));
+                    }
+                    else
+                    {
+                        // Large buffer - use ArrayPool to avoid stack overflow
+                        char[] rentedArray = ArrayPool<char>.Shared.Rent(length);
+                        try
+                        {
+                            Span<char> buffer = rentedArray.AsSpan(0, length);
+                            line.ToArray(columnIndex, length, buffer);
+                            RegisterUndoAction(new DeleteSubstringUndoAction(this, lineIndex, columnIndex, buffer));
+                        }
+                        finally
+                        {
+                            ArrayPool<char>.Shared.Return(rentedArray);
+                        }
+                    }
                 }
 
                 line.RemoveAt(columnIndex, length);
