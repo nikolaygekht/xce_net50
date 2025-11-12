@@ -31,7 +31,7 @@ public class ConcurrencyStressTest
         var testCases = new[]
         {
             (Pattern: @"cat|dog", Input: "I have a cat and a dog", Expected: "cat"),
-            (Pattern: @"\w+(?=\d)", Input: "test123", Expected: "test"),
+            (Pattern: @"\w+(?=\d)", Input: "test123", Expected: "test12"), // Greedy \w+ backtracks to where lookahead succeeds
             (Pattern: @"[a-z]+", Input: "hello123world", Expected: "hello"),
             (Pattern: @"\d{3}-\d{4}", Input: "Call 555-1234 now", Expected: "555-1234"),
             (Pattern: @"(foo|bar)+", Input: "foobarfoo", Expected: "foobarfoo"),
@@ -47,6 +47,17 @@ public class ConcurrencyStressTest
         var errors = new System.Collections.Concurrent.ConcurrentBag<Exception>();
         var successCounts = new System.Collections.Concurrent.ConcurrentDictionary<int, int>();
         var failureCounts = new System.Collections.Concurrent.ConcurrentDictionary<int, int>();
+
+        // Pre-compile all patterns once to verify they work
+        foreach (var testCase in testCases)
+        {
+            using var regex = new ColorerRegex(testCase.Pattern, RegexOptions.None);
+            var match = regex.Match(testCase.Input);
+            if (match == null || match.Value != testCase.Expected)
+            {
+                throw new InvalidOperationException($"Pre-validation failed for pattern '{testCase.Pattern}': expected '{testCase.Expected}', got '{match?.Value ?? "null"}'");
+            }
+        }
 
         // Act: Run 10 threads, each processing one pattern repeatedly for 5 seconds
         var tasks = Enumerable.Range(0, 10).Select(threadId =>

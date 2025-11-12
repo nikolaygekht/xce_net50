@@ -39,14 +39,18 @@ internal unsafe class CRegExpMatcher : IDisposable
     private bool startChange;
     private bool endChange;
 
-    // Backtracking stack (static shared across instances like in C++)
-    private static StackElem* regExpStack;
-    private static int regExpStackSize;
+    // Backtracking stack (per-instance for thread safety, unlike C++ which uses static)
+    // C++ uses static stack, but we need per-instance for thread-safe background highlighting
+    private StackElem* regExpStack;
+    private int regExpStackSize;
     private int countElem;
 
     // First character optimization
     private char firstChar = BAD_WCHAR;
     private EMetaSymbols firstMetaChar = EMetaSymbols.ReBadMeta;
+
+    // Thread synchronization for shared instance usage
+    private readonly object _matchLock = new object();
 
     public CRegExpMatcher(SRegInfo* compiledTree, bool ignoreCase = false,
                           bool singleLine = false, bool multiLine = false)
@@ -63,12 +67,9 @@ internal unsafe class CRegExpMatcher : IDisposable
         matches = (SMatches*)Marshal.AllocHGlobal(sizeof(SMatches));
         matches->Clear();
 
-        // Initialize static stack if needed
-        if (regExpStack == null)
-        {
-            regExpStackSize = INIT_MEM_SIZE;
-            regExpStack = (StackElem*)Marshal.AllocHGlobal(sizeof(StackElem) * regExpStackSize);
-        }
+        // Initialize per-instance stack for thread safety
+        regExpStackSize = INIT_MEM_SIZE;
+        regExpStack = (StackElem*)Marshal.AllocHGlobal(sizeof(StackElem) * regExpStackSize);
 
         // Optimize first character if possible
         OptimizeFirstChar();
@@ -81,6 +82,13 @@ internal unsafe class CRegExpMatcher : IDisposable
             Marshal.FreeHGlobal((IntPtr)matches);
             matches = null;
         }
+
+        if (regExpStack != null)
+        {
+            Marshal.FreeHGlobal((IntPtr)regExpStack);
+            regExpStack = null;
+        }
+
         GC.SuppressFinalize(this);
     }
 
@@ -89,40 +97,35 @@ internal unsafe class CRegExpMatcher : IDisposable
         Dispose();
     }
 
-    public static void ClearRegExpStack()
-    {
-        if (regExpStack != null)
-        {
-            Marshal.FreeHGlobal((IntPtr)regExpStack);
-            regExpStack = null;
-            regExpStackSize = 0;
-        }
-    }
-
     /// <summary>
     /// Match the pattern against the input string.
     /// Port of parse() method from cregexp.cpp lines 1428-1451
+    /// Thread-safe: Can be called from multiple threads on the same instance.
     /// </summary>
     public bool Parse(string str, int pos, int eol, int soscheme = 0, bool? posMovesOverride = null)
     {
         if (str == null)
             throw new ArgumentNullException(nameof(str));
 
-        globalPattern = str;
-        end = Math.Min(eol, str.Length);
-        schemeStart = soscheme;
-        startChange = false;
-        endChange = false;
+        // Lock to protect instance state during matching
+        lock (_matchLock)
+        {
+            globalPattern = str;
+            end = Math.Min(eol, str.Length);
+            schemeStart = soscheme;
+            startChange = false;
+            endChange = false;
 
-        // Allow override of position moves
-        bool originalPosMoves = positionMoves;
-        if (posMovesOverride.HasValue)
-            positionMoves = posMovesOverride.Value;
+            // Allow override of position moves
+            bool originalPosMoves = positionMoves;
+            if (posMovesOverride.HasValue)
+                positionMoves = posMovesOverride.Value;
 
-        bool result = ParseRE(pos);
+            bool result = ParseRE(pos);
 
-        positionMoves = originalPosMoves;
-        return result;
+            positionMoves = originalPosMoves;
+            return result;
+        }
     }
 
     /// <summary>
