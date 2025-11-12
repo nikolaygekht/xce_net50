@@ -755,13 +755,56 @@ internal unsafe class CRegExpCompiler : IDisposable
     {
         if (start == null) return start;
 
-        // First, recursively process all subtrees (groups, etc.)
+        // First, recursively process all subtrees (groups, quantifiers, etc.)
         // We need to collect nodes first to avoid issues while modifying tree
         List<IntPtr> nodesToProcess = new List<IntPtr>();
         SRegInfo* node = start;
         while (node != null)
         {
-            if (node->param != null && (node->op == EOps.ReBrackets || node->op == EOps.ReAhead || node->op == EOps.ReNAhead || node->op == EOps.ReBehind || node->op == EOps.ReNBehind))
+            // Process subtrees in: brackets, lookahead/behind
+            // Also recurse into quantifiers, but only if they contain brackets/groups
+            bool hasSubtree = false;
+
+            if (node->param != null)
+            {
+                // Always recurse into brackets and assertions
+                if (node->op == EOps.ReBrackets ||
+                    node->op == EOps.ReNamedBrackets ||
+                    node->op == EOps.ReAhead ||
+                    node->op == EOps.ReNAhead ||
+                    node->op == EOps.ReBehind ||
+                    node->op == EOps.ReNBehind)
+                {
+                    hasSubtree = true;
+                }
+                // For quantifiers, only recurse if param is a bracket/group
+                // (not just a character class or symbol)
+                else if (node->op == EOps.ReMul ||
+                         node->op == EOps.RePlus ||
+                         node->op == EOps.ReQuest ||
+                         node->op == EOps.ReNGMul ||
+                         node->op == EOps.ReNGPlus ||
+                         node->op == EOps.ReNGQuest ||
+                         node->op == EOps.ReRangeN ||
+                         node->op == EOps.ReRangeNM ||
+                         node->op == EOps.ReNGRangeN ||
+                         node->op == EOps.ReNGRangeNM)
+                {
+                    // Only recurse if the quantified element is itself a bracket/group
+                    var paramOp = node->param->op;
+                    if (paramOp == EOps.ReBrackets ||
+                        paramOp == EOps.ReNamedBrackets ||
+                        paramOp == EOps.ReAhead ||
+                        paramOp == EOps.ReNAhead ||
+                        paramOp == EOps.ReBehind ||
+                        paramOp == EOps.ReNBehind)
+                    {
+                        hasSubtree = true;
+                    }
+                }
+            }
+
+            if (hasSubtree)
             {
                 // This is a node with a subtree that needs processing
                 nodesToProcess.Add((IntPtr)node);

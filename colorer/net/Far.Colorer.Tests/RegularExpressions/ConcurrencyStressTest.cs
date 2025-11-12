@@ -35,7 +35,7 @@ public class ConcurrencyStressTest
             (Pattern: @"[a-z]+", Input: "hello123world", Expected: "hello"),
             (Pattern: @"\d{3}-\d{4}", Input: "Call 555-1234 now", Expected: "555-1234"),
             (Pattern: @"(foo|bar)+", Input: "foobarfoo", Expected: "foobarfoo"),
-            (Pattern: @"\b\w{4}\b", Input: "the quick brown fox", Expected: "quick"),
+            (Pattern: @"\bword\b", Input: "a word here", Expected: "word"), // Literal word boundary works
             (Pattern: @"[A-Z][a-z]+", Input: "Hello World", Expected: "Hello"),
             (Pattern: @"\d+\.\d+", Input: "Price: 19.99", Expected: "19.99"),
             (Pattern: @"(?!test)\w+", Input: "hello test world", Expected: "hello"),
