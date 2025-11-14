@@ -243,6 +243,18 @@ internal unsafe class CRegExpMatcher : IDisposable
                                 int idx = re->param0;
                                 if (idx >= 0 && idx < 10)
                                 {
+                                    // UNIFIED STORAGE: Store in regular arrays (same as ReBrackets)
+                                    // This makes backreferences work with named groups
+                                    int* sArr = matches->s;
+                                    int* eArr = matches->e;
+                                    if (idx > 0 || !startChange)
+                                        sArr[idx] = re->s;
+                                    if (idx > 0 || !endChange)
+                                        eArr[idx] = toParse;
+                                    if (eArr[idx] < sArr[idx])
+                                        sArr[idx] = eArr[idx];
+
+                                    // Also update ns/ne for backward compatibility (deprecated)
                                     int* nsArr = matches->ns;
                                     int* neArr = matches->ne;
                                     nsArr[idx] = re->s;
@@ -1049,23 +1061,15 @@ internal unsafe class CRegExpMatcher : IDisposable
 
     /// <summary>
     /// Get named capture group result.
-    /// Thread-safe: Reads named capture results that were stored by Parse().
+    /// DEPRECATED: Named groups now use unified storage with regular groups.
+    /// Use GetCapture() instead - it works for both named and regular groups.
+    /// Thread-safe: Reads capture results that were stored by Parse().
     /// </summary>
+    [Obsolete("Named groups now use unified storage. Use GetCapture() instead.")]
     public void GetNamedCapture(int index, out int start, out int end)
     {
-        if (index < 0 || index >= 10)
-        {
-            start = -1;
-            end = -1;
-            return;
-        }
-
-        lock (_matchLock)
-        {
-            int* nsArr = matches->ns;
-            int* neArr = matches->ne;
-            start = nsArr[index];
-            end = neArr[index];
-        }
+        // For backward compatibility, delegate to GetCapture
+        // Named groups now use the same storage as regular groups
+        GetCapture(index, out start, out end);
     }
 }

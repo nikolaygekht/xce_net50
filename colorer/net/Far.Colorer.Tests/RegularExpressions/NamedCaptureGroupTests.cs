@@ -481,12 +481,10 @@ public class NamedCaptureGroupTests
         Assert.Equal("path/to/file", match.GetGroupValue("path"));
     }
 
-    [Fact(Skip = "Backreferences to named groups not yet supported - named captures use separate storage")]
+    [Fact]
     public void NamedGroupWithBackreference_WorksTogether()
     {
-        // Note: \1 backreference doesn't currently work with named groups
-        // because named groups use ns/ne arrays instead of s/e arrays
-        // This is a known limitation
+        // Numeric backreferences now work with named groups (unified storage)
         var regex = new ColorerRegex(@"(?{tag}\w+):\1");
         var match = regex.Match("test:test");
 

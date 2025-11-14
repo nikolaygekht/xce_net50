@@ -97,31 +97,20 @@ internal unsafe class ColorerRegex : IDisposable
                 groupNames.ContainsKey(0) ? groupNames[0] : null));
 
             // Add numbered captures (1-9)
+            // NOTE: Unified storage - all groups now use GetCapture (named and regular)
             for (int i = 1; i < 10; i++)
             {
-                // Check if this is a named group
-                bool isNamedGroup = groupNames.ContainsKey(i);
-                int capStart, capEnd;
-
-                if (isNamedGroup)
-                {
-                    // Use GetNamedCapture for named groups
-                    matcher.GetNamedCapture(i, out capStart, out capEnd);
-                }
-                else
-                {
-                    // Use regular GetCapture for regular groups
-                    matcher.GetCapture(i, out capStart, out capEnd);
-                }
+                matcher.GetCapture(i, out int capStart, out int capEnd);
 
                 if (capStart >= 0 && capEnd >= 0 && capEnd >= capStart)
                 {
-                    string? name = isNamedGroup ? groupNames[i] : null;
+                    // Check if this group has a name
+                    string? name = groupNames.ContainsKey(i) ? groupNames[i] : null;
                     captures.Add(new CaptureGroup(
                         capStart,
                         capEnd - capStart,
                         i,
-                        name)); // Pass name!
+                        name));
                 }
             }
 
