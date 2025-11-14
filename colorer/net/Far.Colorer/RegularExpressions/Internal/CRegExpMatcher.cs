@@ -788,8 +788,11 @@ internal unsafe class CRegExpMatcher : IDisposable
             case EMetaSymbols.ReEoL:
                 if (multiLine)
                 {
-                    if (toParse > 0 && toParse < end && IsLineTerminator(globalPattern![toParse - 1]))
-                        return true;
+                    // In multiline mode, $ matches at end of string OR before a line terminator
+                    bool ok = false;
+                    if (toParse < end && IsLineTerminator(globalPattern![toParse]))
+                        ok = true;
+                    return (toParse == end || ok);
                 }
                 return (end == toParse);
 

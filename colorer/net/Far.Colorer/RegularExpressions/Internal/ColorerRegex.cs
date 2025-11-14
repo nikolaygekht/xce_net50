@@ -50,11 +50,28 @@ internal unsafe class ColorerRegex : IDisposable
     /// </summary>
     public ColorerMatch? Match(string input, int startIndex = 0)
     {
+        return Match(input, startIndex, input.Length, schemeStart: 0, posMovesOverride: null);
+    }
+
+    /// <summary>
+    /// Match the pattern against input string with advanced COLORERMODE parameters.
+    /// Thread-safe: Can be called concurrently from multiple threads on the same instance.
+    /// </summary>
+    /// <param name="input">Input string to match</param>
+    /// <param name="startIndex">Start position</param>
+    /// <param name="endIndex">End position (exclusive)</param>
+    /// <param name="schemeStart">Scheme start position for ~ metacharacter</param>
+    /// <param name="posMovesOverride">Override position movement behavior (null = default, false = anchor at start, true = search)</param>
+    public ColorerMatch? Match(string input, int startIndex, int endIndex, int schemeStart = 0, bool? posMovesOverride = null)
+    {
         if (input == null)
             throw new ArgumentNullException(nameof(input));
 
         if (startIndex < 0 || startIndex > input.Length)
             throw new ArgumentOutOfRangeException(nameof(startIndex));
+
+        if (endIndex < 0 || endIndex > input.Length)
+            throw new ArgumentOutOfRangeException(nameof(endIndex));
 
         if (matcher == null)
             throw new InvalidOperationException("Regex not compiled");
@@ -63,8 +80,8 @@ internal unsafe class ColorerRegex : IDisposable
         // are using the same ColorerRegex instance (e.g., shared regex for syntax highlighting)
         lock (_matchLock)
         {
-            // Try to match at startIndex
-            bool success = matcher.Parse(input, startIndex, input.Length);
+            // Try to match at startIndex with advanced parameters
+            bool success = matcher.Parse(input, startIndex, endIndex, schemeStart, posMovesOverride);
 
             if (!success)
                 return null;
