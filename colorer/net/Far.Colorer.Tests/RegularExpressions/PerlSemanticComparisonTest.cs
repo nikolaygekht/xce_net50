@@ -2,6 +2,7 @@ using Far.Colorer.RegularExpressions.Internal;
 using Far.Colorer.RegularExpressions.Enums;
 using Xunit;
 using Xunit.Abstractions;
+using AwesomeAssertions;
 
 namespace Far.Colorer.Tests.RegularExpressions;
 
@@ -58,10 +59,10 @@ public class PerlSemanticComparisonTest
         _output.WriteLine($"5. Return match: '10'");
 
         // Assert - Perl behavior: matches "10"
-        Assert.NotNull(match1);
-        Assert.Equal("10", match1!.Value);
-        Assert.Equal(0, match1.Index);
-        Assert.Equal(2, match1.Length);
+        match1.Should().NotBeNull();
+        match1!.Value.Should().Be("10");
+        match1.Index.Should().Be(0);
+        match1.Length.Should().Be(2);
     }
 
     /// <summary>
@@ -83,8 +84,8 @@ public class PerlSemanticComparisonTest
         _output.WriteLine($"Match: {match?.Value ?? "null"}");
 
         // Assert - Should match full "100"
-        Assert.NotNull(match);
-        Assert.Equal("100", match!.Value);
+        match.Should().NotBeNull();
+        match!.Value.Should().Be("100");
     }
 
     /// <summary>
@@ -110,11 +111,11 @@ public class PerlSemanticComparisonTest
         _output.WriteLine($"'foo': {match3?.Value ?? "null"}");
 
         // Assert
-        Assert.Null(match1);  // "foobar" - foo IS followed by bar
-        Assert.NotNull(match2); // "foobaz" - foo is NOT followed by bar
-        Assert.Equal("foo", match2!.Value);
-        Assert.NotNull(match3); // "foo" at end - NOT followed by bar
-        Assert.Equal("foo", match3!.Value);
+        match1.Should().BeNull();  // "foobar" - foo IS followed by bar
+        match2.Should().NotBeNull(); // "foobaz" - foo is NOT followed by bar
+        match2!.Value.Should().Be("foo");
+        match3.Should().NotBeNull(); // "foo" at end - NOT followed by bar
+        match3!.Value.Should().Be("foo");
     }
 
     /// <summary>
@@ -146,13 +147,13 @@ public class PerlSemanticComparisonTest
         _output.WriteLine($"  Then 'bar' matches literally");
 
         // Assert - Both should match "bar"
-        Assert.NotNull(match1);
-        Assert.Equal("bar", match1!.Value);
-        Assert.Equal(3, match1.Index); // At position 3 in "foobar"
+        match1.Should().NotBeNull();
+        match1!.Value.Should().Be("bar");
+        match1.Index.Should().Be(3); // At position 3 in "foobar"
 
-        Assert.NotNull(match2);
-        Assert.Equal("bar", match2!.Value);
-        Assert.Equal(3, match2.Index); // At position 3 in "xyzbar"
+        match2.Should().NotBeNull();
+        match2!.Value.Should().Be("bar");
+        match2.Index.Should().Be(3); // At position 3 in "xyzbar"
     }
 
     /// <summary>
@@ -173,10 +174,10 @@ public class PerlSemanticComparisonTest
         _output.WriteLine($"'100em': {match2?.Value ?? "null"}");
 
         // Assert
-        Assert.NotNull(match1);
-        Assert.Equal("100", match1!.Value); // Matches "100" when followed by "px"
+        match1.Should().NotBeNull();
+        match1!.Value.Should().Be("100"); // Matches "100" when followed by "px"
 
-        Assert.Null(match2); // No match when not followed by "px"
+        match2.Should().BeNull(); // No match when not followed by "px"
     }
 
     /// <summary>
@@ -206,11 +207,11 @@ public class PerlSemanticComparisonTest
         _output.WriteLine($"'testpx': {match3?.Value ?? "null"}");
 
         // Assert
-        Assert.NotNull(match1); // Both lookaheads pass
-        Assert.Equal("test12", match1!.Value); // Greedy matching with both lookaheads satisfied
+        match1.Should().NotBeNull(); // Both lookaheads pass
+        match1!.Value.Should().Be("test12"); // Greedy matching with both lookaheads satisfied
 
-        Assert.Null(match2); // Second lookahead fails (no "px")
-        Assert.Null(match3); // First lookahead fails (no digit after)
+        match2.Should().BeNull(); // Second lookahead fails (no "px")
+        match3.Should().BeNull(); // First lookahead fails (no digit after)
     }
 
     /// <summary>
@@ -253,8 +254,8 @@ public class PerlSemanticComparisonTest
 
         // In Perl, this would match something (likely "fooba" or full "foobar")
         // The exact behavior depends on how lookahead interprets "end of string"
-        Assert.NotNull(match);
-        Assert.True(match!.Value.Length > 0);
+        match.Should().NotBeNull();
+        match!.Value.Length.Should().BeGreaterThan(0);
     }
 
     /// <summary>
@@ -280,9 +281,9 @@ public class PerlSemanticComparisonTest
         _output.WriteLine($"'var+=(/path': {match2?.Value ?? "null"}");
 
         // Assert
-        Assert.NotNull(match1); // NOT followed by /
-        Assert.Equal("var+=(", match1!.Value);
+        match1.Should().NotBeNull(); // NOT followed by /
+        match1!.Value.Should().Be("var+=(");
 
-        Assert.Null(match2); // IS followed by /
+        match2.Should().BeNull(); // IS followed by /
     }
 }

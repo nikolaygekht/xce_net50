@@ -429,7 +429,18 @@ internal unsafe class CRegExpMatcher : IDisposable
                             br = false;
                             for (i = matchSArr[sv]; i < matchEArr[sv]; i++)
                             {
-                                if (toParse >= end || globalPattern![toParse] != globalPattern[i])
+                                bool mismatch;
+                                if (ignoreCase)
+                                {
+                                    mismatch = toParse >= end ||
+                                               Character.ToLowerCase(globalPattern![toParse]) != Character.ToLowerCase(globalPattern[i]);
+                                }
+                                else
+                                {
+                                    mismatch = toParse >= end || globalPattern![toParse] != globalPattern[i];
+                                }
+
+                                if (mismatch)
                                 {
                                     CheckStack(false, ref re, ref prev, ref toParse, ref leftenter, ref action);
                                     br = true;
@@ -1001,17 +1012,22 @@ internal unsafe class CRegExpMatcher : IDisposable
 
     /// <summary>
     /// Get match results after successful parse.
+    /// Thread-safe: Reads match results that were stored by Parse().
     /// </summary>
     public void GetMatches(out int start, out int end)
     {
-        int* sArr = matches->s;
-        int* eArr = matches->e;
-        start = sArr[0];
-        end = eArr[0];
+        lock (_matchLock)
+        {
+            int* sArr = matches->s;
+            int* eArr = matches->e;
+            start = sArr[0];
+            end = eArr[0];
+        }
     }
 
     /// <summary>
     /// Get specific capture group result.
+    /// Thread-safe: Reads capture results that were stored by Parse().
     /// </summary>
     public void GetCapture(int index, out int start, out int end)
     {
@@ -1022,14 +1038,18 @@ internal unsafe class CRegExpMatcher : IDisposable
             return;
         }
 
-        int* sArr = matches->s;
-        int* eArr = matches->e;
-        start = sArr[index];
-        end = eArr[index];
+        lock (_matchLock)
+        {
+            int* sArr = matches->s;
+            int* eArr = matches->e;
+            start = sArr[index];
+            end = eArr[index];
+        }
     }
 
     /// <summary>
     /// Get named capture group result.
+    /// Thread-safe: Reads named capture results that were stored by Parse().
     /// </summary>
     public void GetNamedCapture(int index, out int start, out int end)
     {
@@ -1040,9 +1060,12 @@ internal unsafe class CRegExpMatcher : IDisposable
             return;
         }
 
-        int* nsArr = matches->ns;
-        int* neArr = matches->ne;
-        start = nsArr[index];
-        end = neArr[index];
+        lock (_matchLock)
+        {
+            int* nsArr = matches->ns;
+            int* neArr = matches->ne;
+            start = nsArr[index];
+            end = neArr[index];
+        }
     }
 }

@@ -2,6 +2,7 @@ using Xunit;
 using Xunit.Abstractions;
 using Far.Colorer.RegularExpressions.Internal;
 using Far.Colorer.RegularExpressions.Enums;
+using AwesomeAssertions;
 
 namespace Far.Colorer.Tests.RegularExpressions;
 
@@ -33,8 +34,8 @@ public class AlternationQuantifierBugTest
         _output.WriteLine($"Match index: {match?.Index ?? -1}");
         _output.WriteLine($"Match length: {match?.Length ?? 0}");
 
-        Assert.NotNull(match);
-        Assert.Equal("foobarfoo", match!.Value);
+        match.Should().NotBeNull();
+        match!.Value.Should().Be("foobarfoo");
     }
 
     [Fact]
@@ -49,8 +50,8 @@ public class AlternationQuantifierBugTest
         var match = regex.Match("foobarfoo");
 
         _output.WriteLine($"Match result: {match?.Value ?? "null"}");
-        Assert.NotNull(match);
-        Assert.Equal("foobarfoo", match!.Value);
+        match.Should().NotBeNull();
+        match!.Value.Should().Be("foobarfoo");
     }
 
     [Fact]
@@ -65,8 +66,8 @@ public class AlternationQuantifierBugTest
         var match = regex.Match("foobar");
 
         _output.WriteLine($"Match result: {match?.Value ?? "null"}");
-        Assert.NotNull(match);
-        Assert.Equal("foo", match!.Value);
+        match.Should().NotBeNull();
+        match!.Value.Should().Be("foo");
     }
 
     [Fact]
@@ -81,8 +82,8 @@ public class AlternationQuantifierBugTest
         var match = regex.Match("foofoofoo");
 
         _output.WriteLine($"Match result: {match?.Value ?? "null"}");
-        Assert.NotNull(match);
-        Assert.Equal("foofoofoo", match!.Value);
+        match.Should().NotBeNull();
+        match!.Value.Should().Be("foofoofoo");
     }
 
     [Fact]
@@ -97,8 +98,8 @@ public class AlternationQuantifierBugTest
         var match = regex.Match("foobar");
 
         _output.WriteLine($"Match result: {match?.Value ?? "null"}");
-        Assert.NotNull(match);
-        Assert.Equal("foo", match!.Value);
+        match.Should().NotBeNull();
+        match!.Value.Should().Be("foo");
     }
 
     [Fact]
@@ -113,8 +114,8 @@ public class AlternationQuantifierBugTest
         var match = regex.Match("foooo");
 
         _output.WriteLine($"Match result: {match?.Value ?? "null"}");
-        Assert.NotNull(match);
-        Assert.Equal("foooo", match!.Value);
+        match.Should().NotBeNull();
+        match!.Value.Should().Be("foooo");
     }
 
     [Fact]
@@ -129,8 +130,8 @@ public class AlternationQuantifierBugTest
         var match = regex.Match("ababab");
 
         _output.WriteLine($"Match result: {match?.Value ?? "null"}");
-        Assert.NotNull(match);
-        Assert.Equal("ababab", match!.Value);
+        match.Should().NotBeNull();
+        match!.Value.Should().Be("ababab");
     }
 
     // NOTE: \b\w{4}\b pattern is currently broken (unrelated to alternation bug)

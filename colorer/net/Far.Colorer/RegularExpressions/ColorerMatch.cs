@@ -218,7 +218,11 @@ public sealed class ColorerMatch
     /// </summary>
     public bool TryGetGroupNumber(string name, out int groupNumber)
     {
-        return _namedGroups.TryGetValue(name, out groupNumber);
+        if (_namedGroups.TryGetValue(name, out groupNumber))
+            return true;
+
+        groupNumber = -1;
+        return false;
     }
 
     /// <summary>

@@ -7,6 +7,7 @@ using Xunit;
 using Xunit.Abstractions;
 using Far.Colorer.RegularExpressions.Internal;
 using Far.Colorer.RegularExpressions.Enums;
+using AwesomeAssertions;
 
 namespace Far.Colorer.Tests.RegularExpressions;
 
@@ -25,7 +26,7 @@ public class ConcurrencyStressTest
     }
 
     [Fact]
-    public void ConcurrentRegexOperations_10Threads_5Seconds_ShouldSucceed()
+    public async Task ConcurrentRegexOperations_10Threads_5Seconds_ShouldSucceed()
     {
         // Arrange: Define 10 different patterns with their test strings
         var testCases = new[]
@@ -118,7 +119,7 @@ public class ConcurrencyStressTest
         }).ToArray();
 
         // Wait for all threads to complete
-        Task.WaitAll(tasks);
+        await Task.WhenAll(tasks);
         stopwatch.Stop();
 
         // Assert: Report results
@@ -157,13 +158,13 @@ public class ConcurrencyStressTest
         }
 
         // Test passes if we have no failures
-        Assert.Empty(errors);
-        Assert.Equal(0, totalFailure);
-        Assert.True(totalSuccess > 0, "Should have at least some successful matches");
+        errors.Should().BeEmpty();
+        totalFailure.Should().Be(0);
+        totalSuccess.Should().BeGreaterThan(0, "Should have at least some successful matches");
     }
 
     [Fact]
-    public void ConcurrentRegexReuse_SamePatternMultipleThreads_ShouldSucceed()
+    public async Task ConcurrentRegexReuse_SamePatternMultipleThreads_ShouldSucceed()
     {
         // This tests reusing the same compiled regex from multiple threads
         var pattern = @"cat|dog";
@@ -176,21 +177,24 @@ public class ConcurrencyStressTest
             "I have dogs"
         };
 
-        // Create one regex instance to be shared
+        // Create one regex instance to be shared across all threads
         using var regex = new ColorerRegex(pattern, RegexOptions.None);
         var errors = new System.Collections.Concurrent.ConcurrentBag<Exception>();
         var matchCount = 0;
+        var duration = TimeSpan.FromSeconds(5);
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
-        // Run 100 matches across 10 threads
+        // Run 10 threads, each repeatedly matching for 5 seconds
         var tasks = Enumerable.Range(0, 10).Select(threadId =>
         {
             return Task.Run(() =>
             {
-                for (int i = 0; i < 10; i++)
+                int iteration = 0;
+                while (stopwatch.Elapsed < duration)
                 {
                     try
                     {
-                        var input = inputs[i % inputs.Length];
+                        var input = inputs[iteration % inputs.Length];
                         var match = regex.Match(input);
 
                         if (match != null)
@@ -202,31 +206,51 @@ public class ConcurrencyStressTest
                             {
                                 errors.Add(new Exception(
                                     $"Thread {threadId}: Invalid match '{match.Value}' in '{input}'"));
+
+                                // Don't spam errors
+                                if (errors.Count > 20)
+                                    break;
                             }
                         }
+
+                        iteration++;
+
+                        // Small delay to allow thread interleaving
+                        Thread.Sleep(1);
                     }
                     catch (Exception ex)
                     {
-                        errors.Add(new Exception($"Thread {threadId}, iteration {i}: {ex.Message}", ex));
+                        errors.Add(new Exception($"Thread {threadId}, iteration {iteration}: {ex.Message}", ex));
+
+                        if (errors.Count > 20)
+                            break;
                     }
                 }
             });
         }).ToArray();
 
-        Task.WaitAll(tasks);
+        await Task.WhenAll(tasks);
+        stopwatch.Stop();
 
-        _output.WriteLine($"Completed {matchCount} matches");
+        _output.WriteLine($"Shared regex stress test completed in {stopwatch.Elapsed.TotalSeconds:F2} seconds");
+        _output.WriteLine($"Completed {matchCount} matches across 10 threads");
 
         if (errors.Any())
         {
+            _output.WriteLine("");
             _output.WriteLine("Errors:");
             foreach (var error in errors.Take(10))
             {
                 _output.WriteLine($"  - {error.Message}");
             }
+
+            if (errors.Count > 10)
+            {
+                _output.WriteLine($"  ... and {errors.Count - 10} more errors");
+            }
         }
 
-        Assert.Empty(errors);
-        Assert.True(matchCount > 0, "Should have found matches");
+        errors.Should().BeEmpty();
+        matchCount.Should().BeGreaterThan(0, "Should have found matches");
     }
 }

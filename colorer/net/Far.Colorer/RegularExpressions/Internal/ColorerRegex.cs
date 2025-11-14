@@ -16,6 +16,7 @@ internal unsafe class ColorerRegex : IDisposable
     private CRegExpMatcher? matcher;
     private string pattern;
     private RegexOptions options;
+    private readonly object _matchLock = new object();
 
     public ColorerRegex(string pattern, RegexOptions options = RegexOptions.None)
     {
@@ -45,6 +46,7 @@ internal unsafe class ColorerRegex : IDisposable
 
     /// <summary>
     /// Match the pattern against input string starting at specified position.
+    /// Thread-safe: Can be called concurrently from multiple threads on the same instance.
     /// </summary>
     public ColorerMatch? Match(string input, int startIndex = 0)
     {
@@ -57,45 +59,78 @@ internal unsafe class ColorerRegex : IDisposable
         if (matcher == null)
             throw new InvalidOperationException("Regex not compiled");
 
-        // Try to match at startIndex
-        bool success = matcher.Parse(input, startIndex, input.Length);
-
-        if (!success)
-            return null;
-
-        // Extract match results
-        matcher.GetMatches(out int matchStart, out int matchEnd);
-
-        if (matchStart == -1 || matchEnd == -1)
-            return null;
-
-        // Create match object with captures
-        var captures = new List<CaptureGroup>();
-
-        // Add capture group 0 (full match)
-        captures.Add(new CaptureGroup(
-            matchStart,
-            matchEnd - matchStart,
-            0)); // group number 0
-
-        // Add numbered captures (1-9)
-        for (int i = 1; i < 10; i++)
+        // Lock entire match operation to ensure atomicity when multiple threads
+        // are using the same ColorerRegex instance (e.g., shared regex for syntax highlighting)
+        lock (_matchLock)
         {
-            matcher.GetCapture(i, out int capStart, out int capEnd);
-            if (capStart >= 0 && capEnd >= 0 && capEnd >= capStart)
-            {
-                captures.Add(new CaptureGroup(
-                    capStart,
-                    capEnd - capStart,
-                    i)); // group number i
-            }
-        }
+            // Try to match at startIndex
+            bool success = matcher.Parse(input, startIndex, input.Length);
 
-        return new ColorerMatch(
-            input,
-            matchStart,
-            matchEnd - matchStart,
-            captures);
+            if (!success)
+                return null;
+
+            // Extract match results
+            matcher.GetMatches(out int matchStart, out int matchEnd);
+
+            if (matchStart == -1 || matchEnd == -1)
+                return null;
+
+            // Create match object with captures
+            var captures = new List<CaptureGroup>();
+
+            // Get named groups from compiler
+            var namedGroups = compiler?.NamedGroups ??
+                new Dictionary<string, int>();
+
+            // Build reverse lookup: group number -> name
+            var groupNames = new Dictionary<int, string>();
+            foreach (var kvp in namedGroups)
+            {
+                groupNames[kvp.Value] = kvp.Key;
+            }
+
+            // Add capture group 0 (full match)
+            captures.Add(new CaptureGroup(
+                matchStart,
+                matchEnd - matchStart,
+                0,
+                groupNames.ContainsKey(0) ? groupNames[0] : null));
+
+            // Add numbered captures (1-9)
+            for (int i = 1; i < 10; i++)
+            {
+                // Check if this is a named group
+                bool isNamedGroup = groupNames.ContainsKey(i);
+                int capStart, capEnd;
+
+                if (isNamedGroup)
+                {
+                    // Use GetNamedCapture for named groups
+                    matcher.GetNamedCapture(i, out capStart, out capEnd);
+                }
+                else
+                {
+                    // Use regular GetCapture for regular groups
+                    matcher.GetCapture(i, out capStart, out capEnd);
+                }
+
+                if (capStart >= 0 && capEnd >= 0 && capEnd >= capStart)
+                {
+                    string? name = isNamedGroup ? groupNames[i] : null;
+                    captures.Add(new CaptureGroup(
+                        capStart,
+                        capEnd - capStart,
+                        i,
+                        name)); // Pass name!
+                }
+            }
+
+            return new ColorerMatch(
+                input,
+                matchStart,
+                matchEnd - matchStart,
+                captures);
+        }
     }
 
     /// <summary>

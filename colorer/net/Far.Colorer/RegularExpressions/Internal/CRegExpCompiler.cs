@@ -24,6 +24,8 @@ internal unsafe class CRegExpCompiler : IDisposable
 
     public int TotalGroups => groupCount;
 
+    public IReadOnlyDictionary<string, int> NamedGroups => namedGroups;
+
     public CRegExpCompiler(string pattern, RegexOptions options)
     {
         this.pattern = pattern ?? throw new ArgumentNullException(nameof(pattern));
@@ -219,7 +221,7 @@ internal unsafe class CRegExpCompiler : IDisposable
 
         position++; // Skip backslash
         char ch = pattern[position];
-        position++;
+        position++; // Advance past escape character (most cases need this)
 
         switch (ch)
         {
@@ -291,8 +293,27 @@ internal unsafe class CRegExpCompiler : IDisposable
                 node->op = EOps.ReSymb;
                 node->symbol = '\r';
                 break;
+            case 'f':
+                node->op = EOps.ReSymb;
+                node->symbol = '\f';
+                break;
+            case 'a':
+                node->op = EOps.ReSymb;
+                node->symbol = '\x07'; // Bell/alert
+                break;
+            case 'e':
+                node->op = EOps.ReSymb;
+                node->symbol = '\x1b'; // Escape
+                break;
 
-            // Backreferences \1-\9
+            // Hex escape \xNN or \x{NNNN}
+            case 'x':
+                node->op = EOps.ReSymb;
+                node->symbol = ParseHexEscape();
+                break;
+
+            // Backreferences \1-\9 or octal escapes \0NN, \NNN
+            case '0':
             case '1':
             case '2':
             case '3':
@@ -302,8 +323,29 @@ internal unsafe class CRegExpCompiler : IDisposable
             case '7':
             case '8':
             case '9':
-                node->op = EOps.ReBkBrack;
-                node->param0 = ch - '0';
+                // Check if this looks like an octal escape (starts with 0 or has more digits)
+                if (ch == '0' || (position < pattern.Length && char.IsDigit(pattern[position])))
+                {
+                    // Try to parse as octal
+                    position--; // Back up to include current digit
+                    char octalChar = ParseOctalEscape();
+                    if (octalChar != '\0') // Valid octal
+                    {
+                        node->op = EOps.ReSymb;
+                        node->symbol = octalChar;
+                    }
+                    else // Not a valid octal, treat as backreference
+                    {
+                        node->op = EOps.ReBkBrack;
+                        node->param0 = ch - '0';
+                    }
+                }
+                else
+                {
+                    // Single digit backreference \1-\9
+                    node->op = EOps.ReBkBrack;
+                    node->param0 = ch - '0';
+                }
                 break;
 
             // COLORERMODE cross-pattern backreferences
@@ -385,6 +427,106 @@ internal unsafe class CRegExpCompiler : IDisposable
 
         node->op = EOps.ReBkBrackName;
         node->param0 = groupNum;
+    }
+
+    /// <summary>
+    /// Parse hex escape: \xNN or \x{NNNN}
+    /// Returns the character represented by the hex escape
+    /// </summary>
+    private char ParseHexEscape()
+    {
+        if (position >= pattern.Length)
+            throw new RegexSyntaxException("Incomplete hex escape");
+
+        // Check for \x{...} format
+        if (pattern[position] == '{')
+        {
+            position++; // Skip {
+            int start = position;
+            while (position < pattern.Length && pattern[position] != '}')
+            {
+                if (!IsHexDigit(pattern[position]))
+                    throw new RegexSyntaxException($"Invalid hex digit in escape: {pattern[position]}");
+                position++;
+            }
+
+            if (position >= pattern.Length)
+                throw new RegexSyntaxException("Unclosed hex escape \\x{...}");
+
+            string hexStr = pattern.Substring(start, position - start);
+            position++; // Skip }
+
+            if (hexStr.Length == 0)
+                throw new RegexSyntaxException("Empty hex escape \\x{}");
+
+            return (char)Convert.ToInt32(hexStr, 16);
+        }
+        else
+        {
+            // \xNN format (exactly 2 hex digits)
+            if (position + 1 >= pattern.Length)
+                throw new RegexSyntaxException("Incomplete hex escape (expected 2 hex digits)");
+
+            if (!IsHexDigit(pattern[position]) || !IsHexDigit(pattern[position + 1]))
+                throw new RegexSyntaxException("Invalid hex escape (expected 2 hex digits)");
+
+            string hexStr = pattern.Substring(position, 2);
+            position += 2;
+            return (char)Convert.ToInt32(hexStr, 16);
+        }
+    }
+
+    /// <summary>
+    /// Parse octal escape: \NNN (1-3 octal digits, max value 377 octal = 255 decimal)
+    /// Returns the character or '\0' if not a valid octal escape
+    /// </summary>
+    private char ParseOctalEscape()
+    {
+        int start = position;
+        int value = 0;
+        int digitCount = 0;
+
+        // Parse up to 3 octal digits (0-7)
+        while (digitCount < 3 && position < pattern.Length)
+        {
+            char ch = pattern[position];
+            if (ch >= '0' && ch <= '7')
+            {
+                value = value * 8 + (ch - '0');
+                position++;
+                digitCount++;
+
+                // Stop if value would exceed 255
+                if (value > 255)
+                {
+                    position--; // Back up one digit
+                    digitCount--;
+                    value /= 8;
+                    break;
+                }
+            }
+            else
+                break;
+        }
+
+        // Must have at least one digit
+        if (digitCount == 0)
+        {
+            position = start;
+            return '\0'; // Not a valid octal escape
+        }
+
+        return (char)value;
+    }
+
+    /// <summary>
+    /// Check if character is a hex digit (0-9, a-f, A-F)
+    /// </summary>
+    private static bool IsHexDigit(char ch)
+    {
+        return (ch >= '0' && ch <= '9') ||
+               (ch >= 'a' && ch <= 'f') ||
+               (ch >= 'A' && ch <= 'F');
     }
 
     /// <summary>
@@ -521,8 +663,12 @@ internal unsafe class CRegExpCompiler : IDisposable
             negated = true;
         }
 
+        // Special case: ] immediately after [ or [^ is a literal character, not end of class
+        // Patterns like []abc] or [^]abc] include ] as first character in the class
+        bool firstChar = true;
+
         // Parse character class content
-        while (position < pattern.Length && pattern[position] != ']')
+        while (position < pattern.Length && (firstChar || pattern[position] != ']'))
         {
             char start = pattern[position];
 
@@ -538,6 +684,7 @@ internal unsafe class CRegExpCompiler : IDisposable
                     case 'd': // digits [0-9]
                         for (char c = '0'; c <= '9'; c++)
                             node->charclass->AddChar(c);
+                        position++;
                         break;
                     case 'w': // word chars [a-zA-Z0-9_]
                         for (char c = 'a'; c <= 'z'; c++)
@@ -547,6 +694,7 @@ internal unsafe class CRegExpCompiler : IDisposable
                         for (char c = '0'; c <= '9'; c++)
                             node->charclass->AddChar(c);
                         node->charclass->AddChar('_');
+                        position++;
                         break;
                     case 's': // whitespace
                         node->charclass->AddChar(' ');
@@ -554,22 +702,61 @@ internal unsafe class CRegExpCompiler : IDisposable
                         node->charclass->AddChar('\n');
                         node->charclass->AddChar('\r');
                         node->charclass->AddChar('\f');
+                        position++;
                         break;
                     case 'n':
                         node->charclass->AddChar('\n');
+                        position++;
                         break;
                     case 't':
                         node->charclass->AddChar('\t');
+                        position++;
                         break;
                     case 'r':
                         node->charclass->AddChar('\r');
+                        position++;
+                        break;
+                    case 'f':
+                        node->charclass->AddChar('\f');
+                        position++;
+                        break;
+                    case 'a':
+                        node->charclass->AddChar('\a');
+                        position++;
+                        break;
+                    case 'e':
+                        node->charclass->AddChar('\x1b');
+                        position++;
+                        break;
+                    case 'x':
+                        // Hex escape: \xNN or \x{...}
+                        // At entry: position points to 'x', ParseHexEscape expects position at first hex digit
+                        position++;  // Advance to char after 'x'
+                        char hexChar = ParseHexEscape();
+                        node->charclass->AddChar(hexChar);
+                        // ParseHexEscape already advanced position past the escape
+                        break;
+                    case '0':
+                    case '1':
+                    case '2':
+                    case '3':
+                    case '4':
+                    case '5':
+                    case '6':
+                    case '7':
+                        // Octal escape: \NNN
+                        // At entry: position points to first octal digit (the digit we just read into 'escaped')
+                        // ParseOctalEscape expects position at first digit - we're already there!
+                        char octalChar = ParseOctalEscape();
+                        node->charclass->AddChar(octalChar);
+                        // ParseOctalEscape already advanced position past the escape
                         break;
                     default:
                         // Literal escaped character
                         node->charclass->AddChar(escaped);
+                        position++;
                         break;
                 }
-                position++;
             }
             else
             {
@@ -589,20 +776,66 @@ internal unsafe class CRegExpCompiler : IDisposable
                         end = pattern[position];
                     }
 
+                    // Validate range order
+                    if (start > end)
+                    {
+                        throw new RegexSyntaxException($"Invalid character range: [{start}-{end}] - start character must be <= end character");
+                    }
+
                     // Add range
                     node->charclass->AddRange(start, end);
+
+                    // If case-insensitive, add the opposite case range too
+                    if (ignoreCase)
+                    {
+                        // Convert range to opposite case
+                        char startUpper = char.ToUpper(start);
+                        char endUpper = char.ToUpper(end);
+                        char startLower = char.ToLower(start);
+                        char endLower = char.ToLower(end);
+
+                        // Add uppercase range if original was lowercase
+                        if (start != startUpper || end != endUpper)
+                        {
+                            node->charclass->AddRange(startUpper, endUpper);
+                        }
+
+                        // Add lowercase range if original was uppercase
+                        if (start != startLower || end != endLower)
+                        {
+                            node->charclass->AddRange(startLower, endLower);
+                        }
+                    }
+
                     position++;
                 }
                 else
                 {
                     // Single character
                     node->charclass->AddChar(start);
+
+                    // If case-insensitive, add the opposite case too
+                    if (ignoreCase)
+                    {
+                        char upper = char.ToUpper(start);
+                        char lower = char.ToLower(start);
+                        if (start != upper)
+                            node->charclass->AddChar(upper);
+                        if (start != lower)
+                            node->charclass->AddChar(lower);
+                    }
                 }
             }
+
+            // After processing first character, subsequent ] chars will end the class
+            firstChar = false;
         }
 
-        if (position < pattern.Length)
-            position++; // Skip ]
+        // Verify we found closing ]
+        if (position >= pattern.Length)
+            throw new RegexSyntaxException("Unterminated character class - missing closing ]");
+
+        position++; // Skip ]
 
         // Apply negation if needed
         // Note: For negated classes, we keep the character set as-is
