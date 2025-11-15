@@ -375,6 +375,9 @@ internal unsafe class CRegExpCompiler : IDisposable
         if (position < pattern.Length && pattern[position] == '{')
         {
             // Named: \y{name} or \Y{name}
+            // Can be either same-pattern or cross-pattern backreference:
+            // 1. Same-pattern: (?{test}a)\y{test} - name exists in current pattern
+            // 2. Cross-pattern: Pattern A defines (?{Delim}...), Pattern B uses \y{Delim}
             int start = ++position;
             while (position < pattern.Length && pattern[position] != '}')
                 position++;
@@ -385,11 +388,24 @@ internal unsafe class CRegExpCompiler : IDisposable
             string name = pattern.Substring(start, position - start);
             position++; // Skip }
 
-            if (!namedGroups.TryGetValue(name, out int groupNum))
-                throw new RegexSyntaxException($"Unknown group name: {name}");
-
             node->op = positive ? EOps.ReBkTraceName : EOps.ReBkTraceNName;
-            node->param0 = groupNum;
+
+            // Check if name exists in current pattern's named groups
+            if (namedGroups.TryGetValue(name, out int groupNum))
+            {
+                // Same-pattern backreference - store group number
+                node->param0 = groupNum;
+            }
+            else
+            {
+                // Cross-pattern backreference - store name for runtime resolution
+                // Store the name string pointer in word field
+                fixed (char* namePtr = name)
+                {
+                    node->word = (void*)Marshal.StringToHGlobalUni(name);
+                }
+                node->param0 = -1; // Signal: resolve name at match time from backTrace
+            }
         }
         else if (position < pattern.Length && char.IsDigit(pattern[position]))
         {

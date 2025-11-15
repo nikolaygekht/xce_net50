@@ -594,16 +594,19 @@ public unsafe class CRegExpCompilerTests : IDisposable
     }
 
     [Fact]
-    public void Compile_InvalidBackreference_ThrowsException()
+    public void Compile_CrossPatternBackreference_AllowsUnknownName()
     {
-        // Arrange
+        // Arrange - \y{unknown} where "unknown" doesn't exist in current pattern
+        // This is valid - it's a cross-pattern backreference that will be resolved at match time
         var compiler = CreateCompiler(@"\y{unknown}");
 
         // Act
-        Action act = () => compiler.Compile();
+        var root = compiler.Compile();
 
-        // Assert
-        act.Should().Throw<RegexSyntaxException>();
+        // Assert - Should compile successfully with param0 = -1
+        var node = root->param;
+        node->op.Should().Be(EOps.ReBkTraceName);
+        node->param0.Should().Be(-1); // Cross-pattern - resolve at runtime
     }
 
     // Note: Empty patterns are now ALLOWED per integration test requirements

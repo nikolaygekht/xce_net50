@@ -182,13 +182,16 @@ internal unsafe class ColorerRegex : IDisposable
 
         if (backStr == null || backMatch == null)
         {
-            matcher.SetBackTrace(null, null);
+            matcher.SetBackTrace(null, null, null);
             return;
         }
 
         // Convert ColorerMatch to SMatches
         SMatches* backTrace = (SMatches*)Marshal.AllocHGlobal(sizeof(SMatches));
         backTrace->Clear();
+
+        // Build named group dictionary for cross-pattern backreferences
+        var namedGroups = new Dictionary<string, int>();
 
         // Fill in captures from backMatch
         var groups = backMatch.Groups;
@@ -199,11 +202,17 @@ internal unsafe class ColorerRegex : IDisposable
             int* eArr = backTrace->e;
             sArr[i] = capture.Index;
             eArr[i] = capture.Index + capture.Length;
+
+            // Add named group to dictionary if it has a name
+            if (capture.Name != null)
+            {
+                namedGroups[capture.Name] = capture.GroupNumber;
+            }
         }
 
         backTrace->cMatch = groups.Count;
 
-        matcher.SetBackTrace(backStr, backTrace);
+        matcher.SetBackTrace(backStr, backTrace, namedGroups);
 
         // Note: backTrace is leaked here - in production code we'd need to track and free it
         // For now this matches the C++ semantics where the caller owns the backTrace
