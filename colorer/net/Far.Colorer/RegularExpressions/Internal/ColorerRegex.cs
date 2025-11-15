@@ -16,6 +16,7 @@ internal unsafe class ColorerRegex : IDisposable
     private CRegExpMatcher? matcher;
     private string pattern;
     private RegexOptions options;
+    private ColorerRegex? backRE; // Reference regex for cross-pattern backreferences (\y)
     private readonly object _matchLock = new object();
 
     public ColorerRegex(string pattern, RegexOptions options = RegexOptions.None)
@@ -30,9 +31,41 @@ internal unsafe class ColorerRegex : IDisposable
         Compile();
     }
 
+    /// <summary>
+    /// Sets the reference regex for cross-pattern backreferences (\y{name}).
+    /// Must be called BEFORE compilation (i.e., before constructor completes).
+    /// In C++: setBackRE() - allows \y{name} to resolve group numbers at compile time.
+    ///
+    /// Typical usage in HRC files:
+    ///   startRegex = new ColorerRegex("(?{Delim}...)");
+    ///   endRegex = CreateWithBackRE("\\y{Delim}", startRegex);
+    /// </summary>
+    internal static ColorerRegex CreateWithBackRE(string pattern, ColorerRegex backRE, RegexOptions options = RegexOptions.None)
+    {
+        var regex = new ColorerRegex();
+        regex.pattern = pattern;
+        regex.options = options;
+        regex.backRE = backRE;
+        regex.Compile();
+        return regex;
+    }
+
+    // Private constructor for CreateWithBackRE
+    private ColorerRegex()
+    {
+        pattern = string.Empty; // Will be set by CreateWithBackRE
+    }
+
     private void Compile()
     {
         compiler = new CRegExpCompiler(pattern, options);
+
+        // If backRE is set, pass it to compiler for \y{name} resolution
+        if (backRE != null)
+        {
+            compiler.SetBackRE(backRE.compiler);
+        }
+
         compiledTree = compiler.Compile();
 
         // Extract options for matcher

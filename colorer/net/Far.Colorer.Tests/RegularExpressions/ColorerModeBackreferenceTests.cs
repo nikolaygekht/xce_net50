@@ -185,8 +185,9 @@ public class ColorerModeBackreferenceTests
     public void CrossPatternBackreference_Named_Basic()
     {
         // Arrange - Lines 381-410: ReBkTraceName implementation
+        // In C++, setBackRE is called before compilation to resolve group numbers
         var startPattern = new ColorerRegex(@"(?{delim}.)", RegexOptions.None);
-        var endPattern = new ColorerRegex(@"\y{delim}", RegexOptions.None);
+        var endPattern = ColorerRegex.CreateWithBackRE(@"\y{delim}", startPattern, RegexOptions.None);
 
         // Act
         var startMatch = startPattern.Match("#");
@@ -206,7 +207,7 @@ public class ColorerModeBackreferenceTests
     {
         // Arrange - Lines 411-438: ReBkTraceNName implementation
         var startPattern = new ColorerRegex(@"(?{word}\w+)", RegexOptions.None);
-        var endPattern = new ColorerRegex(@"\Y{word}", RegexOptions.None);
+        var endPattern = ColorerRegex.CreateWithBackRE(@"\Y{word}", startPattern, RegexOptions.None);
 
         // Act
         var startMatch = startPattern.Match("Hello");
@@ -222,21 +223,14 @@ public class ColorerModeBackreferenceTests
     }
 
     [Fact]
-    public void CrossPatternBackreference_Named_NotFound_NoMatch()
+    public void CrossPatternBackreference_Named_NotFound_ThrowsAtCompileTime()
     {
-        // Arrange - Lines 383-387, 413-417: Group name not found
+        // Arrange - With compile-time resolution, group name validation happens during compilation
         var startPattern = new ColorerRegex(@"(?{foo}a)", RegexOptions.None);
-        var endPattern = new ColorerRegex(@"\y{bar}", RegexOptions.None); // Different name
 
-        // Act
-        var startMatch = startPattern.Match("a");
-        startMatch.Should().NotBeNull();
-
-        endPattern.SetBackReference("a", startMatch);
-        var endMatch = endPattern.Match("a");
-
-        // Assert - Group "bar" doesn't exist
-        endMatch.Should().BeNull();
+        // Act & Assert - Should throw when group "bar" doesn't exist in startPattern
+        Action act = () => ColorerRegex.CreateWithBackRE(@"\y{bar}", startPattern, RegexOptions.None);
+        act.Should().Throw<RegexSyntaxException>().WithMessage("*Named group 'bar' not found*");
     }
 
     #endregion

@@ -377,37 +377,19 @@ internal unsafe class CRegExpMatcher : IDisposable
                             break;
 
                         case EOps.ReBkTraceName:
+                            // ReBkTraceName is ALWAYS cross-pattern (\y{name})
+                            // Group number resolved at compile time (stored in param0)
+                            // Requires backTrace to be set via SetBackReference at match time
+                            if (backStr == null || backTrace == null)
+                            {
+                                CheckStack(false, ref re, ref prev, ref toParse, ref leftenter, ref action);
+                                continue;
+                            }
+
+                            // Group number already resolved at compile time - just use param0
                             sv = re->param0;
 
-                            // If param0 == -1, this is a cross-pattern named backreference
-                            // that needs to be resolved at runtime from backTraceNamedGroups
-                            if (sv == -1)
-                            {
-                                if (backStr == null || backTrace == null || backTraceNamedGroups == null)
-                                {
-                                    CheckStack(false, ref re, ref prev, ref toParse, ref leftenter, ref action);
-                                    continue;
-                                }
-
-                                // Resolve name from word pointer
-                                string groupName = Marshal.PtrToStringUni((IntPtr)re->word)!;
-                                if (!backTraceNamedGroups.TryGetValue(groupName, out sv))
-                                {
-                                    CheckStack(false, ref re, ref prev, ref toParse, ref leftenter, ref action);
-                                    continue;
-                                }
-                            }
-                            else
-                            {
-                                // Numeric backreference - ensure backTrace is available
-                                if (backStr == null || backTrace == null)
-                                {
-                                    CheckStack(false, ref re, ref prev, ref toParse, ref leftenter, ref action);
-                                    continue;
-                                }
-                            }
-
-                            // Use unified s/e arrays (not deprecated ns/ne)
+                            // Use unified s/e arrays
                             br = false;
                             bkSArr = backTrace->s;
                             bkEArr = backTrace->e;
@@ -426,37 +408,19 @@ internal unsafe class CRegExpMatcher : IDisposable
                             break;
 
                         case EOps.ReBkTraceNName:
+                            // ReBkTraceNName is ALWAYS cross-pattern (\Y{name})
+                            // Group number resolved at compile time (stored in param0)
+                            // Requires backTrace to be set via SetBackReference at match time
+                            if (backStr == null || backTrace == null)
+                            {
+                                CheckStack(false, ref re, ref prev, ref toParse, ref leftenter, ref action);
+                                continue;
+                            }
+
+                            // Group number already resolved at compile time - just use param0
                             sv = re->param0;
 
-                            // If param0 == -1, this is a cross-pattern named backreference
-                            // that needs to be resolved at runtime from backTraceNamedGroups
-                            if (sv == -1)
-                            {
-                                if (backStr == null || backTrace == null || backTraceNamedGroups == null)
-                                {
-                                    CheckStack(false, ref re, ref prev, ref toParse, ref leftenter, ref action);
-                                    continue;
-                                }
-
-                                // Resolve name from word pointer
-                                string groupName = Marshal.PtrToStringUni((IntPtr)re->word)!;
-                                if (!backTraceNamedGroups.TryGetValue(groupName, out sv))
-                                {
-                                    CheckStack(false, ref re, ref prev, ref toParse, ref leftenter, ref action);
-                                    continue;
-                                }
-                            }
-                            else
-                            {
-                                // Numeric backreference - ensure backTrace is available
-                                if (backStr == null || backTrace == null)
-                                {
-                                    CheckStack(false, ref re, ref prev, ref toParse, ref leftenter, ref action);
-                                    continue;
-                                }
-                            }
-
-                            // Use unified s/e arrays (not deprecated ns/ne)
+                            // Use unified s/e arrays
                             br = false;
                             bkSArr = backTrace->s;
                             bkEArr = backTrace->e;

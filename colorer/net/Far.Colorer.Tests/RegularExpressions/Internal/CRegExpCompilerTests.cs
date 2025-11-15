@@ -497,16 +497,21 @@ public unsafe class CRegExpCompilerTests : IDisposable
     [Fact]
     public void Compile_NamedBackreferenceY_CreatesBkTraceNode()
     {
-        var compiler = CreateCompiler(@"(?{test}a)\y{test}");
+        // \y{name} is ALWAYS cross-pattern - requires backRE to be set
+        // C++ requires backRE to be set and resolves group number at compile time
+        // Create backRE with the referenced group
+        var backCompiler = CreateCompiler(@"(?{test}.)");
+        backCompiler.Compile();
+
+        var compiler = CreateCompiler(@"\y{test}");
+        compiler.SetBackRE(backCompiler);
         var root = compiler.Compile();
 
         // Find the backreference node
         var node = root->param;
-        node->op.Should().Be(EOps.ReNamedBrackets);
-
-        node = node->next;
         node->op.Should().Be(EOps.ReBkTraceName);
-        (node->param0 >= 0).Should().Be(true);
+        node->param0.Should().Be(1); // Group number resolved at compile time (group 1 = "test")
+        ((IntPtr)node->word).Should().Be((IntPtr)null); // No name pointer needed
     }
 
     #endregion
@@ -594,19 +599,14 @@ public unsafe class CRegExpCompilerTests : IDisposable
     }
 
     [Fact]
-    public void Compile_CrossPatternBackreference_AllowsUnknownName()
+    public void Compile_CrossPatternBackreference_RequiresBackRE()
     {
-        // Arrange - \y{unknown} where "unknown" doesn't exist in current pattern
-        // This is valid - it's a cross-pattern backreference that will be resolved at match time
+        // Arrange - \y{unknown} requires backRE to be set (C++ requirement)
         var compiler = CreateCompiler(@"\y{unknown}");
 
-        // Act
-        var root = compiler.Compile();
-
-        // Assert - Should compile successfully with param0 = -1
-        var node = root->param;
-        node->op.Should().Be(EOps.ReBkTraceName);
-        node->param0.Should().Be(-1); // Cross-pattern - resolve at runtime
+        // Act & Assert - Should throw because backRE not set
+        Action act = () => compiler.Compile();
+        act.Should().Throw<RegexSyntaxException>().WithMessage("*requires SetBackRE()*");
     }
 
     // Note: Empty patterns are now ALLOWED per integration test requirements
