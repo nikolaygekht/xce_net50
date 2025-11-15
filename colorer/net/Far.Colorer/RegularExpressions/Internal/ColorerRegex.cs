@@ -16,6 +16,7 @@ internal unsafe class ColorerRegex : IDisposable
     private CRegExpMatcher? matcher;
     private string pattern;
     private RegexOptions options;
+    private ColorerRegex? backRE; // Reference regex for cross-pattern backreferences (\y)
     private readonly object _matchLock = new object();
 
     public ColorerRegex(string pattern, RegexOptions options = RegexOptions.None)
@@ -30,9 +31,41 @@ internal unsafe class ColorerRegex : IDisposable
         Compile();
     }
 
+    /// <summary>
+    /// Sets the reference regex for cross-pattern backreferences (\y{name}).
+    /// Must be called BEFORE compilation (i.e., before constructor completes).
+    /// In C++: setBackRE() - allows \y{name} to resolve group numbers at compile time.
+    ///
+    /// Typical usage in HRC files:
+    ///   startRegex = new ColorerRegex("(?{Delim}...)");
+    ///   endRegex = CreateWithBackRE("\\y{Delim}", startRegex);
+    /// </summary>
+    internal static ColorerRegex CreateWithBackRE(string pattern, ColorerRegex backRE, RegexOptions options = RegexOptions.None)
+    {
+        var regex = new ColorerRegex();
+        regex.pattern = pattern;
+        regex.options = options;
+        regex.backRE = backRE;
+        regex.Compile();
+        return regex;
+    }
+
+    // Private constructor for CreateWithBackRE
+    private ColorerRegex()
+    {
+        pattern = string.Empty; // Will be set by CreateWithBackRE
+    }
+
     private void Compile()
     {
         compiler = new CRegExpCompiler(pattern, options);
+
+        // If backRE is set, pass it to compiler for \y{name} resolution
+        if (backRE != null)
+        {
+            compiler.SetBackRE(backRE.compiler);
+        }
+
         compiledTree = compiler.Compile();
 
         // Extract options for matcher
@@ -50,11 +83,28 @@ internal unsafe class ColorerRegex : IDisposable
     /// </summary>
     public ColorerMatch? Match(string input, int startIndex = 0)
     {
+        return Match(input, startIndex, input.Length, schemeStart: 0, posMovesOverride: null);
+    }
+
+    /// <summary>
+    /// Match the pattern against input string with advanced COLORERMODE parameters.
+    /// Thread-safe: Can be called concurrently from multiple threads on the same instance.
+    /// </summary>
+    /// <param name="input">Input string to match</param>
+    /// <param name="startIndex">Start position</param>
+    /// <param name="endIndex">End position (exclusive)</param>
+    /// <param name="schemeStart">Scheme start position for ~ metacharacter</param>
+    /// <param name="posMovesOverride">Override position movement behavior (null = default, false = anchor at start, true = search)</param>
+    public ColorerMatch? Match(string input, int startIndex, int endIndex, int schemeStart = 0, bool? posMovesOverride = null)
+    {
         if (input == null)
             throw new ArgumentNullException(nameof(input));
 
         if (startIndex < 0 || startIndex > input.Length)
             throw new ArgumentOutOfRangeException(nameof(startIndex));
+
+        if (endIndex < 0 || endIndex > input.Length)
+            throw new ArgumentOutOfRangeException(nameof(endIndex));
 
         if (matcher == null)
             throw new InvalidOperationException("Regex not compiled");
@@ -63,8 +113,8 @@ internal unsafe class ColorerRegex : IDisposable
         // are using the same ColorerRegex instance (e.g., shared regex for syntax highlighting)
         lock (_matchLock)
         {
-            // Try to match at startIndex
-            bool success = matcher.Parse(input, startIndex, input.Length);
+            // Try to match at startIndex with advanced parameters
+            bool success = matcher.Parse(input, startIndex, endIndex, schemeStart, posMovesOverride);
 
             if (!success)
                 return null;
@@ -97,31 +147,20 @@ internal unsafe class ColorerRegex : IDisposable
                 groupNames.ContainsKey(0) ? groupNames[0] : null));
 
             // Add numbered captures (1-9)
+            // NOTE: Unified storage - all groups now use GetCapture (named and regular)
             for (int i = 1; i < 10; i++)
             {
-                // Check if this is a named group
-                bool isNamedGroup = groupNames.ContainsKey(i);
-                int capStart, capEnd;
-
-                if (isNamedGroup)
-                {
-                    // Use GetNamedCapture for named groups
-                    matcher.GetNamedCapture(i, out capStart, out capEnd);
-                }
-                else
-                {
-                    // Use regular GetCapture for regular groups
-                    matcher.GetCapture(i, out capStart, out capEnd);
-                }
+                matcher.GetCapture(i, out int capStart, out int capEnd);
 
                 if (capStart >= 0 && capEnd >= 0 && capEnd >= capStart)
                 {
-                    string? name = isNamedGroup ? groupNames[i] : null;
+                    // Check if this group has a name
+                    string? name = groupNames.ContainsKey(i) ? groupNames[i] : null;
                     captures.Add(new CaptureGroup(
                         capStart,
                         capEnd - capStart,
                         i,
-                        name)); // Pass name!
+                        name));
                 }
             }
 
@@ -176,13 +215,16 @@ internal unsafe class ColorerRegex : IDisposable
 
         if (backStr == null || backMatch == null)
         {
-            matcher.SetBackTrace(null, null);
+            matcher.SetBackTrace(null, null, null);
             return;
         }
 
         // Convert ColorerMatch to SMatches
         SMatches* backTrace = (SMatches*)Marshal.AllocHGlobal(sizeof(SMatches));
         backTrace->Clear();
+
+        // Build named group dictionary for cross-pattern backreferences
+        var namedGroups = new Dictionary<string, int>();
 
         // Fill in captures from backMatch
         var groups = backMatch.Groups;
@@ -193,11 +235,17 @@ internal unsafe class ColorerRegex : IDisposable
             int* eArr = backTrace->e;
             sArr[i] = capture.Index;
             eArr[i] = capture.Index + capture.Length;
+
+            // Add named group to dictionary if it has a name
+            if (capture.Name != null)
+            {
+                namedGroups[capture.Name] = capture.GroupNumber;
+            }
         }
 
         backTrace->cMatch = groups.Count;
 
-        matcher.SetBackTrace(backStr, backTrace);
+        matcher.SetBackTrace(backStr, backTrace, namedGroups);
 
         // Note: backTrace is leaked here - in production code we'd need to track and free it
         // For now this matches the C++ semantics where the caller owns the backTrace

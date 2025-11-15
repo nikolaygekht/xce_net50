@@ -1,4 +1,4 @@
-using Far.Colorer.RegularExpressions;
+﻿using Far.Colorer.RegularExpressions;
 using Far.Colorer.RegularExpressions.Enums;
 using Far.Colorer.RegularExpressions.Internal;
 using Xunit;
@@ -623,6 +623,20 @@ public unsafe class ColorerRegexTests
     }
 
     [Fact]
+    public void Match_NegativeLookahead_MatchesCorrectly1()
+    {
+        // Arrange
+        var regex = new ColorerRegex(@"[a-z]+(?![A-Z])");
+
+        // Act
+        var match1 = regex.Match("helloW");
+
+        // Assert
+        match1.Should().NotBeNull();
+        match1!.Value.Should().Be("hell");
+    }
+
+    [Fact]
     public void Match_NegativeLookahead_MatchesCorrectly()
     {
         // Arrange
@@ -638,7 +652,7 @@ public unsafe class ColorerRegexTests
 
         // Assert
         match1.Should().NotBeNull();
-        match1!.Value.Should().Be("100"); // No "px", matches full number
+        match1!.Value.Should().Be("100"); // No "px" after digits, matches full number
 
         // Perl semantic: Matches "10" due to backtracking (see PerlSemanticComparisonTest)
         match2.Should().NotBeNull();

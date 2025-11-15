@@ -35,6 +35,7 @@ internal unsafe class CRegExpMatcher : IDisposable
     // COLORERMODE support
     private string? backStr;
     private SMatches* backTrace;
+    private System.Collections.Generic.Dictionary<string, int>? backTraceNamedGroups;
     private int schemeStart;
     private bool startChange;
     private bool endChange;
@@ -178,10 +179,11 @@ internal unsafe class CRegExpMatcher : IDisposable
     /// <summary>
     /// Set backreference support for COLORERMODE (\y, \Y operators)
     /// </summary>
-    public void SetBackTrace(string? str, SMatches* trace)
+    public void SetBackTrace(string? str, SMatches* trace, System.Collections.Generic.Dictionary<string, int>? namedGroups = null)
     {
         backStr = str;
         backTrace = trace;
+        backTraceNamedGroups = namedGroups;
     }
 
     /// <summary>
@@ -243,6 +245,18 @@ internal unsafe class CRegExpMatcher : IDisposable
                                 int idx = re->param0;
                                 if (idx >= 0 && idx < 10)
                                 {
+                                    // UNIFIED STORAGE: Store in regular arrays (same as ReBrackets)
+                                    // This makes backreferences work with named groups
+                                    int* sArr = matches->s;
+                                    int* eArr = matches->e;
+                                    if (idx > 0 || !startChange)
+                                        sArr[idx] = re->s;
+                                    if (idx > 0 || !endChange)
+                                        eArr[idx] = toParse;
+                                    if (eArr[idx] < sArr[idx])
+                                        sArr[idx] = eArr[idx];
+
+                                    // Also update ns/ne for backward compatibility (deprecated)
                                     int* nsArr = matches->ns;
                                     int* neArr = matches->ne;
                                     nsArr[idx] = re->s;
@@ -315,7 +329,7 @@ internal unsafe class CRegExpMatcher : IDisposable
                         // COLORERMODE backreferences
                         case EOps.ReBkTrace:
                             sv = re->param0;
-                            if (backStr == null || backTrace == null || sv == -1)
+                            if (backStr == null || backTrace == null || sv == -1 || sv >= backTrace->cMatch)
                             {
                                 CheckStack(false, ref re, ref prev, ref toParse, ref leftenter, ref action);
                                 continue;
@@ -339,7 +353,7 @@ internal unsafe class CRegExpMatcher : IDisposable
 
                         case EOps.ReBkTraceN:
                             sv = re->param0;
-                            if (backStr == null || backTrace == null || sv == -1)
+                            if (backStr == null || backTrace == null || sv == -1 || sv >= backTrace->cMatch)
                             {
                                 CheckStack(false, ref re, ref prev, ref toParse, ref leftenter, ref action);
                                 continue;
@@ -363,16 +377,23 @@ internal unsafe class CRegExpMatcher : IDisposable
                             break;
 
                         case EOps.ReBkTraceName:
-                            sv = re->param0;
-                            if (backStr == null || backTrace == null || sv == -1)
+                            // ReBkTraceName is ALWAYS cross-pattern (\y{name})
+                            // Group number resolved at compile time (stored in param0)
+                            // Requires backTrace to be set via SetBackReference at match time
+                            if (backStr == null || backTrace == null)
                             {
                                 CheckStack(false, ref re, ref prev, ref toParse, ref leftenter, ref action);
                                 continue;
                             }
+
+                            // Group number already resolved at compile time - just use param0
+                            sv = re->param0;
+
+                            // Use unified s/e arrays
                             br = false;
-                            int* bkNSArr = backTrace->ns;
-                            int* bkNEArr = backTrace->ne;
-                            for (i = bkNSArr[sv]; i < bkNEArr[sv]; i++)
+                            bkSArr = backTrace->s;
+                            bkEArr = backTrace->e;
+                            for (i = bkSArr[sv]; i < bkEArr[sv]; i++)
                             {
                                 if (toParse >= end || globalPattern![toParse] != backStr[i])
                                 {
@@ -387,16 +408,23 @@ internal unsafe class CRegExpMatcher : IDisposable
                             break;
 
                         case EOps.ReBkTraceNName:
-                            sv = re->param0;
-                            if (backStr == null || backTrace == null || sv == -1)
+                            // ReBkTraceNName is ALWAYS cross-pattern (\Y{name})
+                            // Group number resolved at compile time (stored in param0)
+                            // Requires backTrace to be set via SetBackReference at match time
+                            if (backStr == null || backTrace == null)
                             {
                                 CheckStack(false, ref re, ref prev, ref toParse, ref leftenter, ref action);
                                 continue;
                             }
+
+                            // Group number already resolved at compile time - just use param0
+                            sv = re->param0;
+
+                            // Use unified s/e arrays
                             br = false;
-                            bkNSArr = backTrace->ns;
-                            bkNEArr = backTrace->ne;
-                            for (i = bkNSArr[sv]; i < bkNEArr[sv]; i++)
+                            bkSArr = backTrace->s;
+                            bkEArr = backTrace->e;
+                            for (i = bkSArr[sv]; i < bkEArr[sv]; i++)
                             {
                                 if (toParse >= end ||
                                     Character.ToLowerCase(globalPattern![toParse]) != Character.ToLowerCase(backStr[i]))
@@ -776,8 +804,11 @@ internal unsafe class CRegExpMatcher : IDisposable
             case EMetaSymbols.ReEoL:
                 if (multiLine)
                 {
-                    if (toParse > 0 && toParse < end && IsLineTerminator(globalPattern![toParse - 1]))
-                        return true;
+                    // In multiline mode, $ matches at end of string OR before a line terminator
+                    bool ok = false;
+                    if (toParse < end && IsLineTerminator(globalPattern![toParse]))
+                        ok = true;
+                    return (toParse == end || ok);
                 }
                 return (end == toParse);
 
@@ -1049,23 +1080,15 @@ internal unsafe class CRegExpMatcher : IDisposable
 
     /// <summary>
     /// Get named capture group result.
-    /// Thread-safe: Reads named capture results that were stored by Parse().
+    /// DEPRECATED: Named groups now use unified storage with regular groups.
+    /// Use GetCapture() instead - it works for both named and regular groups.
+    /// Thread-safe: Reads capture results that were stored by Parse().
     /// </summary>
+    [Obsolete("Named groups now use unified storage. Use GetCapture() instead.")]
     public void GetNamedCapture(int index, out int start, out int end)
     {
-        if (index < 0 || index >= 10)
-        {
-            start = -1;
-            end = -1;
-            return;
-        }
-
-        lock (_matchLock)
-        {
-            int* nsArr = matches->ns;
-            int* neArr = matches->ne;
-            start = nsArr[index];
-            end = neArr[index];
-        }
+        // For backward compatibility, delegate to GetCapture
+        // Named groups now use the same storage as regular groups
+        GetCapture(index, out start, out end);
     }
 }

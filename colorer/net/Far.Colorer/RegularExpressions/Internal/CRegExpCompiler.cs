@@ -21,10 +21,21 @@ internal unsafe class CRegExpCompiler : IDisposable
     private readonly bool singleLine;
     private readonly Dictionary<string, int> namedGroups;
     private readonly List<IntPtr> allocatedNodes;  // Track for cleanup
+    private CRegExpCompiler? backRE;  // Reference compiler for \y{name} resolution
 
     public int TotalGroups => groupCount;
 
     public IReadOnlyDictionary<string, int> NamedGroups => namedGroups;
+
+    /// <summary>
+    /// Sets the reference compiler for cross-pattern backreferences (\y{name}).
+    /// Must be called before Compile().
+    /// In C++: setBackRE(CRegExp*) - allows resolving group numbers at compile time.
+    /// </summary>
+    internal void SetBackRE(CRegExpCompiler? backRE)
+    {
+        this.backRE = backRE;
+    }
 
     public CRegExpCompiler(string pattern, RegexOptions options)
     {
@@ -375,6 +386,9 @@ internal unsafe class CRegExpCompiler : IDisposable
         if (position < pattern.Length && pattern[position] == '{')
         {
             // Named: \y{name} or \Y{name}
+            // This is ALWAYS a cross-pattern backreference (e.g., HRC start/end blocks)
+            // The name refers to a group in a DIFFERENT regex (set via SetBackRE)
+            // C++ requires backRE to be set and validates name exists in backRE at COMPILE time
             int start = ++position;
             while (position < pattern.Length && pattern[position] != '}')
                 position++;
@@ -385,11 +399,22 @@ internal unsafe class CRegExpCompiler : IDisposable
             string name = pattern.Substring(start, position - start);
             position++; // Skip }
 
-            if (!namedGroups.TryGetValue(name, out int groupNum))
-                throw new RegexSyntaxException($"Unknown group name: {name}");
-
             node->op = positive ? EOps.ReBkTraceName : EOps.ReBkTraceNName;
-            node->param0 = groupNum;
+
+            // Resolve group number at compile time using backRE (like C++)
+            if (backRE == null)
+            {
+                throw new RegexSyntaxException($"Cross-pattern backreference \\y{{{name}}} requires SetBackRE() to be called before compilation");
+            }
+
+            if (!backRE.namedGroups.TryGetValue(name, out int groupNumber))
+            {
+                throw new RegexSyntaxException($"Named group '{name}' not found in reference regex");
+            }
+
+            // Store resolved group number - NO runtime resolution needed!
+            node->param0 = groupNumber;
+            node->word = null; // Not needed, param0 has the group number
         }
         else if (position < pattern.Length && char.IsDigit(pattern[position]))
         {
