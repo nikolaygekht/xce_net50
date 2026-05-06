@@ -149,5 +149,56 @@ namespace Gehtsoft.Xce.TextBuffer
         {
             return GetEnumerator();
         }
+
+        // --- snapshot support (used by BufferStateSnapshot) ---
+
+        /// <summary>
+        /// Capture each marker's identity-and-position so it can be restored later.
+        /// We keep a reference to the marker object itself so the user's external
+        /// references stay valid - we just write back into the same instance on restore.
+        /// </summary>
+        internal MarkerSnapshotEntry[] Snapshot()
+        {
+            var snap = new MarkerSnapshotEntry[mMarkers.Count];
+            for (int i = 0; i < mMarkers.Count; i++)
+            {
+                var m = mMarkers[i];
+                snap[i] = new MarkerSnapshotEntry(m, m.Line, m.Column);
+            }
+            return snap;
+        }
+
+        /// <summary>
+        /// Restore the collection to exactly its snapshot state: same set of marker
+        /// instances in the same order, each with its captured (line, column).
+        /// Markers added since the snapshot are dropped; markers removed since the
+        /// snapshot are re-added (same instance, same id) at their captured positions.
+        /// External references continue to work because we restore values in-place.
+        /// </summary>
+        internal void RestoreFromSnapshot(MarkerSnapshotEntry[] snapshot)
+        {
+            if (snapshot == null) return;
+            mMarkers.Clear();
+            for (int i = 0; i < snapshot.Length; i++)
+            {
+                var entry = snapshot[i];
+                entry.Marker.Line = entry.Line;
+                entry.Marker.Column = entry.Column;
+                mMarkers.Add(entry.Marker);
+            }
+        }
+
+        internal readonly struct MarkerSnapshotEntry
+        {
+            public readonly TextMarker Marker;
+            public readonly int Line;
+            public readonly int Column;
+            public MarkerSnapshotEntry(TextMarker marker, int line, int column)
+            {
+                Marker = marker;
+                Line = line;
+                Column = column;
+            }
+        }
     }
 }

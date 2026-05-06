@@ -17,7 +17,38 @@ namespace Gehtsoft.Xce.TextBuffer
         private readonly TextBufferCallbackCollection mCallbacks;
         private readonly Stack<IUndoAction> mUndoActions = new Stack<IUndoAction>();
         private readonly Stack<IUndoAction> mRedoActions = new Stack<IUndoAction>();
-        private readonly Stack<UndoTransaction> mTransactionStack = new Stack<UndoTransaction>();
+
+        // Each entry pairs an open transaction with the BEFORE-state snapshot taken
+        // when it began. The outermost transaction's BEFORE snapshot becomes the
+        // "before" half of the StateSnapshotUndoAction wrapped around the transaction
+        // when it commits.
+        private readonly Stack<TransactionFrame> mTransactionStack = new Stack<TransactionFrame>();
+
+        // Buffer-owned editor state. Adjusted in-line during edits and round-tripped
+        // through undo/redo via BufferStateSnapshot.
+        private readonly TextCursor mCursor = new TextCursor();
+        private readonly TextBufferBlock mBlock = new TextBufferBlock();
+        private readonly TextMarkerCollection mMarkers = new TextMarkerCollection();
+
+        /// <summary>Caret + selection anchor. Owned by the buffer; round-tripped through undo/redo.</summary>
+        public TextCursor Cursor => mCursor;
+
+        /// <summary>Primary selection block. Owned by the buffer; round-tripped through undo/redo.</summary>
+        public TextBufferBlock Block => mBlock;
+
+        /// <summary>Marker collection. Owned by the buffer; round-tripped through undo/redo.</summary>
+        public TextMarkerCollection Markers => mMarkers;
+
+        private readonly struct TransactionFrame
+        {
+            public readonly UndoTransaction Transaction;
+            public readonly BufferStateSnapshot Before;
+            public TransactionFrame(UndoTransaction transaction, BufferStateSnapshot before)
+            {
+                Transaction = transaction;
+                Before = before;
+            }
+        }
 
         /// <summary>
         /// Gets the number of lines in the buffer
@@ -216,7 +247,7 @@ namespace Gehtsoft.Xce.TextBuffer
             int addedLines = mLines.Count - startCount;
             if (addedLines > 0)
             {
-                mCallbacks.InvokeOnLinesInserted(startCount, addedLines);
+                NotifyLinesInserted(startCount, addedLines);
             }
         }
 
@@ -234,8 +265,51 @@ namespace Gehtsoft.Xce.TextBuffer
             {
                 int spacesToAdd = columnIndex - currentLength;
                 line.Add(' ', spacesToAdd);
-                mCallbacks.InvokeOnSubstringInserted(lineIndex, currentLength, spacesToAdd);
+                NotifySubstringInserted(lineIndex, currentLength, spacesToAdd);
             }
+        }
+
+        // --- internal notification helpers: update buffer-owned state in-line, then external callbacks ---
+
+        private void NotifyLinesInserted(int lineIndex, int count)
+        {
+            mCursor.OnLinesInserted(lineIndex, count);
+            mBlock.OnLinesInserted(lineIndex, count);
+            mMarkers.OnLinesInserted(lineIndex, count);
+            mCallbacks.InvokeOnLinesInserted(lineIndex, count);
+        }
+
+        private void NotifyLinesDeleted(int lineIndex, int count)
+        {
+            mCursor.OnLinesDeleted(lineIndex, count);
+            mBlock.OnLinesDeleted(lineIndex, count);
+            mMarkers.OnLinesDeleted(lineIndex, count);
+            mCallbacks.InvokeOnLinesDeleted(lineIndex, count);
+        }
+
+        private void NotifySubstringInserted(int lineIndex, int columnIndex, int length)
+        {
+            mCursor.OnSubstringInserted(lineIndex, columnIndex, length);
+            mBlock.OnSubstringInserted(lineIndex, columnIndex, length);
+            // markers ignore substring ops by design
+            mCallbacks.InvokeOnSubstringInserted(lineIndex, columnIndex, length);
+        }
+
+        private void NotifySubstringDeleted(int lineIndex, int columnIndex, int length)
+        {
+            mCursor.OnSubstringDeleted(lineIndex, columnIndex, length);
+            mBlock.OnSubstringDeleted(lineIndex, columnIndex, length);
+            // markers ignore substring ops by design
+            mCallbacks.InvokeOnSubstringDeleted(lineIndex, columnIndex, length);
+        }
+
+        /// <summary>
+        /// Restore cursor / block / marker state from a snapshot. Called by
+        /// StateSnapshotUndoAction during undo/redo.
+        /// </summary>
+        internal void RestoreStateFromSnapshot(BufferStateSnapshot snapshot)
+        {
+            snapshot.Restore(mCursor, mBlock, mMarkers);
         }
 
         /// <summary>
@@ -264,7 +338,7 @@ namespace Gehtsoft.Xce.TextBuffer
                 newLine = new SplitList<char>(text);
 
             mLines.InsertAt(lineIndex, newLine);
-            mCallbacks.InvokeOnLinesInserted(lineIndex, 1);
+            NotifyLinesInserted(lineIndex, 1);
 
             if (!suppressUndo)
             {
@@ -273,7 +347,15 @@ namespace Gehtsoft.Xce.TextBuffer
         }
 
         /// <summary>
-        /// Inserts a new line at the specified position using a span
+        /// Inserts a new line at the specified position using a span.
+        /// <para>
+        /// <b>Callback events:</b> if <paramref name="lineIndex"/> is past the current buffer
+        /// end, the buffer first auto-creates the missing intermediate lines (firing one
+        /// <c>OnLinesInserted</c> for the batch) and then inserts the requested line
+        /// (firing a second <c>OnLinesInserted</c>). Listeners must be ready to receive 1
+        /// or 2 events for a single InsertLine call. All events together correspond to a
+        /// single undoable unit.
+        /// </para>
         /// </summary>
         /// <param name="lineIndex">The line index where to insert</param>
         /// <param name="text">The text content of the new line</param>
@@ -281,7 +363,12 @@ namespace Gehtsoft.Xce.TextBuffer
         {
             lock (mLock)
             {
+                bool isOutermost = mTransactionStack.Count == 0;
+                BufferStateSnapshot before = isOutermost
+                    ? BufferStateSnapshot.Capture(mCursor, mBlock, mMarkers) : null;
+                int countBefore = mUndoActions.Count;
                 InsertLineInternal(lineIndex, text, false);
+                WrapLastUndoActionWithSnapshot(isOutermost, before, countBefore);
             }
         }
 
@@ -338,7 +425,7 @@ namespace Gehtsoft.Xce.TextBuffer
             }
 
             mLines.RemoveAt(lineIndex);
-            mCallbacks.InvokeOnLinesDeleted(lineIndex, 1);
+            NotifyLinesDeleted(lineIndex, 1);
         }
 
         /// <summary>
@@ -349,7 +436,12 @@ namespace Gehtsoft.Xce.TextBuffer
         {
             lock (mLock)
             {
+                bool isOutermost = mTransactionStack.Count == 0;
+                BufferStateSnapshot before = isOutermost
+                    ? BufferStateSnapshot.Capture(mCursor, mBlock, mMarkers) : null;
+                int countBefore = mUndoActions.Count;
                 DeleteLineInternal(lineIndex, false);
+                WrapLastUndoActionWithSnapshot(isOutermost, before, countBefore);
             }
         }
 
@@ -391,7 +483,7 @@ namespace Gehtsoft.Xce.TextBuffer
             int autoAddedSpaces = line.Count - columnsBefore;
 
             line.InsertAt(columnIndex, text);
-            mCallbacks.InvokeOnSubstringInserted(lineIndex, columnIndex, text.Length);
+            NotifySubstringInserted(lineIndex, columnIndex, text.Length);
 
             if (!suppressUndo)
             {
@@ -401,6 +493,19 @@ namespace Gehtsoft.Xce.TextBuffer
 
         /// <summary>
         /// Inserts a substring into a line using a span. Auto-extends the buffer and line if needed.
+        /// <para>
+        /// <b>Callback events:</b> a single InsertSubstring call may fire MULTIPLE callback events
+        /// when auto-extension is triggered:
+        /// </para>
+        /// <list type="number">
+        /// <item><c>OnLinesInserted(...)</c> — once, if <paramref name="lineIndex"/> is past the buffer end and lines must be auto-added.</item>
+        /// <item><c>OnSubstringInserted(...)</c> — once, if <paramref name="columnIndex"/> is past the line end and padding spaces are inserted.</item>
+        /// <item><c>OnSubstringInserted(...)</c> — once for the actual <paramref name="text"/>.</item>
+        /// </list>
+        /// <para>
+        /// Listeners must be ready to receive 1, 2, or 3 events for a single InsertSubstring call.
+        /// All events together correspond to a single undoable unit: one Undo unwinds them all.
+        /// </para>
         /// </summary>
         /// <param name="lineIndex">The line index</param>
         /// <param name="columnIndex">The column index where to insert</param>
@@ -409,7 +514,12 @@ namespace Gehtsoft.Xce.TextBuffer
         {
             lock (mLock)
             {
+                bool isOutermost = mTransactionStack.Count == 0;
+                BufferStateSnapshot before = isOutermost
+                    ? BufferStateSnapshot.Capture(mCursor, mBlock, mMarkers) : null;
+                int countBefore = mUndoActions.Count;
                 InsertSubstringInternal(lineIndex, columnIndex, text, false);
+                WrapLastUndoActionWithSnapshot(isOutermost, before, countBefore);
             }
         }
 
@@ -484,7 +594,7 @@ namespace Gehtsoft.Xce.TextBuffer
                 }
 
                 line.RemoveAt(columnIndex, length);
-                mCallbacks.InvokeOnSubstringDeleted(lineIndex, columnIndex, length);
+                NotifySubstringDeleted(lineIndex, columnIndex, length);
             }
         }
 
@@ -498,8 +608,28 @@ namespace Gehtsoft.Xce.TextBuffer
         {
             lock (mLock)
             {
+                bool isOutermost = mTransactionStack.Count == 0;
+                BufferStateSnapshot before = isOutermost
+                    ? BufferStateSnapshot.Capture(mCursor, mBlock, mMarkers) : null;
+                int countBefore = mUndoActions.Count;
                 DeleteSubstringInternal(lineIndex, columnIndex, length, false);
+                WrapLastUndoActionWithSnapshot(isOutermost, before, countBefore);
             }
+        }
+
+        /// <summary>
+        /// If we're at the outermost level (not inside a transaction) and the just-run
+        /// internal action pushed something onto the undo stack, wrap that action with
+        /// before/after state snapshots so undo/redo round-trips cursor/block/markers.
+        /// </summary>
+        private void WrapLastUndoActionWithSnapshot(bool isOutermost, BufferStateSnapshot before, int countBefore)
+        {
+            if (!isOutermost) return;
+            if (mUndoActions.Count <= countBefore) return; // op was a no-op (nothing pushed)
+
+            var inner = mUndoActions.Pop();
+            var after = BufferStateSnapshot.Capture(mCursor, mBlock, mMarkers);
+            mUndoActions.Push(new StateSnapshotUndoAction(this, inner, before, after));
         }
 
         /// <summary>
@@ -510,7 +640,7 @@ namespace Gehtsoft.Xce.TextBuffer
             if (mTransactionStack.Count > 0)
             {
                 // Add to the current transaction
-                mTransactionStack.Peek().AddAction(action);
+                mTransactionStack.Peek().Transaction.AddAction(action);
             }
             else
             {
@@ -555,11 +685,27 @@ namespace Gehtsoft.Xce.TextBuffer
         {
             lock (mLock)
             {
+                if (mTransactionStack.Count > 0)
+                    throw new InvalidOperationException("Cannot Undo while a transaction is open");
+
                 if (mUndoActions.Count == 0)
                     throw new InvalidOperationException("No actions to undo");
 
                 var action = mUndoActions.Pop();
-                action.Undo();
+                try
+                {
+                    action.Undo();
+                }
+                catch (Exception ex)
+                {
+                    // The action may have applied part of its work before throwing.
+                    // The buffer can no longer trust its history; drop both stacks
+                    // so subsequent code cannot replay corrupt state.
+                    mUndoActions.Clear();
+                    mRedoActions.Clear();
+                    throw new UndoCorruptedException(
+                        "Undo action failed; undo/redo history has been cleared.", ex);
+                }
                 mRedoActions.Push(action);
             }
         }
@@ -571,12 +717,42 @@ namespace Gehtsoft.Xce.TextBuffer
         {
             lock (mLock)
             {
+                if (mTransactionStack.Count > 0)
+                    throw new InvalidOperationException("Cannot Redo while a transaction is open");
+
                 if (mRedoActions.Count == 0)
                     throw new InvalidOperationException("No actions to redo");
 
                 var action = mRedoActions.Pop();
-                action.Redo();
+                try
+                {
+                    action.Redo();
+                }
+                catch (Exception ex)
+                {
+                    mUndoActions.Clear();
+                    mRedoActions.Clear();
+                    throw new UndoCorruptedException(
+                        "Redo action failed; undo/redo history has been cleared.", ex);
+                }
                 mUndoActions.Push(action);
+            }
+        }
+
+        /// <summary>
+        /// Test-only hook to inject a custom <see cref="IUndoAction"/> directly onto the
+        /// undo stack. Used by lifecycle tests that need to simulate a faulty extension
+        /// action; not part of the public API.
+        /// </summary>
+        internal void RegisterUndoActionForTesting(IUndoAction action)
+        {
+            if (action == null)
+                throw new ArgumentNullException(nameof(action));
+
+            lock (mLock)
+            {
+                mUndoActions.Push(action);
+                mRedoActions.Clear();
             }
         }
 
@@ -589,7 +765,12 @@ namespace Gehtsoft.Xce.TextBuffer
             lock (mLock)
             {
                 var transaction = new UndoTransaction();
-                mTransactionStack.Push(transaction);
+                // Capture the BEFORE snapshot only for the outermost transaction;
+                // nested ones share the outer's snapshot semantically (we only restore
+                // at the outermost boundary).
+                BufferStateSnapshot before = mTransactionStack.Count == 0
+                    ? BufferStateSnapshot.Capture(mCursor, mBlock, mMarkers) : null;
+                mTransactionStack.Push(new TransactionFrame(transaction, before));
                 return new UndoTransactionScope(this, transaction);
             }
         }
@@ -604,9 +785,12 @@ namespace Gehtsoft.Xce.TextBuffer
                 if (mTransactionStack.Count == 0)
                     throw new InvalidOperationException("No active transaction");
 
-                var currentTransaction = mTransactionStack.Pop();
-                if (currentTransaction != transaction)
+                // Validate before mutating the stack: if a wrong-order Dispose throws here,
+                // the stack must remain intact so the actually-active transaction can still commit.
+                if (mTransactionStack.Peek().Transaction != transaction)
                     throw new InvalidOperationException("Transaction mismatch");
+
+                var frame = mTransactionStack.Pop();
 
                 // Only commit to undo stack if this is the outermost transaction
                 if (mTransactionStack.Count == 0)
@@ -614,7 +798,9 @@ namespace Gehtsoft.Xce.TextBuffer
                     // Only add non-empty transactions
                     if (transaction.Count > 0)
                     {
-                        mUndoActions.Push(transaction);
+                        // Wrap with before/after snapshots so cursor/block/markers round-trip.
+                        var after = BufferStateSnapshot.Capture(mCursor, mBlock, mMarkers);
+                        mUndoActions.Push(new StateSnapshotUndoAction(this, transaction, frame.Before, after));
                         mRedoActions.Clear(); // Clear redo stack when new action is performed
                     }
                 }
@@ -623,7 +809,7 @@ namespace Gehtsoft.Xce.TextBuffer
                     // This is a nested transaction, add it to the parent transaction
                     if (transaction.Count > 0)
                     {
-                        mTransactionStack.Peek().AddAction(transaction);
+                        mTransactionStack.Peek().Transaction.AddAction(transaction);
                     }
                 }
             }

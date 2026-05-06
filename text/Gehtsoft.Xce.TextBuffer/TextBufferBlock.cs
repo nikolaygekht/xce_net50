@@ -99,6 +99,60 @@ namespace Gehtsoft.Xce.TextBuffer
             LastColumn = lastColumn;
         }
 
+        /// <summary>Configure as a Line block covering full lines [firstLine..lastLine] inclusive.</summary>
+        public void SetLine(int firstLine, int lastLine)
+        {
+            BlockType = TextBufferBlockType.Line;
+            FirstLine = firstLine;
+            LastLine = lastLine;
+            FirstColumn = 0;
+            LastColumn = 0;
+        }
+
+        /// <summary>Configure as a Box (rectangular) block.</summary>
+        public void SetBox(int firstLine, int firstColumn, int lastLine, int lastColumn)
+        {
+            BlockType = TextBufferBlockType.Box;
+            FirstLine = firstLine;
+            FirstColumn = firstColumn;
+            LastLine = lastLine;
+            LastColumn = lastColumn;
+        }
+
+        /// <summary>Configure as a Stream (continuous text) selection.</summary>
+        public void SetStream(int firstLine, int firstColumn, int lastLine, int lastColumn)
+        {
+            BlockType = TextBufferBlockType.Stream;
+            FirstLine = firstLine;
+            FirstColumn = firstColumn;
+            LastLine = lastLine;
+            LastColumn = lastColumn;
+        }
+
+        /// <summary>Clear the block: type becomes None.</summary>
+        public void Clear()
+        {
+            BlockType = TextBufferBlockType.None;
+            FirstLine = 0;
+            LastLine = 0;
+            FirstColumn = 0;
+            LastColumn = 0;
+        }
+
+        /// <summary>Capture full state for a snapshot.</summary>
+        internal (TextBufferBlockType type, int firstLine, int lastLine, int firstCol, int lastCol) Snapshot()
+            => (BlockType, FirstLine, LastLine, FirstColumn, LastColumn);
+
+        /// <summary>Restore state from a snapshot.</summary>
+        internal void RestoreFromSnapshot(TextBufferBlockType type, int firstLine, int lastLine, int firstCol, int lastCol)
+        {
+            BlockType = type;
+            FirstLine = firstLine;
+            LastLine = lastLine;
+            FirstColumn = firstCol;
+            LastColumn = lastCol;
+        }
+
         /// <summary>
         /// Called when lines are inserted into the buffer
         /// </summary>
@@ -169,7 +223,19 @@ namespace Gehtsoft.Xce.TextBuffer
         }
 
         /// <summary>
-        /// Called when a substring is inserted into the buffer
+        /// Called when a substring is inserted into the buffer.
+        /// <para>
+        /// Stream-block boundary rules: <c>columnIndex &lt;= FirstColumn</c> shifts FirstColumn
+        /// (insert lands BEFORE the block's start) but <c>columnIndex &lt; LastColumn</c>
+        /// strict-less-than shifts LastColumn (insert exactly AT LastColumn lands AFTER the block).
+        /// The asymmetry is intentional: typing exactly at a selection boundary should not
+        /// be swallowed into the selection. Insertions strictly inside (FirstColumn &lt; col &lt; LastColumn)
+        /// grow the block as expected.
+        /// </para>
+        /// <para>
+        /// Box blocks: columns are anchored - substring edits never shift them.
+        /// Line blocks: columns are not tracked.
+        /// </para>
         /// </summary>
         public void OnSubstringInserted(int lineIndex, int columnIndex, int length)
         {
@@ -196,7 +262,19 @@ namespace Gehtsoft.Xce.TextBuffer
         }
 
         /// <summary>
-        /// Called when a substring is deleted from the buffer
+        /// Called when a substring is deleted from the buffer.
+        /// <para>
+        /// Stream-block deletion rules:
+        /// - deletion entirely BEFORE FirstColumn shifts both edges left;
+        /// - deletion straddling FirstColumn moves FirstColumn to the deletion start
+        ///   (any portion of the block that was deleted is gone);
+        /// - deletion exactly AT FirstColumn (deletedFirstColumn == FirstColumn) does NOT
+        ///   shift FirstColumn - the block's left edge stays put, content shrinks;
+        /// - same logic mirrored for LastColumn.
+        /// </para>
+        /// <para>
+        /// Box blocks: columns are anchored; substring deletes never shift them.
+        /// </para>
         /// </summary>
         public void OnSubstringDeleted(int lineIndex, int columnIndex, int length)
         {

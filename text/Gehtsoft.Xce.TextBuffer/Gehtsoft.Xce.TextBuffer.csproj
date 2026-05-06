@@ -8,4 +8,8 @@
     <ProjectReference Include="..\Scintilla.CellBuffer\Scintilla.CellBuffer.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Gehtsoft.Xce.TextBuffer.Test" />
+  </ItemGroup>
+
 </Project>
