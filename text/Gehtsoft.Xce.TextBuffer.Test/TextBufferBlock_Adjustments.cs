@@ -499,16 +499,15 @@ namespace Gehtsoft.Xce.TextBuffer.Test
         {
             // Arrange
             var buffer = new TextBuffer(new[] { "line0", "line1", "line2", "line3", "line4" });
-            var block = new TextBufferBlock(TextBufferBlockType.Line, 1, 3);
-            buffer.Callbacks.Add(block);
+            buffer.Block.SetLine(1, 3);
 
             // Act - insert before block
             buffer.InsertLine(0, "new line");
 
             // Assert
-            block.FirstLine.Should().Be(2);
-            block.LastLine.Should().Be(4);
-            block.Valid.Should().Be(true);
+            buffer.Block.FirstLine.Should().Be(2);
+            buffer.Block.LastLine.Should().Be(4);
+            buffer.Block.Valid.Should().Be(true);
         }
 
         [Fact]
@@ -516,16 +515,15 @@ namespace Gehtsoft.Xce.TextBuffer.Test
         {
             // Arrange
             var buffer = new TextBuffer(new[] { "Hello World" });
-            var block = new TextBufferBlock(TextBufferBlockType.Stream, 0, 0, 6, 11);
-            buffer.Callbacks.Add(block);
+            buffer.Block.SetStream(0, 6, 0, 11);
 
             // Act - insert before block
             buffer.InsertSubstring(0, 0, "XXX");
 
             // Assert
-            block.FirstColumn.Should().Be(9);
-            block.LastColumn.Should().Be(14);
-            block.Valid.Should().Be(true);
+            buffer.Block.FirstColumn.Should().Be(9);
+            buffer.Block.LastColumn.Should().Be(14);
+            buffer.Block.Valid.Should().Be(true);
         }
 
         [Fact]
@@ -533,16 +531,15 @@ namespace Gehtsoft.Xce.TextBuffer.Test
         {
             // Arrange
             var buffer = new TextBuffer(new[] { "line0", "line1", "line2" });
-            var block = new TextBufferBlock(TextBufferBlockType.Box, 0, 2, 5, 10);
-            buffer.Callbacks.Add(block);
+            buffer.Block.SetBox(0, 5, 2, 10);
 
             // Act - insert substring
             buffer.InsertSubstring(1, 0, "XXXXX");
 
             // Assert - columns don't change
-            block.FirstColumn.Should().Be(5);
-            block.LastColumn.Should().Be(10);
-            block.Valid.Should().Be(true);
+            buffer.Block.FirstColumn.Should().Be(5);
+            buffer.Block.LastColumn.Should().Be(10);
+            buffer.Block.Valid.Should().Be(true);
         }
 
         #endregion

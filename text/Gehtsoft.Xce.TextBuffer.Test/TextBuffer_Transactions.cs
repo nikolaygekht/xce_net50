@@ -85,9 +85,11 @@ namespace Gehtsoft.Xce.TextBuffer.Test
         }
 
         [Fact]
-        public void Transaction_Empty_DoesNotCreateUndoAction()
+        public void Transaction_Empty_PushesUniformlyAsNoOp()
         {
-            // Arrange
+            // Per D2, every transaction commit pushes uniformly — even empty ones.
+            // Their Undo/Redo are harmless no-ops. This avoids "is this transaction
+            // empty?" branching at every call site and keeps the undo stack uniform.
             var buffer = new TextBuffer();
             buffer.InsertLine(0, "test");
 
@@ -97,10 +99,16 @@ namespace Gehtsoft.Xce.TextBuffer.Test
                 // No operations
             }
 
-            // Undo should undo the insert, not the empty transaction
-            buffer.Undo();
+            // The empty transaction is now on the undo stack as a no-op entry.
+            buffer.CanUndo.Should().Be(true);
 
-            // Assert
+            // First Undo unwinds the empty transaction (no-op).
+            buffer.Undo();
+            buffer.LinesCount.Should().Be(1);
+            buffer.GetLine(0).Should().Be("test");
+
+            // Second Undo unwinds the actual InsertLine.
+            buffer.Undo();
             buffer.LinesCount.Should().Be(0);
             buffer.CanUndo.Should().Be(false);
         }
@@ -257,7 +265,7 @@ namespace Gehtsoft.Xce.TextBuffer.Test
             // Arrange
             var buffer = new TextBuffer();
             var mock = new Mock<ITextBufferCallback>();
-            buffer.Callbacks.Add(mock.Object);
+            buffer.Owner = mock.Object;
 
             // Act - operations in transaction
             using (buffer.BeginUndoTransaction())
@@ -277,7 +285,7 @@ namespace Gehtsoft.Xce.TextBuffer.Test
             // Arrange
             var buffer = new TextBuffer();
             var mock = new Mock<ITextBufferCallback>();
-            buffer.Callbacks.Add(mock.Object);
+            buffer.Owner = mock.Object;
 
             using (buffer.BeginUndoTransaction())
             {
@@ -301,7 +309,7 @@ namespace Gehtsoft.Xce.TextBuffer.Test
             // Arrange
             var buffer = new TextBuffer();
             var mock = new Mock<ITextBufferCallback>();
-            buffer.Callbacks.Add(mock.Object);
+            buffer.Owner = mock.Object;
 
             using (buffer.BeginUndoTransaction())
             {

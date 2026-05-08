@@ -535,5 +535,195 @@ namespace Gehtsoft.Xce.TextBuffer.Test
         }
 
         #endregion
+
+        #region D5 — Final newline byte-for-byte (PR3.2)
+
+        // Pinning the trailing-empty-line convention: a file ending with N trailing
+        // newline sequences is read into a buffer with N corresponding trailing
+        // empty lines, and writing that buffer back produces the same file bytes.
+        // Files with no trailing newline round-trip with no trailing newline.
+
+        [Fact]
+        public void FinalNewline_NoTrailingNewline_RoundTripsWithNoTrailingNewline_Lf()
+        {
+            var fileName = GetTempFileName();
+            File.WriteAllText(fileName, "line1\nline2\nline3", new UTF8Encoding(false));
+
+            var (buffer, metadata) = TextBufferReader.Read(fileName);
+            buffer.LinesCount.Should().Be(3);                              // no trailing empty line
+            buffer.GetLine(2).Should().Be("line3");
+
+            var outFile = GetTempFileName();
+            TextBufferWriter.Write(buffer, new TextBufferMetadata(outFile, metadata.Encoding, metadata.SkipBom, metadata.EolMode));
+            File.ReadAllText(outFile, new UTF8Encoding(false)).Should().Be("line1\nline2\nline3");
+        }
+
+        [Fact]
+        public void FinalNewline_NoTrailingNewline_RoundTripsWithNoTrailingNewline_CrLf()
+        {
+            var fileName = GetTempFileName();
+            File.WriteAllText(fileName, "line1\r\nline2", new UTF8Encoding(false));
+
+            var (buffer, metadata) = TextBufferReader.Read(fileName);
+            buffer.LinesCount.Should().Be(2);
+            buffer.GetLine(1).Should().Be("line2");
+
+            var outFile = GetTempFileName();
+            TextBufferWriter.Write(buffer, new TextBufferMetadata(outFile, metadata.Encoding, metadata.SkipBom, metadata.EolMode));
+            File.ReadAllText(outFile, new UTF8Encoding(false)).Should().Be("line1\r\nline2");
+        }
+
+        [Fact]
+        public void FinalNewline_OneTrailingNewline_RoundTripsExactly_Lf()
+        {
+            var fileName = GetTempFileName();
+            File.WriteAllText(fileName, "line1\nline2\n", new UTF8Encoding(false));
+
+            var (buffer, metadata) = TextBufferReader.Read(fileName);
+            buffer.LinesCount.Should().Be(3);                              // line1, line2, ""
+            buffer.GetLine(2).Should().Be("");
+
+            var outFile = GetTempFileName();
+            TextBufferWriter.Write(buffer, new TextBufferMetadata(outFile, metadata.Encoding, metadata.SkipBom, metadata.EolMode));
+            File.ReadAllText(outFile, new UTF8Encoding(false)).Should().Be("line1\nline2\n");
+        }
+
+        [Fact]
+        public void FinalNewline_OneTrailingNewline_RoundTripsExactly_CrLf()
+        {
+            var fileName = GetTempFileName();
+            File.WriteAllText(fileName, "line1\r\nline2\r\n", new UTF8Encoding(false));
+
+            var (buffer, metadata) = TextBufferReader.Read(fileName);
+            buffer.LinesCount.Should().Be(3);
+            buffer.GetLine(2).Should().Be("");
+
+            var outFile = GetTempFileName();
+            TextBufferWriter.Write(buffer, new TextBufferMetadata(outFile, metadata.Encoding, metadata.SkipBom, metadata.EolMode));
+            File.ReadAllText(outFile, new UTF8Encoding(false)).Should().Be("line1\r\nline2\r\n");
+        }
+
+        [Fact]
+        public void FinalNewline_TwoTrailingNewlines_RoundTripsExactly_Lf()
+        {
+            // Two trailing newlines = one extra empty line beyond the "trailing
+            // newline" convention. Buffer holds the empty line explicitly.
+            var fileName = GetTempFileName();
+            File.WriteAllText(fileName, "abc\n\n", new UTF8Encoding(false));
+
+            var (buffer, metadata) = TextBufferReader.Read(fileName);
+            buffer.LinesCount.Should().Be(3);                              // "abc", "", ""
+            buffer.GetLine(0).Should().Be("abc");
+            buffer.GetLine(1).Should().Be("");
+            buffer.GetLine(2).Should().Be("");
+
+            var outFile = GetTempFileName();
+            TextBufferWriter.Write(buffer, new TextBufferMetadata(outFile, metadata.Encoding, metadata.SkipBom, metadata.EolMode));
+            File.ReadAllText(outFile, new UTF8Encoding(false)).Should().Be("abc\n\n");
+        }
+
+        #endregion
+
+        #region Reader explicit-encoding override (PR3.2)
+
+        [Fact]
+        public void Reader_ExplicitEncodingOverride_DetectsBom_ButReturnsTheOverride()
+        {
+            // File has a UTF-8 BOM. Caller explicitly passes UTF-8. Reader must
+            // detect+skip the BOM (because the override's preamble matches) AND
+            // return the override as metadata.Encoding (not whatever DetectEncoding
+            // would have re-derived).
+            var fileName = GetTempFileName();
+            File.WriteAllText(fileName, "test", new UTF8Encoding(true));   // BOM included
+
+            var explicitEncoding = new UTF8Encoding(true);
+            var (buffer, metadata) = TextBufferReader.Read(fileName, explicitEncoding);
+
+            buffer.GetLine(0).Should().Be("test");
+            metadata.Encoding.Should().Be(explicitEncoding);                // identity preserved
+            metadata.SkipBom.Should().BeFalse();                            // BOM detected
+        }
+
+        [Fact]
+        public void Reader_ExplicitEncodingOverride_NoBomMatch_OverrideStillWins()
+        {
+            // File has UTF-8 BOM but caller asks for ASCII (no preamble). The
+            // override wins regardless: the reader uses ASCII to decode, the BOM
+            // is not skipped (ASCII has no preamble to match), and metadata
+            // reports ASCII as the encoding.
+            var fileName = GetTempFileName();
+            File.WriteAllBytes(fileName, new byte[] { 0xEF, 0xBB, 0xBF, (byte)'a', (byte)'b' });
+
+            var (_, metadata) = TextBufferReader.Read(fileName, Encoding.ASCII);
+
+            metadata.Encoding.Should().Be(Encoding.ASCII);
+            metadata.SkipBom.Should().BeTrue();                             // ASCII has no BOM
+        }
+
+        [Fact]
+        public void Reader_ExplicitEncoding_Utf16Le_ReadsCorrectlyWithoutAutoDetect()
+        {
+            // BOM-less UTF-16 LE — the reader cannot auto-detect this. Explicit
+            // encoding is the only way.
+            var fileName = GetTempFileName();
+            var encoding = new UnicodeEncoding(bigEndian: false, byteOrderMark: false);
+            File.WriteAllText(fileName, "hello", encoding);
+
+            var (buffer, metadata) = TextBufferReader.Read(fileName, encoding);
+
+            buffer.GetLine(0).Should().Be("hello");
+            metadata.Encoding.Should().Be(encoding);
+        }
+
+        #endregion
+
+        #region Reader/writer argument validation (PR3.2)
+
+        [Fact]
+        public void Reader_NullFileName_Throws()
+        {
+            Assert.Throws<ArgumentException>(() => TextBufferReader.Read(null));
+        }
+
+        [Fact]
+        public void Reader_EmptyFileName_Throws()
+        {
+            Assert.Throws<ArgumentException>(() => TextBufferReader.Read(""));
+        }
+
+        [Fact]
+        public void Writer_NullBuffer_Throws()
+        {
+            var metadata = new TextBufferMetadata(GetTempFileName(), Encoding.UTF8, true, EolMode.Lf);
+            Assert.Throws<ArgumentNullException>(() => TextBufferWriter.Write(null, metadata));
+        }
+
+        [Fact]
+        public void Writer_NullMetadata_Throws()
+        {
+            var buffer = new TextBuffer(new[] { "x" });
+            Assert.Throws<ArgumentNullException>(() => TextBufferWriter.Write(buffer, (TextBufferMetadata)null));
+        }
+
+        [Fact]
+        public void Writer_EmptyFileNameInMetadata_Throws()
+        {
+            var buffer = new TextBuffer(new[] { "x" });
+            var metadata = new TextBufferMetadata("", Encoding.UTF8, true, EolMode.Lf);
+            Assert.Throws<ArgumentException>(() => TextBufferWriter.Write(buffer, metadata));
+        }
+
+        [Fact]
+        public void Writer_UnwritableTarget_PropagatesIoException()
+        {
+            // Parent directory does not exist — file create fails.
+            var buffer = new TextBuffer(new[] { "x" });
+            var bogusPath = Path.Combine(mTempPath, "nonexistent_dir", "out.txt");
+            var metadata = new TextBufferMetadata(bogusPath, Encoding.UTF8, true, EolMode.Lf);
+
+            Assert.Throws<DirectoryNotFoundException>(() => TextBufferWriter.Write(buffer, metadata));
+        }
+
+        #endregion
     }
 }

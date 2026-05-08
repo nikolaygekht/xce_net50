@@ -55,8 +55,9 @@ namespace Gehtsoft.Xce.TextBuffer.Test
         {
             // After a wrong-order disposal mistake (and proper recovery), the buffer
             // must behave normally for subsequent unrelated editing - no leaked
-            // transaction state, no skewed undo stack. Both transactions here are empty
-            // so they leave no undo entry; the recovery just needs to clear them off the stack.
+            // transaction state, no skewed undo stack. Per D2, even empty transactions
+            // push uniformly as no-op entries, so after recovery the undo stack holds
+            // the (empty) outer commit; subsequent edits still work normally.
             var buffer = new TextBuffer();
             var outer = buffer.BeginUndoTransaction();
             var inner = buffer.BeginUndoTransaction();
@@ -65,14 +66,19 @@ namespace Gehtsoft.Xce.TextBuffer.Test
             inner.Dispose();
             outer.Dispose();
 
-            buffer.CanUndo.Should().Be(false); // empty transactions leave no undo entry
-
             // Continue editing - everything should behave normally.
             buffer.InsertLine(0, "after-recovery");
             buffer.LinesCount.Should().Be(1);
 
+            // Undo unwinds the InsertLine.
             buffer.Undo();
             buffer.LinesCount.Should().Be(0);
+
+            // The recovered empty transaction is also on the stack as a no-op.
+            buffer.CanUndo.Should().Be(true);
+            buffer.Undo();                  // no-op unwind of the empty outer commit
+            buffer.LinesCount.Should().Be(0);
+            buffer.CanUndo.Should().Be(false);
         }
 
         #endregion

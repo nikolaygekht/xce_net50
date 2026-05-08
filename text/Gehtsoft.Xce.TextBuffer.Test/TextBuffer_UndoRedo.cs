@@ -49,7 +49,7 @@ namespace Gehtsoft.Xce.TextBuffer.Test
             // Arrange
             var buffer = new TextBuffer(new[] { "line1" });
             var mock = new Mock<ITextBufferCallback>();
-            buffer.Callbacks.Add(mock.Object);
+            buffer.Owner = mock.Object;
 
             // Act
             buffer.InsertLine(1, "line2");
@@ -111,7 +111,7 @@ namespace Gehtsoft.Xce.TextBuffer.Test
             // Arrange
             var buffer = new TextBuffer(new[] { "line1", "line2", "line3" });
             var mock = new Mock<ITextBufferCallback>();
-            buffer.Callbacks.Add(mock.Object);
+            buffer.Owner = mock.Object;
 
             // Act
             buffer.DeleteLine(1);
@@ -168,7 +168,7 @@ namespace Gehtsoft.Xce.TextBuffer.Test
             // Arrange
             var buffer = new TextBuffer(new[] { "Hello World" });
             var mock = new Mock<ITextBufferCallback>();
-            buffer.Callbacks.Add(mock.Object);
+            buffer.Owner = mock.Object;
 
             // Act
             buffer.InsertSubstring(0, 6, "Beautiful ");
@@ -225,7 +225,7 @@ namespace Gehtsoft.Xce.TextBuffer.Test
             // Arrange
             var buffer = new TextBuffer(new[] { "Hello Beautiful World" });
             var mock = new Mock<ITextBufferCallback>();
-            buffer.Callbacks.Add(mock.Object);
+            buffer.Owner = mock.Object;
 
             // Act
             buffer.DeleteSubstring(0, 6, 10);

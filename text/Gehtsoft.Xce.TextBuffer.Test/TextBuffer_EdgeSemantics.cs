@@ -158,7 +158,7 @@ namespace Gehtsoft.Xce.TextBuffer.Test
             // (one Undo unwinds them all).
             var buffer = new TextBuffer(new[] { "first" });
             var recorder = new EventRecorder();
-            buffer.Callbacks.Add(recorder);
+            buffer.Owner = recorder;
 
             buffer.InsertSubstring(3, 0, "hello");
 
@@ -182,7 +182,7 @@ namespace Gehtsoft.Xce.TextBuffer.Test
             // two distinct events.
             var buffer = new TextBuffer(new[] { "ab" });
             var recorder = new EventRecorder();
-            buffer.Callbacks.Add(recorder);
+            buffer.Owner = recorder;
 
             buffer.InsertSubstring(0, 5, "X");
 
@@ -203,7 +203,7 @@ namespace Gehtsoft.Xce.TextBuffer.Test
             // the actual line insert.
             var buffer = new TextBuffer(new[] { "first" });
             var recorder = new EventRecorder();
-            buffer.Callbacks.Add(recorder);
+            buffer.Owner = recorder;
 
             buffer.InsertLine(4, "appended");
 
@@ -224,7 +224,7 @@ namespace Gehtsoft.Xce.TextBuffer.Test
             // one logical edit, one Undo.
             var buffer = new TextBuffer(new[] { "first" });
             var recorder = new EventRecorder();
-            buffer.Callbacks.Add(recorder);
+            buffer.Owner = recorder;
 
             buffer.InsertSubstring(3, 4, "X");
 

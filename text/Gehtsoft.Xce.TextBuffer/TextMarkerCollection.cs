@@ -1,10 +1,17 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 
 namespace Gehtsoft.Xce.TextBuffer
 {
     /// <summary>
-    /// Collection of text markers that automatically adjusts marker positions when buffer changes
+    /// Collection of text markers that automatically adjusts marker positions when buffer changes.
+    /// <para>
+    /// Markers are column-aware: substring inserts/deletes on a marker's line shift its
+    /// column using the same rules as <see cref="TextCursor"/>. Insert at <c>columnIndex &lt;= marker.Column</c>
+    /// shifts the marker right by <c>length</c>; delete entirely before the marker shifts it left;
+    /// delete overlapping the marker clamps the marker column to the deletion start.
+    /// </para>
     /// </summary>
     public class TextMarkerCollection : ITextBufferCallback, IEnumerable<TextMarker>
     {
@@ -119,19 +126,42 @@ namespace Gehtsoft.Xce.TextBuffer
         }
 
         /// <summary>
-        /// Called when a substring is inserted into the buffer
+        /// Called when a substring is inserted into the buffer. For markers on the
+        /// affected line, an insert at or before the marker's column shifts it right
+        /// by <paramref name="length"/> (same rule as <see cref="TextCursor"/>).
         /// </summary>
         public void OnSubstringInserted(int lineIndex, int columnIndex, int length)
         {
-            // Markers don't adjust for substring operations
+            if (length <= 0) return;
+            foreach (var marker in mMarkers)
+            {
+                if (marker.Line == lineIndex && columnIndex <= marker.Column)
+                    marker.Column += length;
+            }
         }
 
         /// <summary>
-        /// Called when a substring is deleted from the buffer
+        /// Called when a substring is deleted from the buffer. For markers on the
+        /// affected line: a delete entirely before the marker shifts it left by
+        /// <paramref name="length"/>; a delete overlapping the marker clamps the
+        /// marker column to the deletion start (same rule as <see cref="TextCursor"/>).
         /// </summary>
         public void OnSubstringDeleted(int lineIndex, int columnIndex, int length)
         {
-            // Markers don't adjust for substring operations
+            if (length <= 0) return;
+            int deletedLast = columnIndex + length;
+            foreach (var marker in mMarkers)
+            {
+                if (marker.Line != lineIndex) continue;
+                if (deletedLast <= marker.Column)
+                {
+                    marker.Column -= length;
+                }
+                else if (columnIndex < marker.Column)
+                {
+                    marker.Column -= Math.Min(marker.Column - columnIndex, length);
+                }
+            }
         }
 
         /// <summary>

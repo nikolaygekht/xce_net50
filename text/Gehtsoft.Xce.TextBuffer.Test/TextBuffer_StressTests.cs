@@ -182,5 +182,81 @@ namespace Gehtsoft.Xce.TextBuffer.Test
         }
 
         #endregion
+
+        #region Large Insert / Deep Auto-Extend (PR3.3)
+
+        [Fact]
+        public void InsertSubstring_10MB_UndoRedo_ContentRoundTrips()
+        {
+            // Mirror of the 10MB delete: a single InsertSubstring of 10M chars
+            // must complete, undo to empty content, and redo back to the inserted text.
+            const int charCount = 5 * 1024 * 1024;
+            var sb = new StringBuilder(charCount);
+            for (int i = 0; i < charCount; i++)
+                sb.Append((char)('a' + (i % 26)));
+            var bigText = sb.ToString();
+
+            var buffer = new TextBuffer(new[] { "" });
+            buffer.InsertSubstring(0, 0, bigText);
+
+            buffer.GetLineLength(0).Should().Be(charCount);
+
+            buffer.Undo();
+            buffer.GetLineLength(0).Should().Be(0);
+
+            buffer.Redo();
+            buffer.GetLineLength(0).Should().Be(charCount);
+            // Spot-check a few positions to confirm content equality without
+            // building a second 10MB string just for the assertion.
+            buffer.GetSubstring(0, 0, 1).Should().Be("a");
+            buffer.GetSubstring(0, 25, 1).Should().Be("z");
+            buffer.GetSubstring(0, charCount - 1, 1).Should().Be(bigText[charCount - 1].ToString());
+        }
+
+        [Fact]
+        public void InsertLine_AtIndex100k_FromEmptyBuffer_AutoExtendsAndUndoRestoresEmpty()
+        {
+            // Deep auto-extend: from an empty buffer, requesting a line index of
+            // 100,000 must materialize the intermediate empty lines and the
+            // requested one. A single Undo must restore the empty buffer state.
+            const int targetIndex = 100_000;
+            var buffer = new TextBuffer();
+
+            buffer.InsertLine(targetIndex, "deep");
+
+            buffer.LinesCount.Should().Be(targetIndex + 1);
+            buffer.GetLine(targetIndex).Should().Be("deep");
+            buffer.GetLine(0).Should().Be("");                              // auto-extended
+            buffer.GetLine(targetIndex - 1).Should().Be("");
+
+            buffer.Undo();
+
+            buffer.LinesCount.Should().Be(0);
+            buffer.CanUndo.Should().BeFalse();
+        }
+
+        [Fact]
+        public void InsertSubstring_DeepAutoExtend_LineAndColumn_UndoRestoresEmpty()
+        {
+            // Worst case: insert past both buffer end AND line end. A single
+            // InsertSubstring at (5000, 1000) on an empty buffer materializes
+            // 5001 lines and pads line 5000 with 1000 spaces before inserting.
+            // One undo must wipe everything.
+            var buffer = new TextBuffer();
+
+            buffer.InsertSubstring(5000, 1000, "X");
+
+            buffer.LinesCount.Should().Be(5001);
+            buffer.GetLineLength(5000).Should().Be(1001);
+            buffer.GetSubstring(5000, 1000, 1).Should().Be("X");
+            buffer.GetSubstring(5000, 0, 4).Should().Be("    ");           // padding
+
+            buffer.Undo();
+
+            buffer.LinesCount.Should().Be(0);
+            buffer.CanUndo.Should().BeFalse();
+        }
+
+        #endregion
     }
 }

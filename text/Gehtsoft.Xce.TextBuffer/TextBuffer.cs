@@ -14,7 +14,6 @@ namespace Gehtsoft.Xce.TextBuffer
     {
         private readonly object mLock = new object();
         private readonly SplitList<SplitList<char>> mLines;
-        private readonly TextBufferCallbackCollection mCallbacks;
         private readonly Stack<IUndoAction> mUndoActions = new Stack<IUndoAction>();
         private readonly Stack<IUndoAction> mRedoActions = new Stack<IUndoAction>();
 
@@ -29,6 +28,38 @@ namespace Gehtsoft.Xce.TextBuffer
         private readonly TextCursor mCursor = new TextCursor();
         private readonly TextBufferBlock mBlock = new TextBufferBlock();
         private readonly TextMarkerCollection mMarkers = new TextMarkerCollection();
+
+        // Replay safety: while Undo()/Redo() runs an inner action, Owner fan-out is
+        // suppressed and the events are queued here. They are fired only after the
+        // replay finishes and the buffer-owned state has been restored from snapshot.
+        // This guarantees that an Owner that throws cannot leave the buffer in a
+        // half-unwound state — the inner action always runs to completion under the
+        // buffer's own internal trackers, with no observer in the loop.
+        private bool mReplayingHistory;
+        private List<DeferredOwnerEvent> mDeferredOwnerEvents;
+
+        private enum DeferredOwnerEventKind
+        {
+            LinesInserted,
+            LinesDeleted,
+            SubstringInserted,
+            SubstringDeleted,
+        }
+
+        private readonly struct DeferredOwnerEvent
+        {
+            public readonly DeferredOwnerEventKind Kind;
+            public readonly int Line;
+            public readonly int Column;
+            public readonly int Length;
+            public DeferredOwnerEvent(DeferredOwnerEventKind kind, int line, int column, int length)
+            {
+                Kind = kind;
+                Line = line;
+                Column = column;
+                Length = length;
+            }
+        }
 
         /// <summary>Caret + selection anchor. Owned by the buffer; round-tripped through undo/redo.</summary>
         public TextCursor Cursor => mCursor;
@@ -65,9 +96,13 @@ namespace Gehtsoft.Xce.TextBuffer
         }
 
         /// <summary>
-        /// Gets the callback collection for registering change notifications
+        /// The single owner callback sink. Set this to the parent editor object so it
+        /// can fan out edits to UI repaint, syntax highlighting, observers, etc.
+        /// <c>null</c> means no fan-out. There is no multi-subscriber surface; the buffer
+        /// drives <see cref="Cursor"/>, <see cref="Block"/>, and <see cref="Markers"/>
+        /// directly without using this hook.
         /// </summary>
-        public TextBufferCallbackCollection Callbacks => mCallbacks;
+        public ITextBufferCallback Owner { get; set; }
 
         /// <summary>
         /// Constructor - creates an empty text buffer
@@ -75,7 +110,6 @@ namespace Gehtsoft.Xce.TextBuffer
         public TextBuffer()
         {
             mLines = new SplitList<SplitList<char>>();
-            mCallbacks = new TextBufferCallbackCollection(mLock);
         }
 
         /// <summary>
@@ -97,7 +131,6 @@ namespace Gehtsoft.Xce.TextBuffer
                 }
                 mLines = new SplitList<SplitList<char>>(lineBuffers);
             }
-            mCallbacks = new TextBufferCallbackCollection(mLock);
         }
 
         /// <summary>
@@ -276,7 +309,7 @@ namespace Gehtsoft.Xce.TextBuffer
             mCursor.OnLinesInserted(lineIndex, count);
             mBlock.OnLinesInserted(lineIndex, count);
             mMarkers.OnLinesInserted(lineIndex, count);
-            mCallbacks.InvokeOnLinesInserted(lineIndex, count);
+            DispatchOwnerEvent(DeferredOwnerEventKind.LinesInserted, lineIndex, 0, count);
         }
 
         private void NotifyLinesDeleted(int lineIndex, int count)
@@ -284,23 +317,42 @@ namespace Gehtsoft.Xce.TextBuffer
             mCursor.OnLinesDeleted(lineIndex, count);
             mBlock.OnLinesDeleted(lineIndex, count);
             mMarkers.OnLinesDeleted(lineIndex, count);
-            mCallbacks.InvokeOnLinesDeleted(lineIndex, count);
+            DispatchOwnerEvent(DeferredOwnerEventKind.LinesDeleted, lineIndex, 0, count);
         }
 
         private void NotifySubstringInserted(int lineIndex, int columnIndex, int length)
         {
             mCursor.OnSubstringInserted(lineIndex, columnIndex, length);
             mBlock.OnSubstringInserted(lineIndex, columnIndex, length);
-            // markers ignore substring ops by design
-            mCallbacks.InvokeOnSubstringInserted(lineIndex, columnIndex, length);
+            mMarkers.OnSubstringInserted(lineIndex, columnIndex, length);
+            DispatchOwnerEvent(DeferredOwnerEventKind.SubstringInserted, lineIndex, columnIndex, length);
         }
 
         private void NotifySubstringDeleted(int lineIndex, int columnIndex, int length)
         {
             mCursor.OnSubstringDeleted(lineIndex, columnIndex, length);
             mBlock.OnSubstringDeleted(lineIndex, columnIndex, length);
-            // markers ignore substring ops by design
-            mCallbacks.InvokeOnSubstringDeleted(lineIndex, columnIndex, length);
+            mMarkers.OnSubstringDeleted(lineIndex, columnIndex, length);
+            DispatchOwnerEvent(DeferredOwnerEventKind.SubstringDeleted, lineIndex, columnIndex, length);
+        }
+
+        private void DispatchOwnerEvent(DeferredOwnerEventKind kind, int line, int column, int length)
+        {
+            if (mReplayingHistory)
+            {
+                mDeferredOwnerEvents.Add(new DeferredOwnerEvent(kind, line, column, length));
+                return;
+            }
+
+            var owner = Owner;
+            if (owner == null) return;
+            switch (kind)
+            {
+                case DeferredOwnerEventKind.LinesInserted: owner.OnLinesInserted(line, length); break;
+                case DeferredOwnerEventKind.LinesDeleted: owner.OnLinesDeleted(line, length); break;
+                case DeferredOwnerEventKind.SubstringInserted: owner.OnSubstringInserted(line, column, length); break;
+                case DeferredOwnerEventKind.SubstringDeleted: owner.OnSubstringDeleted(line, column, length); break;
+            }
         }
 
         /// <summary>
@@ -338,12 +390,15 @@ namespace Gehtsoft.Xce.TextBuffer
                 newLine = new SplitList<char>(text);
 
             mLines.InsertAt(lineIndex, newLine);
-            NotifyLinesInserted(lineIndex, 1);
 
+            // Register undo BEFORE firing the Owner callback so a throwing Owner
+            // doesn't leave a buffer mutation without a matching undo entry.
             if (!suppressUndo)
             {
                 RegisterUndoAction(new InsertLineUndoAction(this, lineIndex, text, autoAddedLines));
             }
+
+            NotifyLinesInserted(lineIndex, 1);
         }
 
         /// <summary>
@@ -367,8 +422,16 @@ namespace Gehtsoft.Xce.TextBuffer
                 BufferStateSnapshot before = isOutermost
                     ? BufferStateSnapshot.Capture(mCursor, mBlock, mMarkers) : null;
                 int countBefore = mUndoActions.Count;
-                InsertLineInternal(lineIndex, text, false);
-                WrapLastUndoActionWithSnapshot(isOutermost, before, countBefore);
+                try
+                {
+                    InsertLineInternal(lineIndex, text, false);
+                }
+                finally
+                {
+                    // Wrap regardless of how InsertLineInternal exited so a throwing
+                    // Owner callback still leaves a snapshot-wrapped undo entry.
+                    WrapLastUndoActionWithSnapshot(isOutermost, before, countBefore);
+                }
             }
         }
 
@@ -390,9 +453,16 @@ namespace Gehtsoft.Xce.TextBuffer
             if (lineIndex < 0)
                 throw new ArgumentOutOfRangeException(nameof(lineIndex), "Line index cannot be negative");
 
-            // If line doesn't exist, do nothing
+            // Past real content: per D3 the buffer is conceptually infinite empty.
+            // Per D2 we still push a no-op undo entry and fire a length-0 callback
+            // so callers don't need to detect this case.
             if (lineIndex >= mLines.Count)
+            {
+                if (!suppressUndo)
+                    RegisterUndoAction(NoOpUndoAction.Instance);
+                NotifyLinesDeleted(lineIndex, 0);
                 return;
+            }
 
             // Register undo action BEFORE deletion
             if (!suppressUndo)
@@ -440,8 +510,14 @@ namespace Gehtsoft.Xce.TextBuffer
                 BufferStateSnapshot before = isOutermost
                     ? BufferStateSnapshot.Capture(mCursor, mBlock, mMarkers) : null;
                 int countBefore = mUndoActions.Count;
-                DeleteLineInternal(lineIndex, false);
-                WrapLastUndoActionWithSnapshot(isOutermost, before, countBefore);
+                try
+                {
+                    DeleteLineInternal(lineIndex, false);
+                }
+                finally
+                {
+                    WrapLastUndoActionWithSnapshot(isOutermost, before, countBefore);
+                }
             }
         }
 
@@ -456,8 +532,16 @@ namespace Gehtsoft.Xce.TextBuffer
             if (columnIndex < 0)
                 throw new ArgumentOutOfRangeException(nameof(columnIndex), "Column index cannot be negative");
 
+            // Empty-text insert: per D2 we still push a no-op undo entry and fire a
+            // length-0 callback so callers don't need to detect this case. No
+            // auto-extension — empty text shouldn't materialize lines or padding.
             if (text.Length == 0)
+            {
+                if (!suppressUndo)
+                    RegisterUndoAction(NoOpUndoAction.Instance);
+                NotifySubstringInserted(lineIndex, columnIndex, 0);
                 return;
+            }
 
             // Track auto-extended lines and spaces
             int linesBefore = mLines.Count;
@@ -483,12 +567,15 @@ namespace Gehtsoft.Xce.TextBuffer
             int autoAddedSpaces = line.Count - columnsBefore;
 
             line.InsertAt(columnIndex, text);
-            NotifySubstringInserted(lineIndex, columnIndex, text.Length);
 
+            // Register undo BEFORE firing the Owner callback so a throwing Owner
+            // doesn't leave a buffer mutation without a matching undo entry.
             if (!suppressUndo)
             {
                 RegisterUndoAction(new InsertSubstringUndoAction(this, lineIndex, columnIndex, text, autoAddedLines, autoAddedSpaces));
             }
+
+            NotifySubstringInserted(lineIndex, columnIndex, text.Length);
         }
 
         /// <summary>
@@ -518,8 +605,14 @@ namespace Gehtsoft.Xce.TextBuffer
                 BufferStateSnapshot before = isOutermost
                     ? BufferStateSnapshot.Capture(mCursor, mBlock, mMarkers) : null;
                 int countBefore = mUndoActions.Count;
-                InsertSubstringInternal(lineIndex, columnIndex, text, false);
-                WrapLastUndoActionWithSnapshot(isOutermost, before, countBefore);
+                try
+                {
+                    InsertSubstringInternal(lineIndex, columnIndex, text, false);
+                }
+                finally
+                {
+                    WrapLastUndoActionWithSnapshot(isOutermost, before, countBefore);
+                }
             }
         }
 
@@ -548,15 +641,19 @@ namespace Gehtsoft.Xce.TextBuffer
             if (length < 0)
                 throw new ArgumentOutOfRangeException(nameof(length), "Length cannot be negative");
 
-            // If line doesn't exist or length is 0, do nothing
-            if (lineIndex >= mLines.Count || length == 0)
+            // Past real content (line missing, column past line end, or zero length):
+            // per D3 the buffer is conceptually infinite empty past real content; per D2
+            // we still push a no-op undo entry and fire a length-0 callback so callers
+            // don't need to detect this case.
+            if (lineIndex >= mLines.Count || length == 0 || columnIndex >= mLines[lineIndex].Count)
+            {
+                if (!suppressUndo)
+                    RegisterUndoAction(NoOpUndoAction.Instance);
+                NotifySubstringDeleted(lineIndex, columnIndex, 0);
                 return;
+            }
 
             var line = mLines[lineIndex];
-
-            // If column is beyond line end, do nothing
-            if (columnIndex >= line.Count)
-                return;
 
             // Adjust length if it goes beyond the end of line
             if (columnIndex + length > line.Count)
@@ -612,8 +709,14 @@ namespace Gehtsoft.Xce.TextBuffer
                 BufferStateSnapshot before = isOutermost
                     ? BufferStateSnapshot.Capture(mCursor, mBlock, mMarkers) : null;
                 int countBefore = mUndoActions.Count;
-                DeleteSubstringInternal(lineIndex, columnIndex, length, false);
-                WrapLastUndoActionWithSnapshot(isOutermost, before, countBefore);
+                try
+                {
+                    DeleteSubstringInternal(lineIndex, columnIndex, length, false);
+                }
+                finally
+                {
+                    WrapLastUndoActionWithSnapshot(isOutermost, before, countBefore);
+                }
             }
         }
 
@@ -679,7 +782,15 @@ namespace Gehtsoft.Xce.TextBuffer
         }
 
         /// <summary>
-        /// Undoes the last action
+        /// Undoes the last action.
+        /// <para>
+        /// Replay safety: while the action runs, Owner fan-out is suppressed and the
+        /// callback events are queued. The action runs end-to-end against the buffer's
+        /// own internal trackers (cursor, block, markers) and the snapshot is restored
+        /// on top, all before any Owner method is called. The queued events are then
+        /// flushed to Owner. If Owner throws while flushing, the buffer is already in
+        /// the fully-restored state — no half-unwound corruption.
+        /// </para>
         /// </summary>
         public void Undo()
         {
@@ -692,26 +803,14 @@ namespace Gehtsoft.Xce.TextBuffer
                     throw new InvalidOperationException("No actions to undo");
 
                 var action = mUndoActions.Pop();
-                try
-                {
-                    action.Undo();
-                }
-                catch (Exception ex)
-                {
-                    // The action may have applied part of its work before throwing.
-                    // The buffer can no longer trust its history; drop both stacks
-                    // so subsequent code cannot replay corrupt state.
-                    mUndoActions.Clear();
-                    mRedoActions.Clear();
-                    throw new UndoCorruptedException(
-                        "Undo action failed; undo/redo history has been cleared.", ex);
-                }
+                List<DeferredOwnerEvent> deferred = ReplayInner(action, isUndo: true);
                 mRedoActions.Push(action);
+                FlushDeferredOwnerEvents(deferred);
             }
         }
 
         /// <summary>
-        /// Redoes the last undone action
+        /// Redoes the last undone action. See <see cref="Undo"/> for the replay-safety contract.
         /// </summary>
         public void Redo()
         {
@@ -724,18 +823,79 @@ namespace Gehtsoft.Xce.TextBuffer
                     throw new InvalidOperationException("No actions to redo");
 
                 var action = mRedoActions.Pop();
-                try
-                {
-                    action.Redo();
-                }
-                catch (Exception ex)
-                {
-                    mUndoActions.Clear();
-                    mRedoActions.Clear();
-                    throw new UndoCorruptedException(
-                        "Redo action failed; undo/redo history has been cleared.", ex);
-                }
+                List<DeferredOwnerEvent> deferred = ReplayInner(action, isUndo: false);
                 mUndoActions.Push(action);
+                FlushDeferredOwnerEvents(deferred);
+            }
+        }
+
+        /// <summary>
+        /// Run a single undo or redo action with Owner fan-out suppressed. Returns the
+        /// deferred event list collected during replay (to be flushed by the caller).
+        /// On failure, both history stacks are cleared and an
+        /// <see cref="UndoCorruptedException"/> is thrown.
+        /// </summary>
+        private List<DeferredOwnerEvent> ReplayInner(IUndoAction action, bool isUndo)
+        {
+            var deferred = new List<DeferredOwnerEvent>();
+            mDeferredOwnerEvents = deferred;
+            mReplayingHistory = true;
+            try
+            {
+                if (isUndo) action.Undo(); else action.Redo();
+            }
+            catch (Exception ex)
+            {
+                // The action may have applied part of its work before throwing.
+                // The buffer can no longer trust its history; drop both stacks
+                // so subsequent code cannot replay corrupt state. Owner has not
+                // been notified of any of this (events were queued, not fired),
+                // so callers must treat the buffer as needing a full re-sync.
+                mUndoActions.Clear();
+                mRedoActions.Clear();
+                throw new UndoCorruptedException(
+                    (isUndo ? "Undo" : "Redo") + " action failed; undo/redo history has been cleared.", ex);
+            }
+            finally
+            {
+                mReplayingHistory = false;
+                mDeferredOwnerEvents = null;
+            }
+            return deferred;
+        }
+
+        /// <summary>
+        /// Fire queued events to Owner after a successful replay, bracketed by
+        /// <see cref="ITextBufferCallback.OnReplayBegin"/> / <see cref="ITextBufferCallback.OnReplayEnd"/>.
+        /// The buffer is fully consistent before this runs, so an Owner exception here
+        /// propagates out without leaving the buffer corrupt. <c>OnReplayEnd</c> is
+        /// guaranteed to fire (in a finally) once <c>OnReplayBegin</c> has returned
+        /// normally, even if an event handler throws mid-flush. Always called — even
+        /// when the deferred list is empty — so Owner can sync any state (e.g.
+        /// cursor/block/markers) restored silently from the snapshot.
+        /// </summary>
+        private void FlushDeferredOwnerEvents(List<DeferredOwnerEvent> deferred)
+        {
+            var owner = Owner;
+            if (owner == null) return;
+            owner.OnReplayBegin();
+            try
+            {
+                for (int i = 0; i < deferred.Count; i++)
+                {
+                    var ev = deferred[i];
+                    switch (ev.Kind)
+                    {
+                        case DeferredOwnerEventKind.LinesInserted: owner.OnLinesInserted(ev.Line, ev.Length); break;
+                        case DeferredOwnerEventKind.LinesDeleted: owner.OnLinesDeleted(ev.Line, ev.Length); break;
+                        case DeferredOwnerEventKind.SubstringInserted: owner.OnSubstringInserted(ev.Line, ev.Column, ev.Length); break;
+                        case DeferredOwnerEventKind.SubstringDeleted: owner.OnSubstringDeleted(ev.Line, ev.Column, ev.Length); break;
+                    }
+                }
+            }
+            finally
+            {
+                owner.OnReplayEnd();
             }
         }
 
@@ -792,25 +952,19 @@ namespace Gehtsoft.Xce.TextBuffer
 
                 var frame = mTransactionStack.Pop();
 
-                // Only commit to undo stack if this is the outermost transaction
+                // Per D2, every commit pushes/propagates uniformly — empty transactions
+                // push too. Their Undo/Redo run an empty action list and are harmless.
                 if (mTransactionStack.Count == 0)
                 {
-                    // Only add non-empty transactions
-                    if (transaction.Count > 0)
-                    {
-                        // Wrap with before/after snapshots so cursor/block/markers round-trip.
-                        var after = BufferStateSnapshot.Capture(mCursor, mBlock, mMarkers);
-                        mUndoActions.Push(new StateSnapshotUndoAction(this, transaction, frame.Before, after));
-                        mRedoActions.Clear(); // Clear redo stack when new action is performed
-                    }
+                    // Outermost: wrap with before/after snapshots so cursor/block/markers round-trip.
+                    var after = BufferStateSnapshot.Capture(mCursor, mBlock, mMarkers);
+                    mUndoActions.Push(new StateSnapshotUndoAction(this, transaction, frame.Before, after));
+                    mRedoActions.Clear(); // Clear redo stack when new action is performed
                 }
                 else
                 {
-                    // This is a nested transaction, add it to the parent transaction
-                    if (transaction.Count > 0)
-                    {
-                        mTransactionStack.Peek().Transaction.AddAction(transaction);
-                    }
+                    // Nested: propagate to the parent transaction.
+                    mTransactionStack.Peek().Transaction.AddAction(transaction);
                 }
             }
         }

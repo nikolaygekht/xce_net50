@@ -358,36 +358,120 @@ namespace Gehtsoft.Xce.TextBuffer.Test
 
         #endregion
 
-        #region Substring Operations Tests
+        #region Substring Operations Tests (column-aware)
 
         [Fact]
-        public void TextMarkerCollection_SubstringInsert_NoEffect()
+        public void TextMarkerCollection_SubstringInsertBeforeMarker_ShiftsColumnRight()
         {
-            // Arrange
             var collection = new TextMarkerCollection();
             var marker = new TextMarker("m1", 5, 10);
             collection.Add(marker);
 
-            // Act
-            collection.OnSubstringInserted(5, 5, 20);
+            collection.OnSubstringInserted(5, 3, 4);
 
-            // Assert - markers don't adjust for substring operations
+            marker.Line.Should().Be(5);
+            marker.Column.Should().Be(14);
+        }
+
+        [Fact]
+        public void TextMarkerCollection_SubstringInsertAtMarkerColumn_ShiftsRight()
+        {
+            // Same convention as TextCursor: insert at the position pushes it right.
+            var collection = new TextMarkerCollection();
+            var marker = new TextMarker("m1", 5, 10);
+            collection.Add(marker);
+
+            collection.OnSubstringInserted(5, 10, 3);
+
+            marker.Column.Should().Be(13);
+        }
+
+        [Fact]
+        public void TextMarkerCollection_SubstringInsertAfterMarker_NoChange()
+        {
+            var collection = new TextMarkerCollection();
+            var marker = new TextMarker("m1", 5, 10);
+            collection.Add(marker);
+
+            collection.OnSubstringInserted(5, 11, 5);
+
+            marker.Column.Should().Be(10);
+        }
+
+        [Fact]
+        public void TextMarkerCollection_SubstringInsertOnDifferentLine_NoChange()
+        {
+            var collection = new TextMarkerCollection();
+            var marker = new TextMarker("m1", 5, 10);
+            collection.Add(marker);
+
+            collection.OnSubstringInserted(4, 0, 100);
+            collection.OnSubstringInserted(6, 0, 100);
+
             marker.Line.Should().Be(5);
             marker.Column.Should().Be(10);
         }
 
         [Fact]
-        public void TextMarkerCollection_SubstringDelete_NoEffect()
+        public void TextMarkerCollection_SubstringDeleteBeforeMarker_ShiftsColumnLeft()
         {
-            // Arrange
             var collection = new TextMarkerCollection();
             var marker = new TextMarker("m1", 5, 10);
             collection.Add(marker);
 
-            // Act
-            collection.OnSubstringDeleted(5, 0, 15);
+            collection.OnSubstringDeleted(5, 2, 3);
 
-            // Assert - markers don't adjust for substring operations
+            marker.Column.Should().Be(7);
+        }
+
+        [Fact]
+        public void TextMarkerCollection_SubstringDeleteOverlappingMarker_ClampsToDeletionStart()
+        {
+            var collection = new TextMarkerCollection();
+            var marker = new TextMarker("m1", 5, 10);
+            collection.Add(marker);
+
+            // delete columns [8..14) — overlaps the marker at 10
+            collection.OnSubstringDeleted(5, 8, 6);
+
+            marker.Column.Should().Be(8);
+        }
+
+        [Fact]
+        public void TextMarkerCollection_SubstringDeleteAtMarkerColumn_NoColumnShift()
+        {
+            // delete starts exactly at marker column → marker stays at deletion start
+            var collection = new TextMarkerCollection();
+            var marker = new TextMarker("m1", 5, 10);
+            collection.Add(marker);
+
+            collection.OnSubstringDeleted(5, 10, 3);
+
+            marker.Column.Should().Be(10);
+        }
+
+        [Fact]
+        public void TextMarkerCollection_SubstringDeleteAfterMarker_NoChange()
+        {
+            var collection = new TextMarkerCollection();
+            var marker = new TextMarker("m1", 5, 10);
+            collection.Add(marker);
+
+            collection.OnSubstringDeleted(5, 12, 4);
+
+            marker.Column.Should().Be(10);
+        }
+
+        [Fact]
+        public void TextMarkerCollection_SubstringDeleteOnDifferentLine_NoChange()
+        {
+            var collection = new TextMarkerCollection();
+            var marker = new TextMarker("m1", 5, 10);
+            collection.Add(marker);
+
+            collection.OnSubstringDeleted(4, 0, 100);
+            collection.OnSubstringDeleted(6, 0, 100);
+
             marker.Line.Should().Be(5);
             marker.Column.Should().Be(10);
         }
@@ -401,10 +485,8 @@ namespace Gehtsoft.Xce.TextBuffer.Test
         {
             // Arrange
             var buffer = new TextBuffer(new[] { "line0", "line1", "line2", "line3", "line4" });
-            var collection = new TextMarkerCollection();
             var marker = new TextMarker("bookmark", 3, 2);
-            collection.Add(marker);
-            buffer.Callbacks.Add(collection);
+            buffer.Markers.Add(marker);
 
             // Act - insert before marker
             buffer.InsertLine(1, "new line");
@@ -419,10 +501,8 @@ namespace Gehtsoft.Xce.TextBuffer.Test
         {
             // Arrange
             var buffer = new TextBuffer(new[] { "line0", "line1", "line2", "line3", "line4" });
-            var collection = new TextMarkerCollection();
             var marker = new TextMarker("bookmark", 3, 5);
-            collection.Add(marker);
-            buffer.Callbacks.Add(collection);
+            buffer.Markers.Add(marker);
 
             // Act - delete marker's line
             buffer.DeleteLine(3);
@@ -433,21 +513,53 @@ namespace Gehtsoft.Xce.TextBuffer.Test
         }
 
         [Fact]
-        public void TextBuffer_WithMarkerCollection_NoChangeOnSubstring()
+        public void TextBuffer_WithMarkerCollection_SubstringInsertBeforeMarker_ShiftsRight()
         {
             // Arrange
             var buffer = new TextBuffer(new[] { "Hello World" });
-            var collection = new TextMarkerCollection();
             var marker = new TextMarker("caret", 0, 6);
-            collection.Add(marker);
-            buffer.Callbacks.Add(collection);
+            buffer.Markers.Add(marker);
 
-            // Act - insert substring
+            // Act - insert substring before the marker on the same line
             buffer.InsertSubstring(0, 0, "XXX");
 
-            // Assert - marker doesn't move
+            // Assert - marker shifts right by 3
             marker.Line.Should().Be(0);
+            marker.Column.Should().Be(9);
+        }
+
+        [Fact]
+        public void TextBuffer_WithMarkerCollection_SubstringDeleteOverlappingMarker_ClampsToDeletionStart()
+        {
+            // Arrange
+            var buffer = new TextBuffer(new[] { "Hello World" });
+            var marker = new TextMarker("caret", 0, 6);
+            buffer.Markers.Add(marker);
+
+            // Act - delete columns [4..9) which overlaps the marker at 6
+            buffer.DeleteSubstring(0, 4, 5);
+
+            // Assert
+            marker.Column.Should().Be(4);
+        }
+
+        [Fact]
+        public void TextBuffer_WithMarkerCollection_SubstringEditUndoRedo_RoundTripsColumn()
+        {
+            // Round-trip a column-aware adjustment through Undo/Redo so the snapshot
+            // mechanism keeps marker positions coherent under the new semantics.
+            var buffer = new TextBuffer(new[] { "Hello World" });
+            var marker = new TextMarker("caret", 0, 6);
+            buffer.Markers.Add(marker);
+
+            buffer.InsertSubstring(0, 0, "XXX");
+            marker.Column.Should().Be(9);
+
+            buffer.Undo();
             marker.Column.Should().Be(6);
+
+            buffer.Redo();
+            marker.Column.Should().Be(9);
         }
 
         [Fact]
@@ -455,10 +567,8 @@ namespace Gehtsoft.Xce.TextBuffer.Test
         {
             // Arrange
             var buffer = new TextBuffer(new[] { "line0", "line1", "line2" });
-            var collection = new TextMarkerCollection();
             var marker = new TextMarker("bookmark", 2, 0);
-            collection.Add(marker);
-            buffer.Callbacks.Add(collection);
+            buffer.Markers.Add(marker);
 
             // Act - insert line, undo, redo
             buffer.InsertLine(0, "new line");
