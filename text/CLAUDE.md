@@ -21,6 +21,41 @@ This is a high-performance text buffer library for text editor applications, bui
    - Position markers with automatic adjustment
    - File I/O with encoding and EOL detection
 
+## Binding Design Decisions (D1–D6)
+
+These are the canonical source for *why* the code looks the way it does. Tests pin them;
+code reviews enforce them. Don't "fix" one without changing the decision first.
+
+| # | Decision | Rationale |
+|---|---|---|
+| **D1** | One `ITextBufferCallback Owner` per buffer, not a multi-subscriber collection. `null` means no fan-out. | Every callback consumer needs state that lives on the parent editor anyway (path, view, theme, syntax mode), so the owner has to re-solve fan-out regardless. Dropping the collection removes concurrent add/remove thread-safety surface, ordering ambiguity, and duplicate-add semantics. |
+| **D2** | Every public edit **always** pushes an undo entry and **always** fires its callback — even when nothing changed (`NoOpUndoAction`, `length = 0`). Empty transactions push too. | Uniformity beats optimization. One stack entry + one callback for a rare empty edit costs less than "is this a no-op?" branching scattered through every edit path. Callers never need to detect no-op cases. |
+| **D3** | The buffer is conceptually infinite empty past real content. Past-end **inserts** auto-extend (tracked, removed on undo); past-end **deletes** are uniform no-ops. Partially-overlapping deletes clamp to real content. | Keeps the "is this index valid?" check in *one* place — the buffer — instead of in every caller. Editor code can treat positions past content as legal without guarding. |
+| **D4** | Negative line/column/length arguments throw `ArgumentOutOfRangeException`. | Negatives have no natural "endless" interpretation; they're caller bugs and worth flagging loudly. |
+| **D5** | File I/O preserves final-newline state byte-for-byte via the trailing-empty-line convention. No implicit normalization on read or write. | N trailing newlines on disk ↔ N trailing empty lines in the buffer. Round-trips must not silently rewrite files. |
+| **D6** | `Cursor`, `Block`, and `Markers` are first-class `TextBuffer` members. There is **no** `IUndoState` plug-in surface and no public way to register a custom `IUndoAction`. | The buffer owns the state it must restore, so undo/redo can never lose it to a lossy callback stream. Externally-supplied undo-tracked state is explicitly out of scope. |
+
+### Threading contract
+
+`TextBuffer` guards its own internals (`mLines`, undo/redo stacks, transaction stack) with a
+private reentrant `Monitor`; locks sit on the public boundary and the `*Internal` methods are
+lock-free because their callers already hold it.
+
+`Cursor`, `Block`, and `Markers` are **live mutable objects, deliberately not synchronized**.
+The contract is **get / use / forget** — read a position, act on it, drop the reference. Do not
+cache them across edits or hand them to another thread. In editor use, state mutation and text
+mutation happen on the same thread (the UI thread), so no concurrent modification can occur and
+locking them would be pure overhead. Multi-threaded mutation of buffer-owned state is *not*
+supported and is out of scope.
+
+`internal int LinesCountNoLock` exists so undo actions carry no reentrancy assumption — see its
+XML doc. It asserts lock ownership in debug builds.
+
+**Replay atomicity** (from the 2026-05-08 audit): during `Undo`/`Redo` the buffer suppresses
+Owner fan-out and queues events, runs the inner action against its own trackers, restores the
+snapshot, and only then flushes queued events inside an `OnReplayBegin` / `OnReplayEnd` bracket.
+An Owner that throws cannot leave the buffer half-unwound.
+
 ## Key Design Principles
 
 ### 1. Performance
@@ -73,17 +108,26 @@ and `InsertSubstring` past content auto-extend (tracked, removed on undo).
 
 #### Command Pattern
 - `IUndoAction` interface with `Undo()` and `Redo()` methods
-- Four action types:
+- Four edit action types:
   - `InsertLineUndoAction` - tracks line insertion + auto-added lines
   - `DeleteLineUndoAction` - stores deleted line content
   - `InsertSubstringUndoAction` - tracks substring insertion + auto-added lines/spaces
   - `DeleteSubstringUndoAction` - stores deleted substring content
+- Plus three infrastructure types (all `internal`):
+  - `NoOpUndoAction` - singleton placeholder for empty / past-end edits (D2/D3)
+  - `BufferStateSnapshot` - captures cursor caret/anchor, block coords/type, marker triples
+  - `StateSnapshotUndoAction` - wraps every top-level edit/transaction so undo and redo
+    restore full editor state, not just text
+- `UndoCorruptedException` thrown and both stacks cleared if an action throws mid-undo/redo
 
 #### Transaction Support
 - `UndoTransaction` groups multiple actions
-- Nested transactions supported
+- Nested transactions supported (only the outermost commit produces a snapshot-wrapped entry)
 - `BeginUndoTransaction()` returns `IDisposable`
 - Pattern: `using (buffer.BeginUndoTransaction()) { ... }`
+- `CommitTransaction` uses peek-then-pop so a mismatch can't corrupt the stack
+- `Undo()` / `Redo()` throw `InvalidOperationException` while a transaction is open
+- Double-dispose is harmless (commits exactly once)
 
 #### Auto-Extension Tracking
 - Auto-added empty lines are tracked and removed on undo
@@ -97,7 +141,13 @@ and `InsertSubstring` past content auto-extend (tracked, removed on undo).
 SplitList<SplitList<char>> mLines;  // Each line is a gap buffer
 Stack<IUndoAction> mUndoActions;
 Stack<IUndoAction> mRedoActions;
-Stack<UndoTransaction> mTransactionStack;
+Stack<TransactionFrame> mTransactionStack;  // transaction + pre-edit snapshot
+
+// Aggregated editor state (D6) — buffer-owned, driven in-line, snapshot-restored
+public TextCursor Cursor { get; }
+public TextBufferBlock Block { get; }
+public TextMarkerCollection Markers { get; }
+public ITextBufferCallback Owner { get; set; }   // single sink (D1); null = no fan-out
 ```
 
 ### Block Selection Types
@@ -166,15 +216,16 @@ Stack<UndoTransaction> mTransactionStack;
 ## Testing Strategy
 
 ### Test Organization
-- **Scintilla.CellBuffer.Test** - Gap buffer tests
+- **Scintilla.CellBuffer.Test** - Gap buffer tests (24 total)
   - SimpleList tests
   - SplitList tests
 
-- **Gehtsoft.Xce.TextBuffer.Test** - TextBuffer tests (227 total)
+- **Gehtsoft.Xce.TextBuffer.Test** - TextBuffer tests (305 total)
   - Basic operations, undo/redo, transactions, transaction lifecycle
   - Block selections, markers, edge semantics, state-undo scenarios
+  - Cursor/selection, replay safety, uniform no-op, Owner contract, span-read API
   - File I/O, stress tests, thread safety
-  - See `CURRENT_STATUS.md` for the full per-class breakdown
+  - See `CURRENT_STATUS.md` for the full per-class breakdown (329 total across both projects)
 
 ### Test Coverage
 - All operations tested
@@ -276,11 +327,11 @@ Implement `ITextBufferCallback` for:
 - Custom position tracking
 - External data structure synchronization
 
-### Custom Undo Actions
-Implement `IUndoAction` for:
-- Complex multi-step operations
-- Operations involving external resources
-- Custom state management
+### Custom Undo Actions — not an extension point (D6)
+`IUndoAction` is public, but `RegisterUndoAction` is **private** and every concrete action type
+(`NoOpUndoAction`, `StateSnapshotUndoAction`, `BufferStateSnapshot`) is `internal`. There is no
+public way to inject a custom action, by design — see D6. Group multi-step operations with
+`BeginUndoTransaction()` instead; that is the supported composition mechanism.
 
 ## Future Considerations
 

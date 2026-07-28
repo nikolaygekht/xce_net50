@@ -1,7 +1,9 @@
 using System;
 using System.Buffers;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using Scintilla.CellBuffer;
 using Gehtsoft.Xce.TextBuffer.Undo;
 
@@ -92,6 +94,28 @@ namespace Gehtsoft.Xce.TextBuffer
                 {
                     return mLines.Count;
                 }
+            }
+        }
+
+        /// <summary>
+        /// Line count without taking <c>mLock</c>. For use from code paths that already
+        /// hold the lock — chiefly <see cref="IUndoAction"/> implementations, which run
+        /// inside <see cref="Undo"/> / <see cref="Redo"/>.
+        /// <para>
+        /// <c>mLock</c> is a reentrant <see cref="Monitor"/>, so calling the public
+        /// <see cref="LinesCount"/> from there is correct today. This accessor exists so
+        /// the undo actions hold no reentrancy assumption: if <c>mLock</c> ever becomes a
+        /// non-recursive primitive (<c>ReaderWriterLockSlim</c>, <c>SemaphoreSlim</c>),
+        /// re-entering it from an action would deadlock. The debug assert turns
+        /// "called without the lock" from a silent data race into a loud failure.
+        /// </para>
+        /// </summary>
+        internal int LinesCountNoLock
+        {
+            get
+            {
+                Debug.Assert(Monitor.IsEntered(mLock), "LinesCountNoLock requires mLock to be held");
+                return mLines.Count;
             }
         }
 

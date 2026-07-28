@@ -40,7 +40,8 @@ namespace Gehtsoft.Xce.TextBuffer.Undo
             // Finally delete any auto-added lines
             if (mAutoAddedLines > 0)
             {
-                int startLine = mBuffer.LinesCount - mAutoAddedLines;
+                // NoLock: we are running inside TextBuffer.Undo(), which holds mLock.
+                int startLine = mBuffer.LinesCountNoLock - mAutoAddedLines;
                 for (int i = 0; i < mAutoAddedLines; i++)
                 {
                     mBuffer.DeleteLineInternal(startLine, suppressUndo: true);

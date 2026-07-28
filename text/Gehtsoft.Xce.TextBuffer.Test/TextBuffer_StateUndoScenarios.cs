@@ -102,7 +102,7 @@ namespace Gehtsoft.Xce.TextBuffer.Test
         [Fact]
         public void Bookmark_SurvivesLineDeleteWithExactColumn_OnUndo()
         {
-            // The headline marker bug from LATEST_FINDINGS.md: a bookmark on a line
+            // The headline marker bug from the 2026-05-06 review: a bookmark on a line
             // that gets deleted loses its column to (line, 0) in the forward direction.
             // After undo, the bookmark must be exactly back at its original (line, col).
             var buffer = new TextBuffer(new[] { "line0", "line1", "line2", "line3" });

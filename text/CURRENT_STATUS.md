@@ -246,7 +246,7 @@ Closes both findings from the 2026-05-08 audit reevaluation (`AUDIT_REPORT.md`).
 - **PR2.2 (span-read API)** — 13 tests in `TextBuffer_ReadApi`: pinned non-throwing contract for `GetLine(Span)`, `GetSubstring(Span)`, and the `string` overload — truncation, exact fit, larger-target-untouched, zero-length, out-of-range, past-end column, negative arguments.
 - **PR2.3 (uniform-no-op pinning)** — 7 tests in `TextBuffer_UniformNoOp`: empty inserts / past-end deletes / empty transactions push undo + fire length-0 callback; negative arguments throw without leaving partial entries. Uses a small `CountingSink` helper as `buffer.Owner`.
 
-### 2026-05-08 — PR1: single Owner sink + uniform edit semantics (FIX_PLAN.md design D1–D4)
+### 2026-05-08 — PR1: single Owner sink + uniform edit semantics (design D1–D4)
 1. **D1 — Single-owner callback sink**
    - `TextBufferCallbackCollection` deleted; `TextBuffer.Owner` is the sole sink.
    - Tests probing concurrent multi-subscriber add/remove retired — surface no longer exists.
@@ -261,7 +261,7 @@ Closes both findings from the 2026-05-08 audit reevaluation (`AUDIT_REPORT.md`).
    - All four edit methods throw `ArgumentOutOfRangeException` on negative L/C/k.
    - Pre-existing behaviour; tests confirmed in `TextBuffer_BasicOperations`.
 
-### 2026 — aggregated state with undo round-trip (FIX_PLAN.md Phases 1–3)
+### 2026 — aggregated state with undo round-trip (Phases 1–3)
 1. **Phase 1 — transaction lifecycle hardening**
    - `CommitTransaction` peek-then-pop.
    - `Undo`/`Redo` rejected while a transaction is open.
@@ -298,10 +298,13 @@ Closes both findings from the 2026-05-08 audit reevaluation (`AUDIT_REPORT.md`).
 
 ## Known Outstanding Work
 
-- All four FIX_PLAN.md PRs (PR1–PR4) have landed, and the 2026-05-08 audit-resolution pass closed the two follow-up findings (replay safety, column-aware markers). No outstanding planned work on the buffer surface.
+- All four planned PRs (PR1–PR4) have landed, and the 2026-05-08 audit-resolution pass closed the two follow-up findings (replay safety, column-aware markers). No outstanding planned work on the buffer surface.
+- **Undo coalescing** — designed, not implemented. See `COALESCING.md`. Groups linear typing and
+  Delete/Backspace runs into single undo entries; requires amending D2. Step 0 of that plan is to
+  try the transaction-based approach first, which needs no library change.
 - Multi-cursor / multi-selection — explicitly out of scope.
 - Multi-byte / grapheme handling — out of scope per `CLAUDE.md`.
-- Async file I/O, search/replace, undo coalescing — future work.
+- Async file I/O, search/replace — future work.
 
 ## Build and Test
 
